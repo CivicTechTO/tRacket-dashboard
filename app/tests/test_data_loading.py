@@ -45,7 +45,7 @@ def test_load_all_and_save(
     """
     Create a backup of the API data for all devices.
     """
-    raw_data = data_loader.load_noise_data(limit=10000, all_columns=True)
+    raw_data = data_loader.load_noise_data(limit=1000, all_columns=True)
     df = data_formatter._raw_to_dataframe(raw_data)
     df.to_csv(os.path.join(CURRENT_DIR, "data/full_backup.csv"), index=False)
 
