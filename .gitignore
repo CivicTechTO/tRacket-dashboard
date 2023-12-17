@@ -1,0 +1,10 @@
+**/__pycache__
+**/.DS_Store
+**/.pytest_cache
+app/tests/data/*
+app/tests/plots/*
+**/.mypy_cache
+app/app.log
+app/logs/*
+.env
+config.env

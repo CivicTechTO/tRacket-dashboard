@@ -1,0 +1,8 @@
+[tool.black]
+line-length = 79
+include = '\.pyi?$'
+
+[tool.mypy]
+follow_imports = 'skip'
+follow_imports_for_stubs = 'false'
+ignore_missing_imports = 'true'
