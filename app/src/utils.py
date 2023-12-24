@@ -36,6 +36,7 @@ class COLUMN(Enum):
     MINNOISE = "minnoise"
     DATE = "date"
     HOUR = "hour"
+    AVGMIN = "min_avg"
 
 
 class HEATMAP_VALUE(Enum):

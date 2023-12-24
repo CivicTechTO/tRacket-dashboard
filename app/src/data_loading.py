@@ -140,6 +140,27 @@ class URLBuilder(object):
 
         return query_url
 
+    def build_system_stats_fetch_url(self, start_date: Optional[str] = None) -> str:
+        """
+        Build URL for fetching system/device stats.
+        """
+        base_url = self._build_base_query_url()
+        query_string = f"""
+            SELECT 
+                {COLUMN.DEVICEID.value},
+                COUNT(*) AS {COLUMN.COUNT.value},
+                AVG({COLUMN.MIN.value}) AS {COLUMN.AVGMIN.value}
+            FROM {TABLE.NOISE.value}
+            GROUP BY {COLUMN.DEVICEID.value}
+            """
+        
+        if start_date:
+            query_string += f"""
+                WHERE DATE({COLUMN.TIMESTAMP.value}) >= '{start_date}'
+                """
+        data_url = self._add_query_to_base_url(base_url, query_string)
+
+        return data_url
 
 class DataFormatter(object):
     """
@@ -348,6 +369,15 @@ class WebcommandDataLoader(AbstractDataLoader):
         raw_data = self._fetch_from_url(url)
 
         logger.info(f"{len(raw_data)} devices found.")
+
+        return raw_data
+
+    def load_system_stats(self, **url_kwargs) -> List[Dict[str, Any]]:
+        """
+        Load the device stats form WebCommand.
+        """
+        url = self.url_builder.build_system_stats_fetch_url(**url_kwargs)
+        raw_data = self._fetch_from_url(url)
 
         return raw_data
 

@@ -116,6 +116,16 @@ def test_device_count(data_loader: WebcommandDataLoader):
 
     assert isinstance(raw_data[0][COLUMN.COUNT.value], int)
 
+def test_system_stats_load(data_loader: WebcommandDataLoader):
+    raw_data = data_loader.load_system_stats(start_date="2023-01-01")
+
+    assert isinstance(raw_data[0][COLUMN.COUNT.value], int)
+
+def test_system_stats_url(url_builder: URLBuilder):
+    url = url_builder.build_system_stats_fetch_url(start_date="2023-01-01")
+
+    assert get_url_response_status(url)
+
 
 def test_device_max_stat(data_loader: WebcommandDataLoader):
     raw_data = data_loader.load_device_stats(device_id="a99")

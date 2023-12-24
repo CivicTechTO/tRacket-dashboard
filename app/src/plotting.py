@@ -348,14 +348,63 @@ class HeatmapPlotter(BasePlotter):
         return fig
 
 
-def get_gauge() -> go.Figure:
-    fig = go.Figure(
-        go.Indicator(
-            mode="gauge+number",
-            value=450,
-            title={"text": "Speed"},
-            domain={"x": [0, 1], "y": [0, 1]},
-        )
-    )
+class IndicatorBasePlotter(BasePlotter):
+    def __init__(self, df: pd.DataFrame) -> None:
+        super().__init__(df)
 
-    return fig
+    @staticmethod
+    def _get_gauge(value: float, text: str, **indicator_kwargs) -> go.Figure:
+        fig = go.Figure(
+            go.Indicator(
+                mode="number",
+                value=value,
+                title={"text": text},
+                domain={"x": [0, 1], "y": [0, 1]},
+                **indicator_kwargs
+            )
+        )
+
+        return fig
+    
+
+class DeviceCountIndicatorPlotter(IndicatorBasePlotter):
+    def __init__(self, df: pd.DataFrame) -> None:
+        super().__init__(df)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        assert COLUMN.DEVICEID in df.columns
+        assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
+
+    def plot(self) -> go.Figure:
+        device_count = self.df.shape[0]
+        fig = self._get_gauge(value=device_count, text="Number of Active Devices")
+
+        return fig
+        
+class MinAverageIndicatorPlotter(IndicatorBasePlotter):
+    def __init__(self, df: pd.DataFrame) -> None:
+        super().__init__(df)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        for col in [COLUMN.DEVICEID, COLUMN.AVGMIN, COLUMN.COUNT]:
+            assert col in df.columns
+
+        assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
+
+    def _get_system_avg(self) -> float:
+        # find system total
+        # individual device avg multiplied by device count for device total
+        total = sum(self.df[COLUMN.AVGMIN]*self.df[COLUMN.COUNT])
+        # add and divide by total count
+        avg = total/sum(self.df[COLUMN.COUNT])
+        
+        return round(avg, 2)
+
+    def plot(self) -> go.Figure:    
+        fig = self._get_gauge(
+            value=self._get_system_avg(), 
+            text="Average Ambient Noise",
+            number={"suffix": " dBA"}
+            )
+
+        return fig
