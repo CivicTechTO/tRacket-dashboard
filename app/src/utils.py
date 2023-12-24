@@ -37,7 +37,7 @@ class COLUMN(Enum):
     DATE = "date"
     HOUR = "hour"
     AVGMIN = "min_avg"
-
+    OUTLIERCOUNT = "outlier_count"
 
 class HEATMAP_VALUE(Enum):
     """

@@ -348,7 +348,7 @@ class HeatmapPlotter(BasePlotter):
         return fig
 
 
-class IndicatorBasePlotter(BasePlotter):
+class AbstractIndicatorPlotter(BasePlotter):
     def __init__(self, df: pd.DataFrame) -> None:
         super().__init__(df)
 
@@ -367,7 +367,7 @@ class IndicatorBasePlotter(BasePlotter):
         return fig
     
 
-class DeviceCountIndicatorPlotter(IndicatorBasePlotter):
+class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, df: pd.DataFrame) -> None:
         super().__init__(df)
 
@@ -381,10 +381,10 @@ class DeviceCountIndicatorPlotter(IndicatorBasePlotter):
 
         return fig
         
-class MinAverageIndicatorPlotter(IndicatorBasePlotter):
+class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, df: pd.DataFrame) -> None:
         super().__init__(df)
-
+        
     def _validate_data(self, df: pd.DataFrame) -> None:
         for col in [COLUMN.DEVICEID, COLUMN.AVGMIN, COLUMN.COUNT]:
             assert col in df.columns
@@ -400,11 +400,29 @@ class MinAverageIndicatorPlotter(IndicatorBasePlotter):
         
         return round(avg, 2)
 
-    def plot(self) -> go.Figure:    
+    def plot(self) -> go.Figure:
         fig = self._get_gauge(
             value=self._get_system_avg(), 
             text="Average Ambient Noise",
             number={"suffix": " dBA"}
+            )
+
+        return fig
+
+class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
+    def __init__(self, df: pd.DataFrame) -> None:
+        super().__init__(df)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        assert COLUMN.OUTLIERCOUNT in df.columns
+
+    def _get_total_count(self) -> int:
+        return self.df[COLUMN.OUTLIERCOUNT].sum()
+
+    def plot(self) -> go.Figure:
+        fig = self._get_gauge(
+            value=self._get_total_count(), 
+            text="Number of Outliers",
             )
 
         return fig

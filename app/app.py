@@ -9,7 +9,7 @@ import pandas as pd
 from typing import List, Dict, Any
 import configparser
 from src.data_loading import URLBuilder, WebcommandDataLoader, DataFormatter
-from src.plotting import TimeseriesPlotter, HistogramPlotter, HeatmapPlotter, DeviceCountIndicatorPlotter, MinAverageIndicatorPlotter
+from src.plotting import TimeseriesPlotter, HistogramPlotter, HeatmapPlotter, DeviceCountIndicatorPlotter, MinAverageIndicatorPlotter, OutlierIndicatorPlotter
 from src.utils import COLUMN, Logging, HEATMAP_VALUE, filter_by_date
 import os
 
@@ -68,11 +68,15 @@ def load_system_stats() -> List[Dict[str, Any]]:
 
 system_stats = load_system_stats()
 system_stats_df = data_formatter.process_records_to_dataframe(system_stats)
+
 indicator_plotter = DeviceCountIndicatorPlotter(system_stats_df)
 system_count_fig = indicator_plotter.plot()
 
 indicator_plotter = MinAverageIndicatorPlotter(system_stats_df)
 system_min_fig = indicator_plotter.plot()
+
+indicator_plotter = OutlierIndicatorPlotter(system_stats_df)
+system_outlier_fig = indicator_plotter.plot()
 
 
 
@@ -86,7 +90,6 @@ def get_intro_markdown() -> dcc.Markdown:
             > _"The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."_
             >
             Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
-            Start by selecting a device from the drop-down.
             """
 
     return dcc.Markdown(text)
@@ -106,18 +109,24 @@ app.layout = dbc.Container(
         html.Br(),
         dbc.Row(
             [get_intro_markdown()],
-            style={"margin-left": "30px", "margin-right": "150px"},
+            style={"margin-left": "30px",},
         ),
         html.Br(),
         dbc.Row(
             [
-                dbc.Col([dbc.Spinner(dcc.Graph(id="system-count", figure=system_count_fig))]),
-                dbc.Col([dbc.Spinner(dcc.Graph(id="system-min", figure=system_min_fig))])
+                html.H2(children="Weekly System Stats", style={"textAlign": "left", "margin-left": "30px"}),
+                dbc.Col([dbc.Spinner(dcc.Graph(id="system-count", figure=system_count_fig, style={'height': '40vh'}))]),
+                dbc.Col([dbc.Spinner(dcc.Graph(id="system-min", figure=system_min_fig, style={'height': '40vh'}))]),
+                dbc.Col([dbc.Spinner(dcc.Graph(id="system-outlier", figure=system_outlier_fig, style={'height': '40vh'}))])
             ],
-            align="start"
+            align="start",
             ),
         dbc.Row(
             [
+                html.H2(children="Device Monitor", style={"textAlign": "left", "margin-left": "30px"}),
+                html.Br(),
+                dcc.Markdown("Start by selecting a device from the drop-down.", style={"textAlign": "left", "margin-left": "30px"}),
+                html.Br(),
                 dbc.Col(
                     [
                         html.Label(

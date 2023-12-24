@@ -149,7 +149,8 @@ class URLBuilder(object):
             SELECT 
                 {COLUMN.DEVICEID.value},
                 COUNT(*) AS {COLUMN.COUNT.value},
-                AVG({COLUMN.MIN.value}) AS {COLUMN.AVGMIN.value}
+                AVG({COLUMN.MIN.value}) AS {COLUMN.AVGMIN.value},
+                SUM(IF({COLUMN.MAX.value} > 85, 1, 0)) AS {COLUMN.OUTLIERCOUNT.value}
             FROM {TABLE.NOISE.value}
             GROUP BY {COLUMN.DEVICEID.value}
             """
