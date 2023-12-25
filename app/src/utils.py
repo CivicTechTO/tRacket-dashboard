@@ -8,6 +8,9 @@ import os
 import logging
 import inspect
 import requests
+import configparser
+
+### ENUMS ###
 
 
 class TABLE(Enum):
@@ -30,6 +33,7 @@ class COLUMN(Enum):
     MEAN = "Mean"
     # aggregate columns
     COUNT = "count"
+    COUNT_PRIOR = "count_prior"
     MINDATE = "mindate"
     MAXDATE = "maxdate"
     MAXNOISE = "maxnoise"
@@ -37,7 +41,10 @@ class COLUMN(Enum):
     DATE = "date"
     HOUR = "hour"
     AVGMIN = "min_avg"
+    AVGMIN_PRIOR = "min_avg_prior"
     OUTLIERCOUNT = "outlier_count"
+    OUTLIERCOUNT_PRIOR = "outlier_count_prior"
+
 
 class HEATMAP_VALUE(Enum):
     """
@@ -46,6 +53,42 @@ class HEATMAP_VALUE(Enum):
 
     MIN = COLUMN.MINNOISE
     MAX = COLUMN.MAXNOISE
+
+
+### GENERAL UTILS ###
+
+
+def load_config() -> configparser.ConfigParser:
+    config = configparser.ConfigParser()
+    config_path = os.path.join(get_current_dir(__file__), "config.ini")
+    config.read(config_path)
+
+    return config
+
+
+def get_date_string(
+    days_before_today: int = None, str_format: str = "%Y-%m-%d"
+) -> str:
+    """
+    Create date string in "%Y-%m-%d" formate
+    """
+    week_ago = pd.to_datetime("today")
+    if days_before_today:
+        week_ago -= pd.Timedelta(days=days_before_today)
+
+    week_ago = week_ago.strftime(str_format)
+
+    return week_ago
+
+
+def get_current_dir(__file__) -> str:
+    """
+    Get the path to the directory of the script.
+    """
+    return os.path.dirname(os.path.realpath(__file__))
+
+
+### DATA PROC UTILS ###
 
 
 def filter_by_date(
@@ -78,11 +121,7 @@ def filter_outliers(df: pd.DataFrame, threshold: int) -> pd.DataFrame:
     return df[df[COLUMN.MAX] > threshold]
 
 
-def get_current_dir(__file__) -> str:
-    """
-    Get the path to the directory of the script.
-    """
-    return os.path.dirname(os.path.realpath(__file__))
+### API UTILS ###
 
 
 def get_url_response_status(url: str) -> bool:

@@ -9,8 +9,15 @@ import pandas as pd
 from typing import List, Dict, Any
 import configparser
 from src.data_loading import URLBuilder, WebcommandDataLoader, DataFormatter
-from src.plotting import TimeseriesPlotter, HistogramPlotter, HeatmapPlotter, DeviceCountIndicatorPlotter, MinAverageIndicatorPlotter, OutlierIndicatorPlotter
-from src.utils import COLUMN, Logging, HEATMAP_VALUE, filter_by_date
+from src.plotting import (
+    TimeseriesPlotter,
+    HistogramPlotter,
+    HeatmapPlotter,
+    DeviceCountIndicatorPlotter,
+    MinAverageIndicatorPlotter,
+    OutlierIndicatorPlotter,
+)
+from src.utils import COLUMN, Logging, HEATMAP_VALUE, get_date_string
 import os
 
 config = configparser.ConfigParser()
@@ -56,17 +63,8 @@ card = dbc.Card(
     style={"width": "18rem"},
 )
 
-def load_system_stats() -> List[Dict[str, Any]]:
-    """
-    Load the system stats data from the API.
-    """
-    week_ago = pd.to_datetime("today") - pd.Timedelta(days=7)
-    week_ago = week_ago.strftime("%Y-%m-%d")
-    raw_stats = data_loader.load_system_stats(start_date=week_ago)
 
-    return raw_stats
-
-system_stats = load_system_stats()
+system_stats = data_loader.load_system_stats()
 system_stats_df = data_formatter.process_records_to_dataframe(system_stats)
 
 indicator_plotter = DeviceCountIndicatorPlotter(system_stats_df)
@@ -77,7 +75,6 @@ system_min_fig = indicator_plotter.plot()
 
 indicator_plotter = OutlierIndicatorPlotter(system_stats_df)
 system_outlier_fig = indicator_plotter.plot()
-
 
 
 def get_intro_markdown() -> dcc.Markdown:
@@ -109,23 +106,68 @@ app.layout = dbc.Container(
         html.Br(),
         dbc.Row(
             [get_intro_markdown()],
-            style={"margin-left": "30px",},
+            style={
+                "margin-left": "30px",
+            },
         ),
         html.Br(),
         dbc.Row(
             [
-                html.H2(children="Weekly System Stats", style={"textAlign": "left", "margin-left": "30px"}),
-                dbc.Col([dbc.Spinner(dcc.Graph(id="system-count", figure=system_count_fig, style={'height': '40vh'}))]),
-                dbc.Col([dbc.Spinner(dcc.Graph(id="system-min", figure=system_min_fig, style={'height': '40vh'}))]),
-                dbc.Col([dbc.Spinner(dcc.Graph(id="system-outlier", figure=system_outlier_fig, style={'height': '40vh'}))])
+                html.H2(
+                    children="System Statistics",
+                    style={"textAlign": "left", "margin-left": "30px"},
+                ),
+                dcc.Markdown(
+                    "The summary statistics are calculated by aggregating data for the past 7 days.",
+                    style={"textAlign": "left", "margin-left": "30px"},
+                ),
+                dbc.Col(
+                    [
+                        dbc.Spinner(
+                            dcc.Graph(
+                                id="system-count",
+                                figure=system_count_fig,
+                                style={"height": "40vh"},
+                            )
+                        )
+                    ]
+                ),
+                dbc.Col(
+                    [
+                        dbc.Spinner(
+                            dcc.Graph(
+                                id="system-min",
+                                figure=system_min_fig,
+                                style={"height": "40vh"},
+                            )
+                        )
+                    ]
+                ),
+                dbc.Col(
+                    [
+                        dbc.Spinner(
+                            dcc.Graph(
+                                id="system-outlier",
+                                figure=system_outlier_fig,
+                                style={"height": "40vh"},
+                            )
+                        )
+                    ]
+                ),
             ],
             align="start",
-            ),
+        ),
         dbc.Row(
             [
-                html.H2(children="Device Monitor", style={"textAlign": "left", "margin-left": "30px"}),
+                html.H2(
+                    children="Device Monitor",
+                    style={"textAlign": "left", "margin-left": "30px"},
+                ),
                 html.Br(),
-                dcc.Markdown("Start by selecting a device from the drop-down.", style={"textAlign": "left", "margin-left": "30px"}),
+                dcc.Markdown(
+                    "Start by selecting a device from the drop-down.",
+                    style={"textAlign": "left", "margin-left": "30px"},
+                ),
                 html.Br(),
                 dbc.Col(
                     [
@@ -141,7 +183,7 @@ app.layout = dbc.Container(
                         ),
                     ],
                     width={"offset": 2},
-                )
+                ),
             ],
             style=dict(width="33.33%"),
         ),
@@ -237,6 +279,7 @@ def update_middle_markdown(device_id: str) -> str:
 
 
 # DATA CALLBACKS
+
 
 @callback(Output("device-stats", "data"), Input("id-selection", "value"))
 def load_device_stats(device_id: str) -> List[Dict[str, Any]]:

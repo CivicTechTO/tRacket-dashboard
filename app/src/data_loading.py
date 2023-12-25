@@ -4,8 +4,7 @@ Classes that handle the dataloading and transformations for the dashboard.
 import requests
 import pandas as pd
 from typing import List, Optional, Dict, Any
-from src.utils import COLUMN, TABLE, Logging
-from enum import Enum
+from src.utils import COLUMN, TABLE, Logging, load_config, get_date_string
 from abc import abstractmethod
 
 logger = Logging.get_console_logger()
@@ -14,6 +13,7 @@ logger = Logging.get_console_logger()
 class URLBuilder(object):
     def __init__(self, api_token: str) -> None:
         self.api_token = api_token
+        self._config = load_config()
 
     def _build_base_url(self) -> str:
         """
@@ -140,28 +140,41 @@ class URLBuilder(object):
 
         return query_url
 
-    def build_system_stats_fetch_url(self, start_date: Optional[str] = None) -> str:
+    def build_system_stats_fetch_url(self) -> str:
         """
-        Build URL for fetching system/device stats.
+        Build URL for fetching system/device aggregate stats for last two weeks.
+        The query organizes data into two columns - 1 and 2-weeks prior.
         """
         base_url = self._build_base_query_url()
+        threshold = int(self._config["constants"]["noise_threshold"])
+        two_week_prior_date = get_date_string(days_before_today=14)
+        one_week_prior_date = get_date_string(days_before_today=7)
+
+        current_week_condition = (
+            f"DATE({COLUMN.TIMESTAMP.value}) >= '{one_week_prior_date}'"
+        )
+        prior_week_condition = f"""
+            (DATE({COLUMN.TIMESTAMP.value}) >= '{two_week_prior_date}') AND (DATE({COLUMN.TIMESTAMP.value}) < '{one_week_prior_date}')
+            """
+
         query_string = f"""
             SELECT 
                 {COLUMN.DEVICEID.value},
-                COUNT(*) AS {COLUMN.COUNT.value},
-                AVG({COLUMN.MIN.value}) AS {COLUMN.AVGMIN.value},
-                SUM(IF({COLUMN.MAX.value} > 85, 1, 0)) AS {COLUMN.OUTLIERCOUNT.value}
+                COUNT(IF({current_week_condition}, 1, Null)) AS {COLUMN.COUNT.value},
+                COUNT(IF({prior_week_condition}, 1, Null)) AS {COLUMN.COUNT_PRIOR.value},
+                AVG(IF({current_week_condition}, {COLUMN.MIN.value}, Null)) AS {COLUMN.AVGMIN.value},
+                AVG(IF({prior_week_condition}, {COLUMN.MIN.value}, Null)) AS {COLUMN.AVGMIN_PRIOR.value},
+                SUM(IF(({COLUMN.MAX.value} > {threshold}) AND ({current_week_condition}), 1, 0)) AS {COLUMN.OUTLIERCOUNT.value},
+                SUM(IF(({COLUMN.MAX.value} > {threshold}) AND ({prior_week_condition}), 1, 0)) AS {COLUMN.OUTLIERCOUNT_PRIOR.value}
             FROM {TABLE.NOISE.value}
             GROUP BY {COLUMN.DEVICEID.value}
+            WHERE DATE({COLUMN.TIMESTAMP.value}) >= '{two_week_prior_date}'
             """
-        
-        if start_date:
-            query_string += f"""
-                WHERE DATE({COLUMN.TIMESTAMP.value}) >= '{start_date}'
-                """
+
         data_url = self._add_query_to_base_url(base_url, query_string)
 
         return data_url
+
 
 class DataFormatter(object):
     """

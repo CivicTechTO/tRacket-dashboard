@@ -1,12 +1,10 @@
 """
 Classes for creating the plots on the dashboard.
 """
-from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, get_current_dir
+from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-import configparser
-import os
 from typing import Optional, List
 from abc import abstractmethod
 import pandas.api.types as ptype
@@ -18,18 +16,10 @@ class BasePlotter:
     """
 
     def __init__(self, df: pd.DataFrame) -> None:
-        self._current_dir = get_current_dir(__file__)
-        self._config = self._load_config()
+        self._config = load_config()
 
         self._validate_data(df)
         self.df = df
-
-    def _load_config(self) -> configparser.ConfigParser:
-        config = configparser.ConfigParser()
-        config_path = os.path.join(self._current_dir, "config.ini")
-        config.read(config_path)
-
-        return config
 
     def _set_background(self, fig: go.Figure) -> None:
         """
@@ -356,16 +346,16 @@ class AbstractIndicatorPlotter(BasePlotter):
     def _get_gauge(value: float, text: str, **indicator_kwargs) -> go.Figure:
         fig = go.Figure(
             go.Indicator(
-                mode="number",
+                mode="number+delta",
                 value=value,
                 title={"text": text},
                 domain={"x": [0, 1], "y": [0, 1]},
-                **indicator_kwargs
+                **indicator_kwargs,
             )
         )
 
         return fig
-    
+
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, df: pd.DataFrame) -> None:
@@ -377,37 +367,62 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
 
     def plot(self) -> go.Figure:
         device_count = self.df.shape[0]
-        fig = self._get_gauge(value=device_count, text="Number of Active Devices")
+        fig = self._get_gauge(
+            value=device_count, text="Number of Active Devices"
+        )
 
         return fig
-        
+
+
 class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, df: pd.DataFrame) -> None:
         super().__init__(df)
-        
+
     def _validate_data(self, df: pd.DataFrame) -> None:
-        for col in [COLUMN.DEVICEID, COLUMN.AVGMIN, COLUMN.COUNT]:
+        for col in [
+            COLUMN.DEVICEID,
+            COLUMN.AVGMIN,
+            COLUMN.COUNT,
+            COLUMN.AVGMIN_PRIOR,
+            COLUMN.COUNT_PRIOR,
+        ]:
             assert col in df.columns
 
         assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
 
-    def _get_system_avg(self) -> float:
+    def _get_min_avg(self, count_col: COLUMN, min_col: COLUMN) -> float:
         # find system total
         # individual device avg multiplied by device count for device total
-        total = sum(self.df[COLUMN.AVGMIN]*self.df[COLUMN.COUNT])
+        total = sum(self.df[min_col] * self.df[count_col])
         # add and divide by total count
-        avg = total/sum(self.df[COLUMN.COUNT])
-        
+        avg = total / sum(self.df[count_col])
+
         return round(avg, 2)
+
+    def _get_system_min_avg(self) -> float:
+        """Current week."""
+        return self._get_min_avg(COLUMN.COUNT, COLUMN.AVGMIN)
+
+    def _get_reference_avg(self) -> float:
+        """Prior week."""
+        return self._get_min_avg(COLUMN.COUNT_PRIOR, COLUMN.AVGMIN_PRIOR)
 
     def plot(self) -> go.Figure:
         fig = self._get_gauge(
-            value=self._get_system_avg(), 
+            value=self._get_system_min_avg(),
             text="Average Ambient Noise",
-            number={"suffix": " dBA"}
-            )
+            delta={
+                "reference": self._get_reference_avg(),
+                "relative": True,
+                "valueformat": ".1%",
+                "increasing.color": "red",
+                "decreasing.color": "green",
+            },
+            number={"suffix": " dBA"},
+        )
 
         return fig
+
 
 class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, df: pd.DataFrame) -> None:
@@ -421,8 +436,8 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
 
     def plot(self) -> go.Figure:
         fig = self._get_gauge(
-            value=self._get_total_count(), 
+            value=self._get_total_count(),
             text="Number of Outliers",
-            )
+        )
 
         return fig
