@@ -407,3 +407,43 @@ class WebcommandDataLoader(AbstractDataLoader):
             )
         else:
             logger.debug((f"{len(raw_data)} rows loaded from Webcommand."))
+
+
+class AppDataManager(object):
+    """
+    Class to collect data loading & formatting for the app.
+    """
+    def __init__(self, data_loader: AbstractDataLoader) -> None:
+        self.data_loader = data_loader
+        self.data_formatter = DataFormatter()
+
+        # data store
+        self.unique_ids = None
+        self.system_stats_df = None
+
+    def load_data(self) -> None:
+        """Load all data."""
+        self._load_device_ids()
+        self._load_system_stats()
+
+    def _load_device_ids(self):
+        """Load unique device IDs for API"""
+        unique_ids = self.data_loader.load_device_ids()
+        unique_ids = self.data_formatter.process_records_to_dataframe(unique_ids)
+        unique_ids = unique_ids[COLUMN.DEVICEID]
+        
+        self.unique_ids = unique_ids
+
+    def _load_system_stats(self) -> None:
+        """Load system level statistincs from the API."""
+        system_stats = self.data_loader.load_system_stats()
+        self.system_stats_df = self.data_formatter.process_records_to_dataframe(system_stats)
+
+    def load_noise_data(self, *args, **kwargs) -> List[Dict[str, Any]]:
+        return self.data_loader.load_noise_data(*args, **kwargs)
+
+    def load_hourly_data(self, *args, **kwargs) -> List[Dict[str, Any]]:
+        return self.data_loader.load_hourly_data(*args, **kwargs)
+
+    def load_device_stats(self, *args, **kwargs) -> List[Dict[str, Any]]:
+        return self.data_loader.load_device_stats(*args, **kwargs)

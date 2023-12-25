@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from plotly.graph_objects import Figure
 import os
-from typing import List, Dict, Any
 from src.plotting import HistogramPlotter, TimeseriesPlotter, HeatmapPlotter, MinAverageIndicatorPlotter, OutlierIndicatorPlotter, DeviceCountIndicatorPlotter
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
