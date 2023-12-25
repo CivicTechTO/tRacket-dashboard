@@ -308,6 +308,9 @@ class CsvDataLoader(AbstractDataLoader):
     def load_device_stats(self, file_path: str) -> List[Dict[str, Any]]:
         return self._load_from_file(file_path)
 
+    def load_system_stats(self, file_path: str) -> List[Dict[str, Any]]:
+        return self._load_from_file(file_path)
+
     def load_device_ids(self, file_path: str) -> List[Dict[str, Any]]:
         return self._load_from_file(file_path)
 

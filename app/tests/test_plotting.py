@@ -4,7 +4,7 @@ import numpy as np
 from plotly.graph_objects import Figure
 import os
 from typing import List, Dict, Any
-from src.plotting import HistogramPlotter, TimeseriesPlotter, HeatmapPlotter
+from src.plotting import HistogramPlotter, TimeseriesPlotter, HeatmapPlotter, MinAverageIndicatorPlotter, OutlierIndicatorPlotter, DeviceCountIndicatorPlotter
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
 
@@ -31,8 +31,45 @@ def dummy_df(data_formatter: DataFormatter) -> pd.DataFrame:
 
     return df
 
+@pytest.fixture
+def dummy_system_df(data_formatter: DataFormatter) -> pd.DataFrame:
+    data_path = os.path.join(CURRENT_DIR, "data/dummy_system_data.csv")
+    loader = CsvDataLoader()
+    raw_data = loader.load_system_stats(data_path)
+    df = data_formatter.process_records_to_dataframe(raw_data)
 
-def test_date_filter(dummy_df: pd.DataFrame):
+    return df
+
+
+def test_min_indicator_and_save(dummy_system_df: pd.DataFrame):
+    plotter = MinAverageIndicatorPlotter(dummy_system_df)
+    fig = plotter.plot()
+
+    figure_out_path = os.path.join(CURRENT_DIR, "plots/min_indicator.html")
+    fig.write_html(figure_out_path)
+
+    assert isinstance(fig, Figure)
+
+def test_count_indicator_and_save(dummy_system_df: pd.DataFrame):
+    plotter = DeviceCountIndicatorPlotter(dummy_system_df)
+    fig = plotter.plot()
+
+    figure_out_path = os.path.join(CURRENT_DIR, "plots/count_indicator.html")
+    fig.write_html(figure_out_path)
+
+    assert isinstance(fig, Figure)
+
+def test_outlier_indicator_and_save(dummy_system_df: pd.DataFrame):
+    plotter = OutlierIndicatorPlotter(dummy_system_df)
+    fig = plotter.plot()
+
+    figure_out_path = os.path.join(CURRENT_DIR, "plots/outlier_indicator.html")
+    fig.write_html(figure_out_path)
+
+    assert isinstance(fig, Figure)
+
+
+def test_date_filter():
     df = pd.DataFrame(
         {
             COLUMN.TIMESTAMP: pd.date_range(
