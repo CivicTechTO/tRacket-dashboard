@@ -362,13 +362,29 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
         super().__init__(df)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
-        assert COLUMN.DEVICEID in df.columns
+        for col in [COLUMN.DEVICEID, COLUMN.COUNT, COLUMN.COUNT_PRIOR]:
+            assert col in df.columns
         assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
 
+    def _get_device_count(self) -> int:
+        """Current device count."""
+        return (self.df[COLUMN.COUNT] > 0).sum()
+
+    def _get_reference_count(self) -> int:
+        """Current device count."""
+        return (self.df[COLUMN.COUNT_PRIOR] > 0).sum()
+        
+
     def plot(self) -> go.Figure:
-        device_count = self.df.shape[0]
         fig = self._get_gauge(
-            value=device_count, text="Number of Active Devices"
+            value=self._get_device_count(), 
+            text="Number of Active Devices",
+            delta={
+                "reference": self._get_reference_count(),
+                "relative": False,
+                "increasing.color": "green",
+                "decreasing.color": "red",
+            },
         )
 
         return fig
@@ -391,10 +407,10 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
         assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
 
     def _get_min_avg(self, count_col: COLUMN, min_col: COLUMN) -> float:
-        # find system total
-        # individual device avg multiplied by device count for device total
+        """
+        Find system avg: individual device-level avg multiplied by device count for device total (disaggregate first) then get global average.
+        """
         total = sum(self.df[min_col] * self.df[count_col])
-        # add and divide by total count
         avg = total / sum(self.df[count_col])
 
         return round(avg, 2)
@@ -430,14 +446,24 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         assert COLUMN.OUTLIERCOUNT in df.columns
+        assert COLUMN.OUTLIERCOUNT_PRIOR in df.columns
 
     def _get_total_count(self) -> int:
         return self.df[COLUMN.OUTLIERCOUNT].sum()
+
+    def _get_reference_count(self) -> int:
+        return self.df[COLUMN.OUTLIERCOUNT_PRIOR].sum()
 
     def plot(self) -> go.Figure:
         fig = self._get_gauge(
             value=self._get_total_count(),
             text="Number of Outliers",
+            delta={
+                "reference": self._get_reference_count(),
+                "relative": False,
+                "increasing.color": "red",
+                "decreasing.color": "green",
+            },
         )
 
         return fig

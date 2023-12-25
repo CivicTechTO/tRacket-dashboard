@@ -118,7 +118,7 @@ app.layout = dbc.Container(
                     style={"textAlign": "left", "margin-left": "30px"},
                 ),
                 dcc.Markdown(
-                    "The summary statistics are calculated by aggregating data for the past 7 days.",
+                    "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week.",
                     style={"textAlign": "left", "margin-left": "30px"},
                 ),
                 dbc.Col(
