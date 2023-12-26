@@ -1,5 +1,6 @@
-from dash import callback, Input, Output, dcc
+from dash import callback, Input, Output, dcc, html
 import dash_daq as daq
+import dash_bootstrap_components as dbc
 from typing import List, Dict, Any
 from src.data_loading import AppDataManager
 from src.utils import COLUMN, HEATMAP_VALUE
@@ -16,10 +17,12 @@ from src.plotting import (
 )
 from plotly.graph_objects import Figure
 
+
 class COMPONENT_ID(str, Enum):
     """
     Component IDs for the app.
     """
+
     # graphs
     histogram = auto()
     noise_line_graph = auto()
@@ -32,11 +35,16 @@ class COMPONENT_ID(str, Enum):
     device_id_input = auto()
     heatmap_toggle = auto()
 
+    # markdowns
+    summary_card_header = auto()
+    summary_card_text = auto()
+
 
 class AbstractAppManager(object):
     """
     Base class for managing app components.
     """
+
     app_data_manager: AppDataManager = None
 
     @classmethod
@@ -47,14 +55,76 @@ class AbstractAppManager(object):
     def initialize(cls, app_data_manager: AppDataManager) -> None:
         cls._set_app_data_manager(app_data_manager)
         pass
-    
+
+
+class MarkdownManager(AbstractAppManager):
+    """
+    Class for handling text components in the app.
+    """
+
+    summary_card: dbc.Card = None
+    intro_markdown: dcc.Markdown = None
+    system_stats_markdown: dcc.Markdown = None
+
+    @classmethod
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
+        cls._set_app_data_manager(app_data_manager)
+        cls._initialize_summary_card()
+        cls._initialize_intro_mardown()
+        cls._initialize_system_markdown()
+
+    @classmethod
+    def _initialize_system_markdown(cls) -> None:
+        text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
+        cls.system_stats_markdown = dcc.Markdown(
+            text,
+            style={"textAlign": "left", "margin-left": "30px"},
+        )
+
+    @classmethod
+    def _initialize_intro_mardown(cls) -> None:
+        """
+        Intro text after the title.
+        """
+        text = """
+                Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
+                >
+                > _"The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."_
+                >
+                Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
+                """
+
+        cls.intro_markdown = dcc.Markdown(
+            text, style={"textAlign": "left", "margin-left": "30px"}
+        )
+
+    @classmethod
+    def _initialize_summary_card(cls) -> None:
+        cls.summary_card = dbc.Card(
+            [
+                dbc.CardHeader(id=COMPONENT_ID.summary_card_header),
+                dbc.CardBody(
+                    [
+                        html.H4("Summary", className="card-title"),
+                        html.P(
+                            id=COMPONENT_ID.summary_card_text,
+                            className="card-text",
+                        ),
+                    ]
+                ),
+            ],
+            style={"width": "18rem"},
+        )
+
 
 class InputManager(AbstractAppManager):
     """
     Component manager for user inputs.
     """
+
     device_id_dropdown: dcc.Dropdown = None
     heatmap_toggle = None
+
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
         cls._set_app_data_manager(app_data_manager)
@@ -64,18 +134,19 @@ class InputManager(AbstractAppManager):
     @classmethod
     def _initialize_device_id_dropdown(cls) -> None:
         cls.device_id_dropdown = dcc.Dropdown(
-                            cls.app_data_manager.unique_ids,
-                            cls.app_data_manager.unique_ids[0],
-                            id=COMPONENT_ID.device_id_input,
-                        )
+            cls.app_data_manager.unique_ids,
+            cls.app_data_manager.unique_ids[0],
+            id=COMPONENT_ID.device_id_input,
+        )
 
     @classmethod
     def _initialize_heatmap_toggle(cls) -> None:
         cls.heatmap_toggle = daq.ToggleSwitch(
-                            id=COMPONENT_ID.heatmap_toggle,
-                            vertical=False,
-                            label="Toggle Heatmap Min/Max",
-                        )
+            id=COMPONENT_ID.heatmap_toggle,
+            vertical=False,
+            label="Toggle Heatmap Min/Max",
+        )
+
 
 class GraphManager(AbstractAppManager):
     """
@@ -92,7 +163,6 @@ class GraphManager(AbstractAppManager):
     heatmap: dcc.Graph = None
     histogram: dcc.Graph = None
 
-
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
         """
@@ -102,7 +172,7 @@ class GraphManager(AbstractAppManager):
 
         # system level
         cls._setup_system_indicators()
-        
+
         # device level
         cls._setup_noise_line_graph()
         cls._setup_heatmap_graph()
@@ -177,7 +247,8 @@ class CallbackManager(AbstractAppManager):
         ### CARD CALLBACKS ###
 
         @callback(
-            Output("card-text", "children"), Input("device-stats", "data")
+            Output(COMPONENT_ID.summary_card_text, "children"),
+            Input("device-stats", "data"),
         )
         def update_card_text(stats: List[dict]) -> str:
             """
@@ -205,7 +276,8 @@ class CallbackManager(AbstractAppManager):
             return text
 
         @callback(
-            Output("card-header", "children"), Input(COMPONENT_ID.device_id_input, "value")
+            Output(COMPONENT_ID.summary_card_header, "children"),
+            Input(COMPONENT_ID.device_id_input, "value"),
         )
         def update_card_header(device_id: str) -> str:
             """
@@ -227,7 +299,8 @@ class CallbackManager(AbstractAppManager):
         ### DATA CALLBACKS ###
 
         @callback(
-            Output("device-stats", "data"), Input(COMPONENT_ID.device_id_input, "value")
+            Output("device-stats", "data"),
+            Input(COMPONENT_ID.device_id_input, "value"),
         )
         def load_device_stats(device_id: str) -> List[Dict[str, Any]]:
             """

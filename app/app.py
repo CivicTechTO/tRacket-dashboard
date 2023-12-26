@@ -5,7 +5,12 @@ from dash import Dash, html, dcc
 import dash_bootstrap_components as dbc
 import configparser
 from src.data_loading import URLBuilder, WebcommandDataLoader, AppDataManager
-from src.app_components import CallbackManager, GraphManager, InputManager
+from src.app_components import (
+    CallbackManager,
+    GraphManager,
+    InputManager,
+    MarkdownManager,
+)
 from src.utils import Logging
 import os
 
@@ -52,22 +57,7 @@ server = app.server
 GraphManager.initialize(app_data_manager)
 InputManager.initialize(app_data_manager)
 CallbackManager.initialize(app_data_manager)
-
-summary_card = dbc.Card(
-    [
-        dbc.CardHeader(id="card-header"),
-        dbc.CardBody(
-            [
-                html.H4("Summary", className="card-title"),
-                html.P(
-                    id="card-text",
-                    className="card-text",
-                ),
-            ]
-        ),
-    ],
-    style={"width": "18rem"},
-)
+MarkdownManager.initialize(app_data_manager)
 
 
 def get_intro_markdown() -> dcc.Markdown:
@@ -96,12 +86,7 @@ app.layout = dbc.Container(
             style={"textAlign": "left", "margin-left": "30px"},
         ),
         html.Br(),
-        dbc.Row(
-            [get_intro_markdown()],
-            style={
-                "margin-left": "30px",
-            },
-        ),
+        dbc.Row([MarkdownManager.intro_markdown]),
         html.Br(),
         dbc.Row(
             [
@@ -109,10 +94,7 @@ app.layout = dbc.Container(
                     children="System Statistics",
                     style={"textAlign": "left", "margin-left": "30px"},
                 ),
-                dcc.Markdown(
-                    "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week.",
-                    style={"textAlign": "left", "margin-left": "30px"},
-                ),
+                MarkdownManager.system_stats_markdown,
                 dbc.Col([dbc.Spinner(GraphManager.system_count_indicator)]),
                 dbc.Col([dbc.Spinner(GraphManager.system_avg_indicator)]),
                 dbc.Col([dbc.Spinner(GraphManager.system_outlier_indicator)]),
@@ -159,7 +141,7 @@ app.layout = dbc.Container(
                     [
                         html.Br(),
                         html.Br(),
-                        summary_card,
+                        MarkdownManager.summary_card,
                         html.Br(),
                         InputManager.heatmap_toggle,
                     ],
