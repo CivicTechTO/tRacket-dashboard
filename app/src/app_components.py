@@ -1,7 +1,10 @@
 from dash import callback, Input, Output, dcc
+import dash_daq as daq
 from typing import List, Dict, Any
 from src.data_loading import AppDataManager
 from src.utils import COLUMN, HEATMAP_VALUE
+from enum import Enum, auto
+from abc import abstractclassmethod
 import pandas as pd
 from src.plotting import (
     TimeseriesPlotter,
@@ -13,14 +16,66 @@ from src.plotting import (
 )
 from plotly.graph_objects import Figure
 
+class COMPONENT_ID(str, Enum):
+    """
+    Component IDs for the app.
+    """
+    # graphs
+    histogram = auto()
+    noise_line_graph = auto()
+    heatmap = auto()
+    count_indicator = auto()
+    avg_indicator = auto()
+    outlier_indicator = auto()
+
+    # inputs
+    device_id_input = auto()
+    heatmap_toggle = auto()
+
 
 class AbstractAppManager(object):
+    """
+    Base class for managing app components.
+    """
     app_data_manager: AppDataManager = None
 
     @classmethod
-    def set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
+    def _set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
         cls.app_data_manager = app_data_manager
 
+    @abstractclassmethod
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
+        cls._set_app_data_manager(app_data_manager)
+        pass
+    
+
+class InputManager(AbstractAppManager):
+    """
+    Component manager for user inputs.
+    """
+    device_id_dropdown: dcc.Dropdown = None
+    heatmap_toggle = None
+    @classmethod
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
+        cls._set_app_data_manager(app_data_manager)
+        cls._initialize_device_id_dropdown()
+        cls._initialize_heatmap_toggle()
+
+    @classmethod
+    def _initialize_device_id_dropdown(cls) -> None:
+        cls.device_id_dropdown = dcc.Dropdown(
+                            cls.app_data_manager.unique_ids,
+                            cls.app_data_manager.unique_ids[0],
+                            id=COMPONENT_ID.device_id_input,
+                        )
+
+    @classmethod
+    def _initialize_heatmap_toggle(cls) -> None:
+        cls.heatmap_toggle = daq.ToggleSwitch(
+                            id=COMPONENT_ID.heatmap_toggle,
+                            vertical=False,
+                            label="Toggle Heatmap Min/Max",
+                        )
 
 class GraphManager(AbstractAppManager):
     """
@@ -39,11 +94,11 @@ class GraphManager(AbstractAppManager):
 
 
     @classmethod
-    def initialize_components(cls, app_data_manager: AppDataManager) -> None:
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
         """
         Main call to setup all graph components for the app.
         """
-        cls.set_app_data_manager(app_data_manager)
+        cls._set_app_data_manager(app_data_manager)
 
         # system level
         cls._setup_system_indicators()
@@ -55,15 +110,15 @@ class GraphManager(AbstractAppManager):
 
     @classmethod
     def _setup_histogram(cls) -> None:
-        cls.histogram = dcc.Graph(id="histogram")
+        cls.histogram = dcc.Graph(id=COMPONENT_ID.histogram)
 
     @classmethod
     def _setup_heatmap_graph(cls) -> None:
-        cls.heatmap = dcc.Graph(id="heatmap")
+        cls.heatmap = dcc.Graph(id=COMPONENT_ID.heatmap)
 
     @classmethod
     def _setup_noise_line_graph(cls) -> None:
-        cls.noise_line_graph = dcc.Graph(id="noise-level-line")
+        cls.noise_line_graph = dcc.Graph(id=COMPONENT_ID.noise_line_graph)
 
     @classmethod
     def _setup_system_indicators(cls) -> None:
@@ -81,7 +136,7 @@ class GraphManager(AbstractAppManager):
         )
         system_count_fig = indicator_plotter.plot()
         cls.system_count_indicator = dcc.Graph(
-            id="system-count",
+            id=COMPONENT_ID.count_indicator,
             figure=system_count_fig,
             style={"height": "40vh"},
         )
@@ -93,7 +148,7 @@ class GraphManager(AbstractAppManager):
         )
         system_min_fig = indicator_plotter.plot()
         cls.system_avg_indicator = dcc.Graph(
-            id="system-min",
+            id=COMPONENT_ID.avg_indicator,
             figure=system_min_fig,
             style={"height": "40vh"},
         )
@@ -105,7 +160,7 @@ class GraphManager(AbstractAppManager):
         )
         system_outlier_fig = indicator_plotter.plot()
         cls.system_outlier_indicator = dcc.Graph(
-            id="system-outlier",
+            id=COMPONENT_ID.outlier_indicator,
             figure=system_outlier_fig,
             style={"height": "40vh"},
         )
@@ -117,8 +172,8 @@ class CallbackManager(AbstractAppManager):
     """
 
     @classmethod
-    def initialize_callbacks(cls, app_data_manager: AppDataManager) -> None:
-        cls.set_app_data_manager(app_data_manager)
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
+        cls._set_app_data_manager(app_data_manager)
         ### CARD CALLBACKS ###
 
         @callback(
@@ -150,7 +205,7 @@ class CallbackManager(AbstractAppManager):
             return text
 
         @callback(
-            Output("card-header", "children"), Input("id-selection", "value")
+            Output("card-header", "children"), Input(COMPONENT_ID.device_id_input, "value")
         )
         def update_card_header(device_id: str) -> str:
             """
@@ -161,7 +216,7 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output("middle-markdown", "children"),
-            Input("id-selection", "value"),
+            Input(COMPONENT_ID.device_id_input, "value"),
         )
         def update_middle_markdown(device_id: str) -> str:
             """
@@ -172,7 +227,7 @@ class CallbackManager(AbstractAppManager):
         ### DATA CALLBACKS ###
 
         @callback(
-            Output("device-stats", "data"), Input("id-selection", "value")
+            Output("device-stats", "data"), Input(COMPONENT_ID.device_id_input, "value")
         )
         def load_device_stats(device_id: str) -> List[Dict[str, Any]]:
             """
@@ -186,7 +241,7 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output("hourly-device-data", "data"),
-            Input("id-selection", "value"),
+            Input(COMPONENT_ID.device_id_input, "value"),
         )
         def load_hourly_data(device_id: str) -> List[Dict[str, Any]]:
             """
@@ -200,9 +255,9 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output("device-data", "data"),
-            Input("id-selection", "value"),
+            Input(COMPONENT_ID.device_id_input, "value"),
             Input("device-stats", "data"),
-            Input("heatmap", "clickData"),
+            Input(COMPONENT_ID.heatmap, "clickData"),
         )
         def load_data(
             device_id: str, stats: List[dict], clickData: Dict
@@ -237,7 +292,7 @@ class CallbackManager(AbstractAppManager):
         ### PLOT CALLBACKS ###
 
         @callback(
-            Output("noise-level-line", "figure"),
+            Output(COMPONENT_ID.noise_line_graph, "figure"),
             Input("device-data", "data"),
         )
         def update_noise_level_fig(data: List[Dict[str, Any]]) -> Figure:
@@ -253,7 +308,7 @@ class CallbackManager(AbstractAppManager):
             return timeseries_plotter.plot()
 
         @callback(
-            Output("histogram", "figure"),
+            Output(COMPONENT_ID.histogram, "figure"),
             Input("device-data", "data"),
         )
         def update_histogram(data: List[Dict[str, Any]]) -> Figure:
@@ -269,9 +324,9 @@ class CallbackManager(AbstractAppManager):
             return hist_plotter.plot()
 
         @callback(
-            Output("heatmap", "figure"),
+            Output(COMPONENT_ID.heatmap, "figure"),
             Input("hourly-device-data", "data"),
-            Input("heatmap-toggle", "value"),
+            Input(COMPONENT_ID.heatmap_toggle, "value"),
         )
         def update_heatmap(
             data: List[Dict[str, Any]], max_toggle: bool

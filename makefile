@@ -89,7 +89,7 @@ docker_clean:
 ### TESTING ###
 ###############
 
-make test:
+test:
 	pytest .
 
 
@@ -112,3 +112,11 @@ app:
 
 debug:
 	(cd /project/app; python app.py)
+
+
+#############
+### Utils ###
+#############
+
+count:
+	wc -l **/*.py makefile Dockerfile README.md

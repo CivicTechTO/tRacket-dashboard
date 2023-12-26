@@ -2,12 +2,10 @@
 Main dash application.
 """
 from dash import Dash, html, dcc
-import dash_daq as daq
 import dash_bootstrap_components as dbc
-
 import configparser
 from src.data_loading import URLBuilder, WebcommandDataLoader, AppDataManager
-from src.app_callbacks_components import CallbackManager, GraphManager
+from src.app_components import CallbackManager, GraphManager, InputManager
 from src.utils import Logging
 import os
 
@@ -29,7 +27,7 @@ logger.info("App starting - here we go.")
 
 ### Setup Data Loader & Data Manager ###
 
-# data loader - this could be swapped for local testing in the future
+# data loader - this could be swapped for local runtime in the future
 url_builder = URLBuilder(TOKEN)
 data_loader = WebcommandDataLoader(url_builder)
 
@@ -49,14 +47,11 @@ app = Dash(
 )
 server = app.server
 
-# setup callbacks
+### Setup Components & Callbacks ###
 
-CallbackManager.initialize_callbacks(app_data_manager)
-
-
-### Setup Components ###
-
-GraphManager.initialize_components(app_data_manager)
+GraphManager.initialize(app_data_manager)
+InputManager.initialize(app_data_manager)
+CallbackManager.initialize(app_data_manager)
 
 summary_card = dbc.Card(
     [
@@ -145,11 +140,7 @@ app.layout = dbc.Container(
                                 "text-align": "left",
                             },
                         ),
-                        dcc.Dropdown(
-                            app_data_manager.unique_ids,
-                            app_data_manager.unique_ids[0],
-                            id="id-selection",
-                        ),
+                        InputManager.device_id_dropdown,
                     ],
                     width={"offset": 2},
                 ),
@@ -170,11 +161,7 @@ app.layout = dbc.Container(
                         html.Br(),
                         summary_card,
                         html.Br(),
-                        daq.ToggleSwitch(
-                            id="heatmap-toggle",
-                            vertical=False,
-                            label="Toggle Heatmap Min/Max",
-                        ),
+                        InputManager.heatmap_toggle,
                     ],
                     width=3,
                     align="start",
