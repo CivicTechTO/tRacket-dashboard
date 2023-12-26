@@ -3,7 +3,14 @@ import pandas as pd
 import numpy as np
 from plotly.graph_objects import Figure
 import os
-from src.plotting import HistogramPlotter, TimeseriesPlotter, HeatmapPlotter, MinAverageIndicatorPlotter, OutlierIndicatorPlotter, DeviceCountIndicatorPlotter
+from src.plotting import (
+    HistogramPlotter,
+    TimeseriesPlotter,
+    HeatmapPlotter,
+    MinAverageIndicatorPlotter,
+    OutlierIndicatorPlotter,
+    DeviceCountIndicatorPlotter,
+)
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
 
@@ -30,6 +37,7 @@ def dummy_df(data_formatter: DataFormatter) -> pd.DataFrame:
 
     return df
 
+
 @pytest.fixture
 def dummy_system_df(data_formatter: DataFormatter) -> pd.DataFrame:
     data_path = os.path.join(CURRENT_DIR, "data/dummy_system_data.csv")
@@ -49,6 +57,7 @@ def test_min_indicator_and_save(dummy_system_df: pd.DataFrame):
 
     assert isinstance(fig, Figure)
 
+
 def test_count_indicator_and_save(dummy_system_df: pd.DataFrame):
     plotter = DeviceCountIndicatorPlotter(dummy_system_df)
     fig = plotter.plot()
@@ -57,6 +66,7 @@ def test_count_indicator_and_save(dummy_system_df: pd.DataFrame):
     fig.write_html(figure_out_path)
 
     assert isinstance(fig, Figure)
+
 
 def test_outlier_indicator_and_save(dummy_system_df: pd.DataFrame):
     plotter = OutlierIndicatorPlotter(dummy_system_df)

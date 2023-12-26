@@ -413,6 +413,7 @@ class AppDataManager(object):
     """
     Class to collect data loading & formatting for the app.
     """
+
     def __init__(self, data_loader: AbstractDataLoader) -> None:
         self.data_loader = data_loader
         self.data_formatter = DataFormatter()
@@ -429,15 +430,19 @@ class AppDataManager(object):
     def _load_device_ids(self):
         """Load unique device IDs for API"""
         unique_ids = self.data_loader.load_device_ids()
-        unique_ids = self.data_formatter.process_records_to_dataframe(unique_ids)
+        unique_ids = self.data_formatter.process_records_to_dataframe(
+            unique_ids
+        )
         unique_ids = unique_ids[COLUMN.DEVICEID]
-        
+
         self.unique_ids = unique_ids
 
     def _load_system_stats(self) -> None:
         """Load system level statistincs from the API."""
         system_stats = self.data_loader.load_system_stats()
-        self.system_stats_df = self.data_formatter.process_records_to_dataframe(system_stats)
+        self.system_stats_df = (
+            self.data_formatter.process_records_to_dataframe(system_stats)
+        )
 
     def load_noise_data(self, *args, **kwargs) -> List[Dict[str, Any]]:
         return self.data_loader.load_noise_data(*args, **kwargs)

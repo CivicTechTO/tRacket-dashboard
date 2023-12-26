@@ -373,11 +373,10 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
     def _get_reference_count(self) -> int:
         """Current device count."""
         return (self.df[COLUMN.COUNT_PRIOR] > 0).sum()
-        
 
     def plot(self) -> go.Figure:
         fig = self._get_gauge(
-            value=self._get_device_count(), 
+            value=self._get_device_count(),
             text="Number of Active Devices",
             delta={
                 "reference": self._get_reference_count(),

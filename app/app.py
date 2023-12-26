@@ -7,12 +7,7 @@ import dash_bootstrap_components as dbc
 
 import configparser
 from src.data_loading import URLBuilder, WebcommandDataLoader, AppDataManager
-from src.plotting import (
-    DeviceCountIndicatorPlotter,
-    MinAverageIndicatorPlotter,
-    OutlierIndicatorPlotter,
-)
-from src.app_callbacks import initilize_callbacks
+from src.app_callbacks_components import CallbackManager, GraphManager
 from src.utils import Logging
 import os
 
@@ -25,16 +20,20 @@ PORT = os.environ["PORT"]
 TOKEN = os.environ["TOKEN"]
 
 
+### Setup Logging ###
+
 Logging.setup()
 logger = Logging.get_console_logger()
 logger.info("App starting - here we go.")
 
 
+### Setup Data Loader & Data Manager ###
 
-### Setup Data Manager ###
-
+# data loader - this could be swapped for local testing in the future
 url_builder = URLBuilder(TOKEN)
 data_loader = WebcommandDataLoader(url_builder)
+
+# data manager
 app_data_manager = AppDataManager(data_loader)
 
 # load data
@@ -45,12 +44,19 @@ app_data_manager.load_data()
 
 app = Dash(
     "Noise-App",
-    title="NoisePressureMonitor",
+    title="Noise Pressure Monitor",
     external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 server = app.server
 
-initilize_callbacks(app_data_manager)
+# setup callbacks
+
+CallbackManager.initialize_callbacks(app_data_manager)
+
+
+### Setup Components ###
+
+GraphManager.initialize_components(app_data_manager)
 
 summary_card = dbc.Card(
     [
@@ -67,17 +73,6 @@ summary_card = dbc.Card(
     ],
     style={"width": "18rem"},
 )
-
-
-
-indicator_plotter = DeviceCountIndicatorPlotter(app_data_manager.system_stats_df)
-system_count_fig = indicator_plotter.plot()
-
-indicator_plotter = MinAverageIndicatorPlotter(app_data_manager.system_stats_df)
-system_min_fig = indicator_plotter.plot()
-
-indicator_plotter = OutlierIndicatorPlotter(app_data_manager.system_stats_df)
-system_outlier_fig = indicator_plotter.plot()
 
 
 def get_intro_markdown() -> dcc.Markdown:
@@ -99,7 +94,6 @@ app.layout = dbc.Container(
     [
         html.Div([dcc.Store(id="device-data")]),
         html.Div([dcc.Store(id="device-stats")]),
-        html.Div([dcc.Store(id="system-stats")]),
         html.Div([dcc.Store(id="hourly-device-data")]),
         html.Br(),
         html.H1(
@@ -124,39 +118,9 @@ app.layout = dbc.Container(
                     "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week.",
                     style={"textAlign": "left", "margin-left": "30px"},
                 ),
-                dbc.Col(
-                    [
-                        dbc.Spinner(
-                            dcc.Graph(
-                                id="system-count",
-                                figure=system_count_fig,
-                                style={"height": "40vh"},
-                            )
-                        )
-                    ]
-                ),
-                dbc.Col(
-                    [
-                        dbc.Spinner(
-                            dcc.Graph(
-                                id="system-min",
-                                figure=system_min_fig,
-                                style={"height": "40vh"},
-                            )
-                        )
-                    ]
-                ),
-                dbc.Col(
-                    [
-                        dbc.Spinner(
-                            dcc.Graph(
-                                id="system-outlier",
-                                figure=system_outlier_fig,
-                                style={"height": "40vh"},
-                            )
-                        )
-                    ]
-                ),
+                dbc.Col([dbc.Spinner(GraphManager.system_count_indicator)]),
+                dbc.Col([dbc.Spinner(GraphManager.system_avg_indicator)]),
+                dbc.Col([dbc.Spinner(GraphManager.system_outlier_indicator)]),
             ],
             align="start",
         ),
@@ -182,7 +146,9 @@ app.layout = dbc.Container(
                             },
                         ),
                         dcc.Dropdown(
-                            app_data_manager.unique_ids, app_data_manager.unique_ids[0], id="id-selection"
+                            app_data_manager.unique_ids,
+                            app_data_manager.unique_ids[0],
+                            id="id-selection",
                         ),
                     ],
                     width={"offset": 2},
@@ -190,14 +156,14 @@ app.layout = dbc.Container(
             ],
             style=dict(width="33.33%"),
         ),
-        dbc.Row(dbc.Spinner(dcc.Graph(id="noise-level-line"))),
+        dbc.Row(dbc.Spinner(GraphManager.noise_line_graph)),
         dbc.Row(
             [dcc.Markdown(id="middle-markdown")],
             style={"margin-left": "30px", "margin-right": "150px"},
         ),
         dbc.Row(
             [
-                dbc.Col(dbc.Spinner(dcc.Graph(id="heatmap")), width=9),
+                dbc.Col(dbc.Spinner(GraphManager.heatmap), width=9),
                 dbc.Col(
                     [
                         html.Br(),
@@ -218,7 +184,7 @@ app.layout = dbc.Container(
         ),
         dbc.Row(
             [
-                dbc.Col(dbc.Spinner(dcc.Graph(id="histogram"))),
+                dbc.Col(dbc.Spinner(GraphManager.histogram)),
             ],
             align="center",
         ),
@@ -227,10 +193,6 @@ app.layout = dbc.Container(
     style={"backgroundColor": config["app.colors"]["background"]},
 )
 
-
-#################
-### CALLBACKS ###
-#################
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=PORT)

@@ -117,11 +117,15 @@ def test_device_count(data_loader: WebcommandDataLoader):
     assert isinstance(raw_data[0][COLUMN.COUNT.value], int)
 
 
-def test_system_stats_fetch_and_save(data_loader: WebcommandDataLoader, data_formatter: DataFormatter):
+def test_system_stats_fetch_and_save(
+    data_loader: WebcommandDataLoader, data_formatter: DataFormatter
+):
     raw_data = data_loader.load_system_stats()
     df = data_formatter._raw_to_dataframe(raw_data)
 
-    df.to_csv(os.path.join(CURRENT_DIR, "data/sample_system_data.csv"), index=False)
+    df.to_csv(
+        os.path.join(CURRENT_DIR, "data/sample_system_data.csv"), index=False
+    )
 
     assert isinstance(raw_data[0][COLUMN.COUNT.value], int)
 
