@@ -1,7 +1,7 @@
 from dash import callback, Input, Output, dcc, html
 import dash_daq as daq
 import dash_bootstrap_components as dbc
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.data_loading import AppDataManager
 from src.utils import COLUMN, HEATMAP_VALUE
 from enum import Enum, auto
@@ -39,6 +39,11 @@ class COMPONENT_ID(str, Enum):
     summary_card_header = auto()
     summary_card_text = auto()
 
+    # store
+    device_data_store = auto()
+    device_stats_store = auto()
+    hourly_device_data_store = auto()
+
 
 class AbstractAppManager(object):
     """
@@ -52,9 +57,30 @@ class AbstractAppManager(object):
         cls.app_data_manager = app_data_manager
 
     @abstractclassmethod
-    def initialize(cls, app_data_manager: AppDataManager) -> None:
-        cls._set_app_data_manager(app_data_manager)
+    def initialize(
+        cls, app_data_manager: Optional[AppDataManager] = None
+    ) -> None:
+        if app_data_manager:
+            cls._set_app_data_manager(app_data_manager)
         pass
+
+
+class DataStoreManager(AbstractAppManager):
+    """
+    Class for initializing the clien-side data stores for re-use.
+    """
+
+    device_data_store: dcc.Store = None
+    device_stats_store: dcc.Store = None
+    hourly_device_data_store: dcc.Store = None
+
+    @classmethod
+    def initialize(cls) -> None:
+        cls.device_data_store = dcc.Store(id=COMPONENT_ID.device_data_store)
+        cls.device_stats_store = dcc.Store(id=COMPONENT_ID.device_stats_store)
+        cls.hourly_device_data_store = dcc.Store(
+            id=COMPONENT_ID.hourly_device_data_store
+        )
 
 
 class MarkdownManager(AbstractAppManager):
@@ -65,21 +91,25 @@ class MarkdownManager(AbstractAppManager):
     summary_card: dbc.Card = None
     intro_markdown: dcc.Markdown = None
     system_stats_markdown: dcc.Markdown = None
+    heatmap_markdown: dcc.Markdown = None
+
+    style = {"textAlign": "left", "margin-left": "30px"}
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
+        """
+        Main call to initialize all app markdowns.
+        """
         cls._set_app_data_manager(app_data_manager)
         cls._initialize_summary_card()
         cls._initialize_intro_mardown()
         cls._initialize_system_markdown()
+        cls._initialize_heatmap_markdown()
 
     @classmethod
     def _initialize_system_markdown(cls) -> None:
         text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
-        cls.system_stats_markdown = dcc.Markdown(
-            text,
-            style={"textAlign": "left", "margin-left": "30px"},
-        )
+        cls.system_stats_markdown = dcc.Markdown(text, style=cls.style)
 
     @classmethod
     def _initialize_intro_mardown(cls) -> None:
@@ -94,9 +124,7 @@ class MarkdownManager(AbstractAppManager):
                 Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
                 """
 
-        cls.intro_markdown = dcc.Markdown(
-            text, style={"textAlign": "left", "margin-left": "30px"}
-        )
+        cls.intro_markdown = dcc.Markdown(text, style=cls.style)
 
     @classmethod
     def _initialize_summary_card(cls) -> None:
@@ -114,6 +142,13 @@ class MarkdownManager(AbstractAppManager):
                 ),
             ],
             style={"width": "18rem"},
+        )
+
+    @classmethod
+    def _initialize_heatmap_markdown(cls) -> None:
+        text = f"To select a different week for the line graph, click the heatmap below."
+        cls.heatmap_markdown = dcc.Markdown(
+            text, style=cls.style
         )
 
 
@@ -248,7 +283,7 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output(COMPONENT_ID.summary_card_text, "children"),
-            Input("device-stats", "data"),
+            Input(COMPONENT_ID.device_stats_store, "data"),
         )
         def update_card_text(stats: List[dict]) -> str:
             """
@@ -286,20 +321,11 @@ class CallbackManager(AbstractAppManager):
 
             return f"Device ID: {device_id}"
 
-        @callback(
-            Output("middle-markdown", "children"),
-            Input(COMPONENT_ID.device_id_input, "value"),
-        )
-        def update_middle_markdown(device_id: str) -> str:
-            """
-            Add the text explaining what is on the line chart and how to use the heatmap.
-            """
-            return f"The plot shows measurements recorded by the device {device_id}, sent at 5 minute intervals. To select a different week to show click the heatmap below."
 
         ### DATA CALLBACKS ###
 
         @callback(
-            Output("device-stats", "data"),
+            Output(COMPONENT_ID.device_stats_store, "data"),
             Input(COMPONENT_ID.device_id_input, "value"),
         )
         def load_device_stats(device_id: str) -> List[Dict[str, Any]]:
@@ -313,7 +339,7 @@ class CallbackManager(AbstractAppManager):
             return raw_stats
 
         @callback(
-            Output("hourly-device-data", "data"),
+            Output(COMPONENT_ID.hourly_device_data_store, "data"),
             Input(COMPONENT_ID.device_id_input, "value"),
         )
         def load_hourly_data(device_id: str) -> List[Dict[str, Any]]:
@@ -327,9 +353,9 @@ class CallbackManager(AbstractAppManager):
             return raw_hourly_data
 
         @callback(
-            Output("device-data", "data"),
+            Output(COMPONENT_ID.device_data_store, "data"),
             Input(COMPONENT_ID.device_id_input, "value"),
-            Input("device-stats", "data"),
+            Input(COMPONENT_ID.device_stats_store, "data"),
             Input(COMPONENT_ID.heatmap, "clickData"),
         )
         def load_data(
@@ -366,7 +392,7 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output(COMPONENT_ID.noise_line_graph, "figure"),
-            Input("device-data", "data"),
+            Input(COMPONENT_ID.device_data_store, "data"),
         )
         def update_noise_level_fig(data: List[Dict[str, Any]]) -> Figure:
             """
@@ -382,7 +408,7 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output(COMPONENT_ID.histogram, "figure"),
-            Input("device-data", "data"),
+            Input(COMPONENT_ID.device_data_store, "data"),
         )
         def update_histogram(data: List[Dict[str, Any]]) -> Figure:
             """
@@ -398,7 +424,7 @@ class CallbackManager(AbstractAppManager):
 
         @callback(
             Output(COMPONENT_ID.heatmap, "figure"),
-            Input("hourly-device-data", "data"),
+            Input(COMPONENT_ID.hourly_device_data_store, "data"),
             Input(COMPONENT_ID.heatmap_toggle, "value"),
         )
         def update_heatmap(

@@ -10,6 +10,7 @@ from src.app_components import (
     GraphManager,
     InputManager,
     MarkdownManager,
+    DataStoreManager,
 )
 from src.utils import Logging
 import os
@@ -58,28 +59,14 @@ GraphManager.initialize(app_data_manager)
 InputManager.initialize(app_data_manager)
 CallbackManager.initialize(app_data_manager)
 MarkdownManager.initialize(app_data_manager)
-
-
-def get_intro_markdown() -> dcc.Markdown:
-    """
-    Intro text after the title.
-    """
-    text = """
-            Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
-            >
-            > _"The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."_
-            >
-            Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
-            """
-
-    return dcc.Markdown(text)
+DataStoreManager.initialize()
 
 
 app.layout = dbc.Container(
     [
-        html.Div([dcc.Store(id="device-data")]),
-        html.Div([dcc.Store(id="device-stats")]),
-        html.Div([dcc.Store(id="hourly-device-data")]),
+        html.Div([DataStoreManager.device_data_store]),
+        html.Div([DataStoreManager.device_stats_store]),
+        html.Div([DataStoreManager.hourly_device_data_store]),
         html.Br(),
         html.H1(
             children="🎧 Noise Pressure Monitor 🎧",
@@ -131,8 +118,7 @@ app.layout = dbc.Container(
         ),
         dbc.Row(dbc.Spinner(GraphManager.noise_line_graph)),
         dbc.Row(
-            [dcc.Markdown(id="middle-markdown")],
-            style={"margin-left": "30px", "margin-right": "150px"},
+            [MarkdownManager.heatmap_markdown],
         ),
         dbc.Row(
             [
