@@ -62,6 +62,8 @@ MarkdownManager.initialize(app_data_manager)
 DataStoreManager.initialize()
 
 
+### Layout ###
+
 app.layout = dbc.Container(
     [
         html.Div([DataStoreManager.device_data_store]),

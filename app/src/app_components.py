@@ -147,9 +147,7 @@ class MarkdownManager(AbstractAppManager):
     @classmethod
     def _initialize_heatmap_markdown(cls) -> None:
         text = f"To select a different week for the line graph, click the heatmap below."
-        cls.heatmap_markdown = dcc.Markdown(
-            text, style=cls.style
-        )
+        cls.heatmap_markdown = dcc.Markdown(text, style=cls.style)
 
 
 class InputManager(AbstractAppManager):
@@ -244,6 +242,7 @@ class GraphManager(AbstractAppManager):
             id=COMPONENT_ID.count_indicator,
             figure=system_count_fig,
             style={"height": "40vh"},
+            config={"displayModeBar": False},
         )
 
     @classmethod
@@ -256,6 +255,7 @@ class GraphManager(AbstractAppManager):
             id=COMPONENT_ID.avg_indicator,
             figure=system_min_fig,
             style={"height": "40vh"},
+            config={"displayModeBar": False},
         )
 
     @classmethod
@@ -268,6 +268,7 @@ class GraphManager(AbstractAppManager):
             id=COMPONENT_ID.outlier_indicator,
             figure=system_outlier_fig,
             style={"height": "40vh"},
+            config={"displayModeBar": False},
         )
 
 
@@ -320,7 +321,6 @@ class CallbackManager(AbstractAppManager):
             """
 
             return f"Device ID: {device_id}"
-
 
         ### DATA CALLBACKS ###
 

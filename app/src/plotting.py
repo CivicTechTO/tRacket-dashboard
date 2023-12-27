@@ -27,7 +27,7 @@ class BasePlotter:
         """
         fig.update_layout(
             paper_bgcolor=self._config["plot.colors"]["background"],
-            plot_bgcolor=self._config["plot.colors"]["background"],
+            plot_bgcolor="rgba(0, 0, 0, 0)",
         )
 
     def _set_title_size(self, fig: go.Figure) -> None:
@@ -343,7 +343,9 @@ class AbstractIndicatorPlotter(BasePlotter):
         super().__init__(df)
 
     @staticmethod
-    def _get_gauge(value: float, text: str, **indicator_kwargs) -> go.Figure:
+    def _get_indicator(
+        value: float, text: str, **indicator_kwargs
+    ) -> go.Figure:
         fig = go.Figure(
             go.Indicator(
                 mode="number+delta",
@@ -355,6 +357,24 @@ class AbstractIndicatorPlotter(BasePlotter):
         )
 
         return fig
+
+    def add_hover_text(self, fig: go.Figure, text: str) -> None:
+        """
+        Adds a hover text by adding a transparent scatter plot above.
+        """
+        fig.add_trace(
+            go.Scatter(
+                x=[0],
+                y=[0],
+                text=[text],
+                mode="markers",
+                marker_symbol="square",
+                marker=dict(size=[200], color=["rgba(0, 0, 0, 0)"]),
+                hoverinfo="text",
+            )
+        )
+        fig.update_xaxes(visible=False)
+        fig.update_yaxes(visible=False)
 
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
@@ -375,7 +395,7 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
         return (self.df[COLUMN.COUNT_PRIOR] > 0).sum()
 
     def plot(self) -> go.Figure:
-        fig = self._get_gauge(
+        fig = self._get_indicator(
             value=self._get_device_count(),
             text="Number of Active Devices",
             delta={
@@ -385,6 +405,11 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
                 "decreasing.color": "red",
             },
         )
+
+        text = "A device is active if it sent data to our server<br>in the past 7 days. The small value below<br>indicates the week-over-week difference."
+        self.add_hover_text(fig, text)
+
+        self.set_formatting(fig)
 
         return fig
 
@@ -423,7 +448,7 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
         return self._get_min_avg(COLUMN.COUNT_PRIOR, COLUMN.AVGMIN_PRIOR)
 
     def plot(self) -> go.Figure:
-        fig = self._get_gauge(
+        fig = self._get_indicator(
             value=self._get_system_min_avg(),
             text="Average Ambient Noise",
             delta={
@@ -435,6 +460,10 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
             },
             number={"suffix": " dBA"},
         )
+
+        text = "This is the system-wide average of recorded minimum<br>noise levels for the past 7 days. The small value below<br>indicates the week-over-week difference."
+        self.add_hover_text(fig, text)
+        self.set_formatting(fig)
 
         return fig
 
@@ -454,7 +483,7 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
         return self.df[COLUMN.OUTLIERCOUNT_PRIOR].sum()
 
     def plot(self) -> go.Figure:
-        fig = self._get_gauge(
+        fig = self._get_indicator(
             value=self._get_total_count(),
             text="Number of Outliers",
             delta={
@@ -464,5 +493,9 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
                 "decreasing.color": "green",
             },
         )
+
+        text = f"This is the number of recordings above {self._config['constants']['noise_threshold']} dBA<br>in the past 7 days. The small value below indicates<br>the week-over-week difference."
+        self.add_hover_text(fig, text)
+        self.set_formatting(fig)
 
         return fig
