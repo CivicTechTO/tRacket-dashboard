@@ -196,7 +196,8 @@ class TimeseriesPlotter(BasePlotter):
         figure.update_xaxes(rangeslider_visible=True)
         figure.update_yaxes(title_text="Noise Level (dBA)")
         figure.update_layout(
-            # showlegend=False,
+            showlegend=False,
+            hovermode="x unified",
         )
 
         title = f"Noise Level - {self.start_date} to {self.end_date}"
