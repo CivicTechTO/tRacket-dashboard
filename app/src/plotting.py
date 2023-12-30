@@ -82,7 +82,7 @@ class HistogramPlotter(BasePlotter):
                 column in df.columns
             ), f"Column {column} missing from the data columns ({df.columns})."
 
-    def plot(self) -> go.Figure:
+    def plot(self, show_title: bool = False) -> go.Figure:
         """
         Create a histogram for the min/max values.
         """
@@ -101,8 +101,13 @@ class HistogramPlotter(BasePlotter):
             labels={
                 "variable": "Measure",
             },
-            title=f"Noise Level Distribution - {self.start_date} to {self.end_date}",
+            
         )
+
+        if show_title:
+            title = f"Noise Level Distribution - {self.start_date} to {self.end_date}",
+            fig.update_layout(title=dict(text=title))
+
         fig.update_traces(opacity=0.75)
 
         fig.update_layout(
@@ -178,7 +183,7 @@ class TimeseriesPlotter(BasePlotter):
             df[COLUMN.TIMESTAMP]
         ), f"Timestamp should be datatime data type, not {df[COLUMN.TIMESTAMP].dtype}."
 
-    def plot(self) -> go.Figure:
+    def plot(self, show_title: bool = False) -> go.Figure:
         """
         Create line chart showing the noise level over time.
         """
@@ -200,9 +205,10 @@ class TimeseriesPlotter(BasePlotter):
             hovermode="x unified",
         )
 
-        title = f"Noise Level - {self.start_date} to {self.end_date}"
+        if show_title:
+            title = f"Noise Level - {self.start_date} to {self.end_date}"
+            figure.update_layout(title=dict(text=title))
 
-        figure.update_layout(title=dict(text=title))
         self.set_formatting(figure)
 
         return figure
@@ -317,7 +323,7 @@ class HeatmapPlotter(BasePlotter):
 
     def plot(
         self, pivot_value: HEATMAP_VALUE, title: Optional[str] = None
-    ) -> go.Figure:
+    , show_title: bool = False) -> go.Figure:
         """
         Create a heatmap from the pivot table.
         """
@@ -331,9 +337,12 @@ class HeatmapPlotter(BasePlotter):
             color_continuous_scale=self._get_colorscale_from_value(
                 pivot_value
             ),
-            title=title,
         )
 
+        if show_title:
+            fig.update_layout(title=dict(text=title))
+        
+        
         self.set_formatting(fig)
 
         return fig

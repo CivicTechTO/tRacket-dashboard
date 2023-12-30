@@ -97,6 +97,7 @@ app.layout = dbc.Container(
                     style={"textAlign": "left", "margin-left": "30px"},
                 ),
                 html.Br(),
+                html.Br(),
                 dcc.Markdown(
                     "Start by selecting a device from the drop-down.",
                     style={"textAlign": "left", "margin-left": "30px"},
@@ -113,12 +114,11 @@ app.layout = dbc.Container(
                         ),
                         InputManager.device_id_dropdown,
                     ],
-                    width={"offset": 2},
+                    width={"size": 4, "offset": 4},
                 ),
             ],
-            style=dict(width="33.33%"),
         ),
-        dbc.Row(dbc.Spinner(GraphManager.noise_line_graph)),
+        html.Br(),
         dbc.Row(
             [MarkdownManager.heatmap_markdown],
         ),
@@ -139,6 +139,7 @@ app.layout = dbc.Container(
             ],
             align="center",
         ),
+        dbc.Row(dbc.Spinner(GraphManager.noise_line_graph)),
         dbc.Row(
             [
                 dbc.Col(dbc.Spinner(GraphManager.histogram)),
