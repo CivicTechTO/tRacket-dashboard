@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-FROM python:3.8.6-slim-buster as builder
+FROM python:3.11-slim as builder
 
 WORKDIR /usr/src/project/
 

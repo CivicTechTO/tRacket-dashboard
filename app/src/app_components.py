@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from typing import List, Dict, Any, Optional
 from src.data_loading import AppDataManager
 from src.utils import COLUMN, HEATMAP_VALUE, load_config
-from enum import Enum, auto
+from enum import StrEnum, auto
 from abc import abstractclassmethod
 import pandas as pd
 from src.plotting import (
@@ -18,7 +18,7 @@ from src.plotting import (
 from plotly.graph_objects import Figure
 
 
-class COMPONENT_ID(str, Enum):
+class COMPONENT_ID(StrEnum):
     """
     Component IDs for the app.
     """
