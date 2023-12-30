@@ -358,19 +358,20 @@ class AbstractIndicatorPlotter(BasePlotter):
 
         return fig
 
-    def add_hover_text(self, fig: go.Figure, text: str) -> None:
+    def add_invisible_scatter(self, fig: go.Figure) -> None:
         """
-        Adds a hover text by adding a transparent scatter plot above.
+        Adds a transparent scatter plot above that is used by the dcc.Tooltip component.
         """
         fig.add_trace(
             go.Scatter(
                 x=[0],
                 y=[0],
-                text=[text],
+                # text=[text],
                 mode="markers",
                 marker_symbol="square",
                 marker=dict(size=[200], color=["rgba(0, 0, 0, 0)"]),
-                hoverinfo="text",
+                hoverinfo="none",
+                hovertemplate=None,
             )
         )
         fig.update_xaxes(visible=False)
@@ -406,8 +407,7 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
             },
         )
 
-        text = "A device is active if it sent data to our server<br>in the past 7 days. The small value below<br>indicates the week-over-week difference."
-        self.add_hover_text(fig, text)
+        self.add_invisible_scatter(fig)
 
         self.set_formatting(fig)
 
@@ -461,8 +461,7 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
             number={"suffix": " dBA"},
         )
 
-        text = "This is the system-wide average of recorded minimum<br>noise levels for the past 7 days. The small value below<br>indicates the week-over-week difference."
-        self.add_hover_text(fig, text)
+        self.add_invisible_scatter(fig)
         self.set_formatting(fig)
 
         return fig
@@ -494,8 +493,7 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
             },
         )
 
-        text = f"This is the number of recordings above {self._config['constants']['noise_threshold']} dBA<br>in the past 7 days. The small value below indicates<br>the week-over-week difference."
-        self.add_hover_text(fig, text)
+        self.add_invisible_scatter(fig)
         self.set_formatting(fig)
 
         return fig

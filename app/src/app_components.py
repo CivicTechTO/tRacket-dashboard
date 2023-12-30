@@ -1,9 +1,9 @@
-from dash import callback, Input, Output, dcc, html
+from dash import callback, Input, Output, dcc, html, no_update
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 from typing import List, Dict, Any, Optional
 from src.data_loading import AppDataManager
-from src.utils import COLUMN, HEATMAP_VALUE
+from src.utils import COLUMN, HEATMAP_VALUE, load_config
 from enum import Enum, auto
 from abc import abstractclassmethod
 import pandas as pd
@@ -28,8 +28,11 @@ class COMPONENT_ID(str, Enum):
     noise_line_graph = auto()
     heatmap = auto()
     count_indicator = auto()
+    count_indicator_tooltip = auto()
     avg_indicator = auto()
+    avg_indicator_tooltip = auto()
     outlier_indicator = auto()
+    outlier_indicator_tooltip = auto()
 
     # inputs
     device_id_input = auto()
@@ -228,22 +231,28 @@ class GraphManager(AbstractAppManager):
         """
         Initialize system indicator graphs.
         """
-        cls._setup_system_count_indicator()
+        cls._setup_device_count_indicator()
         cls._setup_system_min_indicator()
         cls._setup_system_outlier_indicator()
 
     @classmethod
-    def _setup_system_count_indicator(cls) -> None:
+    def _setup_device_count_indicator(cls) -> None:
         indicator_plotter = DeviceCountIndicatorPlotter(
             cls.app_data_manager.system_stats_df
         )
         system_count_fig = indicator_plotter.plot()
-        cls.system_count_indicator = dcc.Graph(
-            id=COMPONENT_ID.count_indicator,
-            figure=system_count_fig,
-            style={"height": "40vh"},
-            config={"displayModeBar": False},
-        )
+        cls.system_count_indicator = html.Div(
+            [
+                dcc.Graph(
+                    id=COMPONENT_ID.count_indicator,
+                    figure=system_count_fig,
+                    style={"height": "40vh"},
+                    config={"displayModeBar": False},
+                    clear_on_unhover=True
+                ),
+                dcc.Tooltip(id=COMPONENT_ID.count_indicator_tooltip, direction="bottom")
+            ]
+            )
 
     @classmethod
     def _setup_system_min_indicator(cls) -> None:
@@ -251,12 +260,17 @@ class GraphManager(AbstractAppManager):
             cls.app_data_manager.system_stats_df
         )
         system_min_fig = indicator_plotter.plot()
-        cls.system_avg_indicator = dcc.Graph(
-            id=COMPONENT_ID.avg_indicator,
-            figure=system_min_fig,
-            style={"height": "40vh"},
-            config={"displayModeBar": False},
-        )
+        cls.system_avg_indicator = html.Div(
+            [
+                dcc.Graph(
+                    id=COMPONENT_ID.avg_indicator,
+                    figure=system_min_fig,
+                    style={"height": "40vh"},
+                    config={"displayModeBar": False},
+                    clear_on_unhover=True
+                ),
+                dcc.Tooltip(id=COMPONENT_ID.avg_indicator_tooltip, direction="bottom")
+            ])
 
     @classmethod
     def _setup_system_outlier_indicator(cls) -> None:
@@ -264,11 +278,17 @@ class GraphManager(AbstractAppManager):
             cls.app_data_manager.system_stats_df
         )
         system_outlier_fig = indicator_plotter.plot()
-        cls.system_outlier_indicator = dcc.Graph(
-            id=COMPONENT_ID.outlier_indicator,
-            figure=system_outlier_fig,
-            style={"height": "40vh"},
-            config={"displayModeBar": False},
+        cls.system_outlier_indicator = html.Div(
+            [
+                dcc.Graph(
+                    id=COMPONENT_ID.outlier_indicator,
+                    figure=system_outlier_fig,
+                    style={"height": "40vh"},
+                    config={"displayModeBar": False},
+                    clear_on_unhover=True
+                ),
+                dcc.Tooltip(id=COMPONENT_ID.outlier_indicator_tooltip, direction="bottom")
+            ]
         )
 
 
@@ -276,6 +296,7 @@ class CallbackManager(AbstractAppManager):
     """
     Class that organizes and  initializes the Dash app callbacks on app start.
     """
+    _config = load_config()
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -389,6 +410,82 @@ class CallbackManager(AbstractAppManager):
             return raw_device_data
 
         ### PLOT CALLBACKS ###
+
+        @callback(
+            Output(COMPONENT_ID.outlier_indicator_tooltip, "show"),
+            Output(COMPONENT_ID.outlier_indicator_tooltip, "bbox"),
+            Output(COMPONENT_ID.outlier_indicator_tooltip, "children"),
+            Input(COMPONENT_ID.outlier_indicator, "hoverData"),
+        )
+        def display_outlier_indicator_tooltip(hoverData):
+            if hoverData is None:
+                return False, no_update, no_update
+            else:
+                pt = hoverData["points"][0]
+                bbox = pt["bbox"]
+
+                text = f"This is the number of recordings above {cls._config['constants']['noise_threshold']} dBA in the past 7 days. The small value below indicates the week-over-week difference."
+                
+                
+                children = [
+                    html.Div(
+                        [
+                            html.P(text)
+                        ], 
+                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
+                ]
+
+                return True, bbox, children
+
+        @callback(
+            Output(COMPONENT_ID.count_indicator_tooltip, "show"),
+            Output(COMPONENT_ID.count_indicator_tooltip, "bbox"),
+            Output(COMPONENT_ID.count_indicator_tooltip, "children"),
+            Input(COMPONENT_ID.count_indicator, "hoverData"),
+        )
+        def display_count_indicator_tooltip(hoverData):
+            if hoverData is None:
+                return False, no_update, no_update
+            else:
+                pt = hoverData["points"][0]
+                bbox = pt["bbox"]
+
+                text = "A device is active if it sent data to our server in the past 7 days. The small value below indicates the week-over-week difference."
+
+                children = [
+                    html.Div(
+                        [
+                            html.P(text)
+                        ], 
+                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
+                ]
+
+                return True, bbox, children
+
+        @callback(
+            Output(COMPONENT_ID.avg_indicator_tooltip, "show"),
+            Output(COMPONENT_ID.avg_indicator_tooltip, "bbox"),
+            Output(COMPONENT_ID.avg_indicator_tooltip, "children"),
+            Input(COMPONENT_ID.avg_indicator, "hoverData"),
+        )
+        def display_avg_indicator_tooltip(hoverData):
+            if hoverData is None:
+                return False, no_update, no_update
+            else:
+                pt = hoverData["points"][0]
+                bbox = pt["bbox"]
+
+                text = "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference."
+
+                children = [
+                    html.Div(
+                        [
+                            html.P(text)
+                        ], 
+                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
+                ]
+
+                return True, bbox, children
 
         @callback(
             Output(COMPONENT_ID.noise_line_graph, "figure"),
