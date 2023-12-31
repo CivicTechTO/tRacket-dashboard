@@ -1,5 +1,4 @@
 from dash import callback, Input, Output, dcc, html, no_update
-import dash_daq as daq
 import dash_bootstrap_components as dbc
 from typing import List, Dict, Any, Optional
 from src.data_loading import AppDataManager
@@ -169,7 +168,7 @@ class InputManager(AbstractAppManager):
 
     @classmethod
     def _initialize_device_id_dropdown(cls) -> None:
-        cls.device_id_dropdown = dcc.Dropdown(
+        cls.device_id_dropdown = dbc.Select(
             cls.app_data_manager.unique_ids,
             cls.app_data_manager.unique_ids[0],
             id=COMPONENT_ID.device_id_input,
@@ -177,10 +176,10 @@ class InputManager(AbstractAppManager):
 
     @classmethod
     def _initialize_heatmap_toggle(cls) -> None:
-        cls.heatmap_toggle = daq.ToggleSwitch(
+        cls.heatmap_toggle = dbc.Switch(
             id=COMPONENT_ID.heatmap_toggle,
-            vertical=False,
             label="Toggle Heatmap Min/Max",
+            value=False
         )
 
 
