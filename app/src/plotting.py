@@ -101,11 +101,12 @@ class HistogramPlotter(BasePlotter):
             labels={
                 "variable": "Measure",
             },
-            
         )
 
         if show_title:
-            title = f"Noise Level Distribution - {self.start_date} to {self.end_date}",
+            title = (
+                f"Noise Level Distribution - {self.start_date} to {self.end_date}",
+            )
             fig.update_layout(title=dict(text=title))
 
         fig.update_traces(opacity=0.75)
@@ -322,8 +323,11 @@ class HeatmapPlotter(BasePlotter):
         return [low_color, high_color]
 
     def plot(
-        self, pivot_value: HEATMAP_VALUE, title: Optional[str] = None
-    , show_title: bool = False) -> go.Figure:
+        self,
+        pivot_value: HEATMAP_VALUE,
+        title: Optional[str] = None,
+        show_title: bool = False,
+    ) -> go.Figure:
         """
         Create a heatmap from the pivot table.
         """
@@ -341,8 +345,7 @@ class HeatmapPlotter(BasePlotter):
 
         if show_title:
             fig.update_layout(title=dict(text=title))
-        
-        
+
         self.set_formatting(fig)
 
         return fig
@@ -367,25 +370,6 @@ class AbstractIndicatorPlotter(BasePlotter):
         )
 
         return fig
-
-    def add_invisible_scatter(self, fig: go.Figure) -> None:
-        """
-        Adds a transparent scatter plot above that is used by the dcc.Tooltip component.
-        """
-        fig.add_trace(
-            go.Scatter(
-                x=[0],
-                y=[0],
-                # text=[text],
-                mode="markers",
-                marker_symbol="square",
-                marker=dict(size=[200], color=["rgba(0, 0, 0, 0)"]),
-                hoverinfo="none",
-                hovertemplate=None,
-            )
-        )
-        fig.update_xaxes(visible=False)
-        fig.update_yaxes(visible=False)
 
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
@@ -417,7 +401,7 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
             },
         )
 
-        self.add_invisible_scatter(fig)
+        # self.add_invisible_scatter(fig)
 
         self.set_formatting(fig)
 
@@ -471,7 +455,6 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
             number={"suffix": " dBA"},
         )
 
-        self.add_invisible_scatter(fig)
         self.set_formatting(fig)
 
         return fig
@@ -503,7 +486,6 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
             },
         )
 
-        self.add_invisible_scatter(fig)
         self.set_formatting(fig)
 
         return fig

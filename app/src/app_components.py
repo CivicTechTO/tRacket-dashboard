@@ -179,7 +179,7 @@ class InputManager(AbstractAppManager):
         cls.heatmap_toggle = dbc.Switch(
             id=COMPONENT_ID.heatmap_toggle,
             label="Toggle Heatmap Min/Max",
-            value=False
+            value=False,
         )
 
 
@@ -187,6 +187,8 @@ class GraphManager(AbstractAppManager):
     """
     Class to collect and initialize the graph components for the app.
     """
+
+    _config = load_config()
 
     # system-level indicators
     system_count_indicator: dcc.Graph = None
@@ -242,16 +244,24 @@ class GraphManager(AbstractAppManager):
         system_count_fig = indicator_plotter.plot()
         cls.system_count_indicator = html.Div(
             [
-                dcc.Graph(
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_count_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                        )
+                    ],
                     id=COMPONENT_ID.count_indicator,
-                    figure=system_count_fig,
-                    style={"height": "40vh"},
-                    config={"displayModeBar": False},
-                    clear_on_unhover=True
                 ),
-                dcc.Tooltip(id=COMPONENT_ID.count_indicator_tooltip, direction="bottom")
+                dbc.Tooltip(
+                    "A device is active if it sent data to our server in the past 7 days. The small value below indicates the week-over-week difference.",
+                    target=COMPONENT_ID.count_indicator,
+                    id=COMPONENT_ID.count_indicator_tooltip,
+                    placement="bottom",
+                ),
             ]
-            )
+        )
 
     @classmethod
     def _setup_system_min_indicator(cls) -> None:
@@ -261,15 +271,25 @@ class GraphManager(AbstractAppManager):
         system_min_fig = indicator_plotter.plot()
         cls.system_avg_indicator = html.Div(
             [
-                dcc.Graph(
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_min_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                            clear_on_unhover=True,
+                        )
+                    ],
                     id=COMPONENT_ID.avg_indicator,
-                    figure=system_min_fig,
-                    style={"height": "40vh"},
-                    config={"displayModeBar": False},
-                    clear_on_unhover=True
                 ),
-                dcc.Tooltip(id=COMPONENT_ID.avg_indicator_tooltip, direction="bottom")
-            ])
+                dbc.Tooltip(
+                    "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference.",
+                    id=COMPONENT_ID.avg_indicator_tooltip,
+                    target=COMPONENT_ID.avg_indicator,
+                    placement="bottom",
+                ),
+            ]
+        )
 
     @classmethod
     def _setup_system_outlier_indicator(cls) -> None:
@@ -279,14 +299,22 @@ class GraphManager(AbstractAppManager):
         system_outlier_fig = indicator_plotter.plot()
         cls.system_outlier_indicator = html.Div(
             [
-                dcc.Graph(
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_outlier_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                        )
+                    ],
                     id=COMPONENT_ID.outlier_indicator,
-                    figure=system_outlier_fig,
-                    style={"height": "40vh"},
-                    config={"displayModeBar": False},
-                    clear_on_unhover=True
                 ),
-                dcc.Tooltip(id=COMPONENT_ID.outlier_indicator_tooltip, direction="bottom")
+                dbc.Tooltip(
+                    f"This is the number of recordings above {cls._config['constants']['noise_threshold']} dBA in the past 7 days. The small value below indicates the week-over-week difference.",
+                    id=COMPONENT_ID.outlier_indicator_tooltip,
+                    target=COMPONENT_ID.outlier_indicator,
+                    placement="bottom",
+                ),
             ]
         )
 
@@ -295,6 +323,7 @@ class CallbackManager(AbstractAppManager):
     """
     Class that organizes and  initializes the Dash app callbacks on app start.
     """
+
     _config = load_config()
 
     @classmethod
@@ -410,81 +439,70 @@ class CallbackManager(AbstractAppManager):
 
         ### PLOT CALLBACKS ###
 
-        @callback(
-            Output(COMPONENT_ID.outlier_indicator_tooltip, "show"),
-            Output(COMPONENT_ID.outlier_indicator_tooltip, "bbox"),
-            Output(COMPONENT_ID.outlier_indicator_tooltip, "children"),
-            Input(COMPONENT_ID.outlier_indicator, "hoverData"),
-        )
-        def display_outlier_indicator_tooltip(hoverData):
-            if hoverData is None:
-                return False, no_update, no_update
-            else:
-                pt = hoverData["points"][0]
-                bbox = pt["bbox"]
+        # @callback(
+        #     # Output(COMPONENT_ID.outlier_indicator_tooltip, "show"),
+        #     # Output(COMPONENT_ID.outlier_indicator_tooltip, "bbox"),
+        #     Output(COMPONENT_ID.outlier_indicator_tooltip, "children"),
+        #     Input(COMPONENT_ID.outlier_indicator, "hoverData"),
+        # )
+        # def display_outlier_indicator_tooltip(hoverData):
+        #     if hoverData is None:
+        #         return no_update
+        #     else:
+        #         pt = hoverData["points"][0]
+        #         bbox = pt["bbox"]
 
-                text = f"This is the number of recordings above {cls._config['constants']['noise_threshold']} dBA in the past 7 days. The small value below indicates the week-over-week difference."
-                
-                
-                children = [
-                    html.Div(
-                        [
-                            html.P(text)
-                        ], 
-                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
-                ]
+        #         text = f"This is the number of recordings above {cls._config['constants']['noise_threshold']} dBA in the past 7 days. The small value below indicates the week-over-week difference."
 
-                return True, bbox, children
+        #         children = [
 
-        @callback(
-            Output(COMPONENT_ID.count_indicator_tooltip, "show"),
-            Output(COMPONENT_ID.count_indicator_tooltip, "bbox"),
-            Output(COMPONENT_ID.count_indicator_tooltip, "children"),
-            Input(COMPONENT_ID.count_indicator, "hoverData"),
-        )
-        def display_count_indicator_tooltip(hoverData):
-            if hoverData is None:
-                return False, no_update, no_update
-            else:
-                pt = hoverData["points"][0]
-                bbox = pt["bbox"]
+        #                     html.P(text)
+        #         ]
 
-                text = "A device is active if it sent data to our server in the past 7 days. The small value below indicates the week-over-week difference."
+        #         return children
 
-                children = [
-                    html.Div(
-                        [
-                            html.P(text)
-                        ], 
-                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
-                ]
+        # @callback(
+        #     # Output(COMPONENT_ID.count_indicator_tooltip, "show"),
+        #     # Output(COMPONENT_ID.count_indicator_tooltip, "bbox"),
+        #     Output(COMPONENT_ID.count_indicator_tooltip, "children"),
+        #     Input(COMPONENT_ID.count_indicator, "hoverData"),
+        # )
+        # def display_count_indicator_tooltip(hoverData):
+        #     if hoverData is None:
+        #         return no_update
+        #     else:
+        #         pt = hoverData["points"][0]
+        #         bbox = pt["bbox"]
 
-                return True, bbox, children
+        #         text = "A device is active if it sent data to our server in the past 7 days. The small value below indicates the week-over-week difference."
 
-        @callback(
-            Output(COMPONENT_ID.avg_indicator_tooltip, "show"),
-            Output(COMPONENT_ID.avg_indicator_tooltip, "bbox"),
-            Output(COMPONENT_ID.avg_indicator_tooltip, "children"),
-            Input(COMPONENT_ID.avg_indicator, "hoverData"),
-        )
-        def display_avg_indicator_tooltip(hoverData):
-            if hoverData is None:
-                return False, no_update, no_update
-            else:
-                pt = hoverData["points"][0]
-                bbox = pt["bbox"]
+        #         children = [
+        #                     html.P(text)
 
-                text = "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference."
+        #         ]
 
-                children = [
-                    html.Div(
-                        [
-                            html.P(text)
-                        ], 
-                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
-                ]
+        #         return children
 
-                return True, bbox, children
+        # @callback(
+        #     # Output(COMPONENT_ID.avg_indicator_tooltip, "show"),
+        #     # Output(COMPONENT_ID.avg_indicator_tooltip, "bbox"),
+        #     Output(COMPONENT_ID.avg_indicator_tooltip, "children"),
+        #     Input(COMPONENT_ID.avg_indicator, "hoverData"),
+        # )
+        # def display_avg_indicator_tooltip(hoverData):
+        #     if hoverData is None:
+        #         return no_update
+        #     else:
+        #         pt = hoverData["points"][0]
+        #         bbox = pt["bbox"]
+
+        #         text = "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference."
+
+        #         children = [
+        #                     html.P(text)
+        #         ]
+
+        #     return children
 
         @callback(
             Output(COMPONENT_ID.noise_line_graph, "figure"),

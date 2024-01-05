@@ -49,7 +49,7 @@ app_data_manager.load_data()
 app = Dash(
     "Noise-App",
     title="Noise Pressure Monitor",
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_stylesheets=[dbc.themes.SKETCHY],
 )
 server = app.server
 
@@ -148,7 +148,7 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
-    #style={"backgroundColor": config["app.colors"]["background"]},
+    # style={"backgroundColor": config["app.colors"]["background"]},
 )
 
 
