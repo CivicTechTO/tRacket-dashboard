@@ -1,7 +1,7 @@
 """
 Classes for creating the plots on the dashboard.
 """
-from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config, get_current_dir
+from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config, get_current_dir, Logging
 import os
 import json
 import pandas as pd
@@ -11,6 +11,9 @@ from typing import Optional, List, Dict
 from abc import abstractmethod
 import pandas.api.types as ptype
 from enum import StrEnum, auto
+
+logger = Logging.get_console_logger()
+
 
 class COLOR_ITEM(StrEnum):
     MIN = auto()
@@ -84,6 +87,8 @@ class BasePlotter:
         with open(file_path) as f:
             template = json.load(f)
 
+        logger.debug(f"Bootstrap plotly template loaded from {file_path}")
+        
         return template
 
     def set_formatting(self, fig: go.Figure) -> None:

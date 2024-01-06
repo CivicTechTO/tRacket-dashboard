@@ -149,7 +149,6 @@ app.layout = dbc.Container(
         ),
     ],
     fluid=True,
-    # style={"backgroundColor": config["app.colors"]["background"]},
 )
 
 

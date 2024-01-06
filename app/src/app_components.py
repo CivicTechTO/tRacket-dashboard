@@ -347,6 +347,8 @@ class CallbackManager(AbstractAppManager):
     """
 
     _config = load_config()
+    _boostrap_template_name = _config["bootstrap"]["theme"]
+    
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -484,7 +486,7 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            timeseries_plotter = TimeseriesPlotter(df, bootstrap_template=cls._config["bootstrap"]["theme"])
+            timeseries_plotter = TimeseriesPlotter(df, bootstrap_template=cls._boostrap_template_name)
 
             return timeseries_plotter.plot()
 
@@ -500,7 +502,7 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            hist_plotter = HistogramPlotter(df, bootstrap_template=cls._config["bootstrap"]["theme"])
+            hist_plotter = HistogramPlotter(df, bootstrap_template=cls._boostrap_template_name)
 
             return hist_plotter.plot()
 
@@ -515,7 +517,7 @@ class CallbackManager(AbstractAppManager):
             df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
                 data
             )
-            heatmap_plotter = HeatmapPlotter(df, bootstrap_template=cls._config["bootstrap"]["theme"])
+            heatmap_plotter = HeatmapPlotter(df, bootstrap_template=cls._boostrap_template_name)
 
             if max_toggle:
                 title = (
