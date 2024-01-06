@@ -12,7 +12,7 @@ from src.app_components import (
     MarkdownManager,
     DataStoreManager,
 )
-from src.utils import Logging
+from src.utils import Logging, dbc_themes_name_to_url
 import os
 
 ### Configs & Settings ###
@@ -20,6 +20,11 @@ import os
 config = configparser.ConfigParser()
 config.read("src/config.ini")
 
+# get theme
+theme_name = config["bootstrap"]["theme"]
+theme_url = dbc_themes_name_to_url[theme_name] 
+
+# get secrets
 PORT = os.environ["PORT"]
 TOKEN = os.environ["TOKEN"]
 
@@ -49,7 +54,7 @@ app_data_manager.load_data()
 app = Dash(
     "Noise-App",
     title="Noise Pressure Monitor",
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_stylesheets=[theme_url],
 )
 server = app.server
 

@@ -401,7 +401,8 @@ class CallbackManager(AbstractAppManager):
         def toggle_modal(n1, is_open):
             if n1:
                 return not is_open
-            return is_open
+            else:
+                return is_open
 
         ### DATA CALLBACKS ###
 

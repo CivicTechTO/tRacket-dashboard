@@ -1,7 +1,9 @@
 """
 Classes for creating the plots on the dashboard.
 """
-from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config
+from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config, get_current_dir
+import os
+import json
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
@@ -15,11 +17,15 @@ class BasePlotter:
     Base class for plotting - loads config.
     """
 
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(self, df: pd.DataFrame, bootstrap_template: str = None) -> None:
         self._config = load_config()
 
         self._validate_data(df)
         self.df = df
+
+        self.template_name = bootstrap_template
+        if self.template_name is not None:
+            self.template = self._load_template(self.template_name)
 
     def _set_background(self, fig: go.Figure) -> None:
         """
@@ -40,12 +46,33 @@ class BasePlotter:
             ),
         )
 
+    @staticmethod
+    def _load_template(name: str) -> dict:
+        """
+        Load the Plotly template from file for a Bootstrap theme by its name.
+        """
+        name = name.lower()
+        file_name = name + ".json" 
+        file_path = os.path.join(get_current_dir(__file__), "templates", file_name)
+        
+        assert os.path.isfile(file_path), f"File at {file_path} does not exist."
+        
+        with open(file_path) as f:
+            template = json.load(f)
+
+        return template
+
     def set_formatting(self, fig: go.Figure) -> None:
         """
-        Run all the formatting helpers on figure.
+        If template is provided, set it, otherwise run all the formatting helpers on figure.
         """
-        self._set_title_size(fig)
-        self._set_background(fig)
+        if self.template_name is None:
+            self._set_title_size(fig)
+            self._set_background(fig)
+        else:
+            fig.update_layout(template=self.template)
+            
+
 
     def set_start_end_date(self) -> None:
         """
@@ -71,8 +98,8 @@ class BasePlotter:
 
 
 class HistogramPlotter(BasePlotter):
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.set_start_end_date()
 
@@ -163,8 +190,8 @@ class TimeseriesPlotter(BasePlotter):
     Plotting the noise data over time.
     """
 
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.noise_threshold = int(
             self._config["constants"]["noise_threshold"]
         )
@@ -273,8 +300,8 @@ class HeatmapPlotter(BasePlotter):
     Create heatmap showing longterm trends in the data.
     """
 
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         assert all(
@@ -352,8 +379,8 @@ class HeatmapPlotter(BasePlotter):
 
 
 class AbstractIndicatorPlotter(BasePlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def _get_indicator(
@@ -373,8 +400,8 @@ class AbstractIndicatorPlotter(BasePlotter):
 
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         for col in [COLUMN.DEVICEID, COLUMN.COUNT, COLUMN.COUNT_PRIOR]:
@@ -409,8 +436,8 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
 
 
 class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         for col in [
@@ -461,8 +488,8 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
 
 
 class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         assert COLUMN.OUTLIERCOUNT in df.columns
