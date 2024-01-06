@@ -69,13 +69,9 @@ app.layout = dbc.Container(
         html.Div([DataStoreManager.device_data_store]),
         html.Div([DataStoreManager.device_stats_store]),
         html.Div([DataStoreManager.hourly_device_data_store]),
+        html.Div([MarkdownManager.navbar]),
         html.Br(),
-        html.H1(
-            children="🎧 Noise Pressure Monitor 🎧",
-            style={"textAlign": "left", "margin-left": "30px"},
-        ),
         html.Br(),
-        dbc.Row([MarkdownManager.intro_markdown]),
         html.Br(),
         dbc.Row(
             [

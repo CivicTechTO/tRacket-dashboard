@@ -1,4 +1,4 @@
-from dash import callback, Input, Output, dcc, html, no_update
+from dash import callback, Input, Output, dcc, html, State
 import dash_bootstrap_components as dbc
 from typing import List, Dict, Any, Optional
 from src.data_loading import AppDataManager
@@ -94,6 +94,7 @@ class MarkdownManager(AbstractAppManager):
     intro_markdown: dcc.Markdown = None
     system_stats_markdown: dcc.Markdown = None
     heatmap_markdown: dcc.Markdown = None
+    navbar: dbc.NavbarSimple
 
     style = {"textAlign": "left", "margin-left": "30px"}
 
@@ -104,29 +105,53 @@ class MarkdownManager(AbstractAppManager):
         """
         cls._set_app_data_manager(app_data_manager)
         cls._initialize_summary_card()
-        cls._initialize_intro_mardown()
         cls._initialize_system_markdown()
         cls._initialize_heatmap_markdown()
+        cls._initialize_navbar()
 
+    
     @classmethod
-    def _initialize_system_markdown(cls) -> None:
-        text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
-        cls.system_stats_markdown = dcc.Markdown(text, style=cls.style)
-
-    @classmethod
-    def _initialize_intro_mardown(cls) -> None:
-        """
-        Intro text after the title.
-        """
-        text = """
+    def _initialize_navbar(cls) -> None:
+        about_text = dcc.Markdown(
+            """
                 Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
                 >
                 > _"The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."_
                 >
                 Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
-                """
 
-        cls.intro_markdown = dcc.Markdown(text, style=cls.style)
+                Developed & maintained by the CivicTech TO community. 
+                
+                Source: [Github](https://github.com/danieltsoukup/noise-dashboard)
+                """
+        )
+        about_modal = html.Div(
+        [
+            dbc.Button("About", id="open", color="primary", n_clicks=0),
+            dbc.Modal(
+                [
+                    dbc.ModalHeader(dbc.ModalTitle("About")),
+                    dbc.ModalBody(about_text),
+                ],
+                id="modal",
+                is_open=False,
+            ),
+        ]
+    )
+        cls.navbar = dbc.NavbarSimple(
+                children=[about_modal],
+                brand="🎧 Toronto Noise Monitor 🎧",
+                color="primary",
+                dark=True,
+                fixed="top",
+            )
+    
+    @classmethod
+    def _initialize_system_markdown(cls) -> None:
+        text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
+        cls.system_stats_markdown = dcc.Markdown(text, style=cls.style)
+
+  
 
     @classmethod
     def _initialize_summary_card(cls) -> None:
@@ -370,6 +395,16 @@ class CallbackManager(AbstractAppManager):
             """
 
             return f"Device ID: {device_id}"
+
+        @callback(
+        Output("modal", "is_open"),
+        Input("open", "n_clicks"),
+        [State("modal", "is_open")],
+        )
+        def toggle_modal(n1, is_open):
+            if n1:
+                return not is_open
+            return is_open
 
         ### DATA CALLBACKS ###
 
