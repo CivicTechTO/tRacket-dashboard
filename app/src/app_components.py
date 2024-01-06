@@ -109,7 +109,6 @@ class MarkdownManager(AbstractAppManager):
         cls._initialize_heatmap_markdown()
         cls._initialize_navbar()
 
-    
     @classmethod
     def _initialize_navbar(cls) -> None:
         about_text = dcc.Markdown(
@@ -126,32 +125,30 @@ class MarkdownManager(AbstractAppManager):
                 """
         )
         about_modal = html.Div(
-        [
-            dbc.Button("About", id="open", color="primary", n_clicks=0),
-            dbc.Modal(
-                [
-                    dbc.ModalHeader(dbc.ModalTitle("About")),
-                    dbc.ModalBody(about_text),
-                ],
-                id="modal",
-                is_open=False,
-            ),
-        ]
-    )
+            [
+                dbc.Button("About", id="open", color="primary", n_clicks=0),
+                dbc.Modal(
+                    [
+                        dbc.ModalHeader(dbc.ModalTitle("About")),
+                        dbc.ModalBody(about_text),
+                    ],
+                    id="modal",
+                    is_open=False,
+                ),
+            ]
+        )
         cls.navbar = dbc.NavbarSimple(
-                children=[about_modal],
-                brand="🎧 Toronto Noise Monitor 🎧",
-                color="primary",
-                dark=True,
-                fixed="top",
-            )
-    
+            children=[about_modal],
+            brand="🎧 Toronto Noise Monitor 🎧",
+            color="primary",
+            dark=True,
+            fixed="top",
+        )
+
     @classmethod
     def _initialize_system_markdown(cls) -> None:
         text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
         cls.system_stats_markdown = dcc.Markdown(text, style=cls.style)
-
-  
 
     @classmethod
     def _initialize_summary_card(cls) -> None:
@@ -397,9 +394,9 @@ class CallbackManager(AbstractAppManager):
             return f"Device ID: {device_id}"
 
         @callback(
-        Output("modal", "is_open"),
-        Input("open", "n_clicks"),
-        [State("modal", "is_open")],
+            Output("modal", "is_open"),
+            Input("open", "n_clicks"),
+            [State("modal", "is_open")],
         )
         def toggle_modal(n1, is_open):
             if n1:
