@@ -49,7 +49,7 @@ app_data_manager.load_data()
 app = Dash(
     "Noise-App",
     title="Noise Pressure Monitor",
-    external_stylesheets=[dbc.themes.SKETCHY],
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 server = app.server
 
