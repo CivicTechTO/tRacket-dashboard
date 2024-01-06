@@ -484,7 +484,7 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            timeseries_plotter = TimeseriesPlotter(df)
+            timeseries_plotter = TimeseriesPlotter(df, bootstrap_template=cls._config["bootstrap"]["theme"])
 
             return timeseries_plotter.plot()
 
@@ -500,7 +500,7 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            hist_plotter = HistogramPlotter(df)
+            hist_plotter = HistogramPlotter(df, bootstrap_template=cls._config["bootstrap"]["theme"])
 
             return hist_plotter.plot()
 
@@ -515,7 +515,7 @@ class CallbackManager(AbstractAppManager):
             df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
                 data
             )
-            heatmap_plotter = HeatmapPlotter(df)
+            heatmap_plotter = HeatmapPlotter(df, bootstrap_template=cls._config["bootstrap"]["theme"])
 
             if max_toggle:
                 title = (
