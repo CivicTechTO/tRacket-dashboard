@@ -104,13 +104,13 @@ def test_date_filter():
         filtered2[COLUMN.TIMESTAMP].max() == pd.Timestamp("2023-01-05")
     )
 
-
-def test_histogram_and_save(dummy_df: pd.DataFrame):
-    plotter = HistogramPlotter(dummy_df)
+@pytest.mark.parametrize("template", [None, "BOOTSTRAP"])
+def test_histogram_and_save(dummy_df: pd.DataFrame, template):
+    plotter = HistogramPlotter(dummy_df, bootstrap_template=template)
 
     figure = plotter.plot()
 
-    figure_out_path = os.path.join(CURRENT_DIR, "plots/noise_histogram.html")
+    figure_out_path = os.path.join(CURRENT_DIR, f"plots/noise_histogram_template={template}.html")
     figure.write_html(figure_out_path)
 
     assert isinstance(figure, Figure)
@@ -141,18 +141,18 @@ def dummy_hourly(data_formatter: DataFormatter) -> pd.DataFrame:
 
     return df
 
-
-def test_heatmap_and_save(dummy_hourly: pd.DataFrame):
+@pytest.mark.parametrize("template", [None, "BOOTSTRAP"])
+def test_heatmap_and_save(dummy_hourly: pd.DataFrame, template: str):
     """
     Create and save the noise plot.
     """
-    plotter = HeatmapPlotter(dummy_hourly)
+    plotter = HeatmapPlotter(dummy_hourly, bootstrap_template=template)
     figure = plotter.plot(pivot_value=HEATMAP_VALUE.MIN, title="Ambient Noise")
-    figure_out_path = os.path.join(CURRENT_DIR, "plots/min_heatmap.html")
+    figure_out_path = os.path.join(CURRENT_DIR, f"plots/min_heatmap_template={template}.html")
     figure.write_html(figure_out_path)
 
     figure = plotter.plot(pivot_value=HEATMAP_VALUE.MAX, title="Bang-bang")
-    figure_out_path = os.path.join(CURRENT_DIR, "plots/max_heatmap.html")
+    figure_out_path = os.path.join(CURRENT_DIR, f"plots/max_heatmap_template={template}.html")
     figure.write_html(figure_out_path)
 
     assert isinstance(figure, Figure)

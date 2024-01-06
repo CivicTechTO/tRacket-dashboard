@@ -7,10 +7,14 @@ import json
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from typing import Optional, List
+from typing import Optional, List, Dict
 from abc import abstractmethod
 import pandas.api.types as ptype
+from enum import StrEnum, auto
 
+class COLOR_ITEM(StrEnum):
+    MIN = auto()
+    MAX = auto()
 
 class BasePlotter:
     """
@@ -23,9 +27,29 @@ class BasePlotter:
         self._validate_data(df)
         self.df = df
 
+        self.template = None
         self.template_name = bootstrap_template
         if self.template_name is not None:
             self.template = self._load_template(self.template_name)
+        
+        self.colors = self._set_colors()
+
+    def _set_colors(self) -> Dict[COLOR_ITEM, str]:
+        """
+        Determine the main colors for the chart to show min/max measurements. Based on the template if provided or the config as a fallback.
+        """
+        if self.template is None:
+            colors = {
+                COLOR_ITEM.MIN: self._config["plot.colors"]["min"],
+                COLOR_ITEM.MAX: self._config["plot.colors"]["max"]
+                }
+        else:
+            colors = {
+                COLOR_ITEM.MIN: self.template["layout"]["colorway"][0],
+                COLOR_ITEM.MAX: self.template["layout"]["colorway"][1]
+                }
+
+        return colors
 
     def _set_background(self, fig: go.Figure) -> None:
         """
@@ -122,8 +146,8 @@ class HistogramPlotter(BasePlotter):
             color="variable",
             marginal="box",
             color_discrete_map={
-                "Min": self._config["plot.colors"]["min"],
-                "Max": self._config["plot.colors"]["max"],
+                "Min": self.colors[COLOR_ITEM.MIN],
+                "Max": self.colors[COLOR_ITEM.MAX],
             },
             labels={
                 "variable": "Measure",
@@ -249,7 +273,7 @@ class TimeseriesPlotter(BasePlotter):
             mode="markers",
             marker=dict(
                 size=int(self._config["plot.sizes"]["marker"]),
-                color=self._config["plot.colors"]["outlier"],
+                color=self.colors[COLOR_ITEM.MAX],
             ),
         )
 
@@ -261,9 +285,9 @@ class TimeseriesPlotter(BasePlotter):
             y=self.df[COLUMN.MAX],
             name="max",
             mode="lines",
-            line_color=self._config["plot.colors"]["max"],
+            line_color=self.colors[COLOR_ITEM.MAX],
             fill="tonexty",
-            fillcolor=self._config["plot.colors"]["fill"],  # grey
+            fillcolor=self._config["plot.colors"]["fill"],
         )
 
         return trace
@@ -274,7 +298,7 @@ class TimeseriesPlotter(BasePlotter):
             y=self.df[COLUMN.MIN],
             name="min",
             mode="lines",
-            line_color=self._config["plot.colors"]["min"],
+            line_color=self.colors[COLOR_ITEM.MIN],
         )
         return trace
 
@@ -285,10 +309,10 @@ class TimeseriesPlotter(BasePlotter):
         indicator = go.Indicator(
             mode="number",
             value=self.outliers.shape[0],
-            number={"font_color": self._config["plot.colors"]["max"]},
+            number={"font_color": self.colors[COLOR_ITEM.MAX]},
             title={
                 "text": "# of outliers",
-                "font_color": self._config["plot.colors"]["max"],
+                "font_color": self.colors[COLOR_ITEM.MAX],
             },
             domain={"x": [0.8, 1], "y": [0.8, 1]},
         )
@@ -343,9 +367,9 @@ class HeatmapPlotter(BasePlotter):
         low_color = self._config["plot.colors"]["heatmap_low"]
 
         if value == HEATMAP_VALUE.MIN:
-            high_color = self._config["plot.colors"]["min_heatmap"]
+            high_color = self.colors[COLOR_ITEM.MIN]
         elif value == HEATMAP_VALUE.MAX:
-            high_color = self._config["plot.colors"]["max_heatmap"]
+            high_color = self.colors[COLOR_ITEM.MAX]
 
         return [low_color, high_color]
 
