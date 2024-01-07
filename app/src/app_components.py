@@ -38,7 +38,6 @@ class COMPONENT_ID(StrEnum):
     heatmap_toggle = auto()
 
     # markdowns
-    summary_card_header = auto()
     summary_card_text = auto()
 
     # store
@@ -90,10 +89,8 @@ class MarkdownManager(AbstractAppManager):
     Class for handling text components in the app.
     """
 
-    summary_card: dbc.Card = None
+    device_card: dbc.Card = None
     intro_markdown: dcc.Markdown = None
-    system_stats_markdown: dcc.Markdown = None
-    heatmap_markdown: dcc.Markdown = None
     navbar: dbc.NavbarSimple
 
     style = {"textAlign": "left", "margin-left": "30px"}
@@ -104,33 +101,64 @@ class MarkdownManager(AbstractAppManager):
         Main call to initialize all app markdowns.
         """
         cls._set_app_data_manager(app_data_manager)
-        cls._initialize_summary_card()
-        cls._initialize_system_markdown()
-        cls._initialize_heatmap_markdown()
         cls._initialize_navbar()
+        cls._initialize_device_card()
+
+    @classmethod
+    def _initialize_device_card(cls) -> None:
+        """Create main card for device selection and stats."""
+        cls.device_card = dbc.Card(
+            [
+                dbc.CardHeader(
+                    [
+                        html.H2("Device Monitor", className="card-title"),
+                        html.Br(),
+                        InputManager.device_id_dropdown,
+                        html.Br(),
+                    ]
+                ),
+                dbc.CardBody(
+                    [
+                        html.H4("Summary", className="card-title"),
+                        html.P(
+                            id=COMPONENT_ID.summary_card_text,
+                            className="card-text",
+                        ),
+                    ]
+                ),
+            ]
+        )
 
     @classmethod
     def _initialize_navbar(cls) -> None:
-        about_text = dcc.Markdown(
+        about_intro = dcc.Markdown(
             """
                 Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
-                >
-                > _"The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."_
-                >
+            """
+        )
+        quote = html.Blockquote(
+            """
+                "The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."
+            """
+        )
+        about_outro = dcc.Markdown(
+            """
                 Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
 
-                Developed & maintained by the CivicTech TO community. 
+                Developed & maintained by the CivicTech TO community using [Plotly Dash](https://dash.plotly.com/) and hosted on [Heroku](https://www.heroku.com/). 
                 
                 Source: [Github](https://github.com/danieltsoukup/noise-dashboard)
                 """
         )
+        about_body = html.Div([about_intro, quote, about_outro])
+
         about_modal = html.Div(
             [
                 dbc.Button("About", id="open", color="primary", n_clicks=0),
                 dbc.Modal(
                     [
                         dbc.ModalHeader(dbc.ModalTitle("About")),
-                        dbc.ModalBody(about_text),
+                        dbc.ModalBody(about_body),
                     ],
                     id="modal",
                     is_open=False,
@@ -144,34 +172,6 @@ class MarkdownManager(AbstractAppManager):
             dark=True,
             fixed="top",
         )
-
-    @classmethod
-    def _initialize_system_markdown(cls) -> None:
-        text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
-        cls.system_stats_markdown = dcc.Markdown(text, style=cls.style)
-
-    @classmethod
-    def _initialize_summary_card(cls) -> None:
-        cls.summary_card = dbc.Card(
-            [
-                dbc.CardHeader(id=COMPONENT_ID.summary_card_header),
-                dbc.CardBody(
-                    [
-                        html.H4("Summary", className="card-title"),
-                        html.P(
-                            id=COMPONENT_ID.summary_card_text,
-                            className="card-text",
-                        ),
-                    ]
-                ),
-            ],
-            style={"width": "18rem"},
-        )
-
-    @classmethod
-    def _initialize_heatmap_markdown(cls) -> None:
-        text = f"To select a different week for the line graph, click the heatmap below."
-        cls.heatmap_markdown = dcc.Markdown(text, style=cls.style)
 
 
 class InputManager(AbstractAppManager):
@@ -239,15 +239,21 @@ class GraphManager(AbstractAppManager):
 
     @classmethod
     def _setup_histogram(cls) -> None:
-        cls.histogram = dcc.Graph(id=COMPONENT_ID.histogram)
+        cls.histogram = dcc.Graph(
+            id=COMPONENT_ID.histogram, config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_heatmap_graph(cls) -> None:
-        cls.heatmap = dcc.Graph(id=COMPONENT_ID.heatmap)
+        cls.heatmap = dcc.Graph(
+            id=COMPONENT_ID.heatmap, config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_noise_line_graph(cls) -> None:
-        cls.noise_line_graph = dcc.Graph(id=COMPONENT_ID.noise_line_graph)
+        cls.noise_line_graph = dcc.Graph(
+            id=COMPONENT_ID.noise_line_graph, config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_system_indicators(cls) -> None:
@@ -348,7 +354,6 @@ class CallbackManager(AbstractAppManager):
 
     _config = load_config()
     _boostrap_template_name = _config["bootstrap"]["theme"]
-    
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -383,17 +388,6 @@ class CallbackManager(AbstractAppManager):
             )
 
             return text
-
-        @callback(
-            Output(COMPONENT_ID.summary_card_header, "children"),
-            Input(COMPONENT_ID.device_id_input, "value"),
-        )
-        def update_card_header(device_id: str) -> str:
-            """
-            Insert device id into the card.
-            """
-
-            return f"Device ID: {device_id}"
 
         @callback(
             Output("modal", "is_open"),
@@ -486,7 +480,9 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            timeseries_plotter = TimeseriesPlotter(df, bootstrap_template=cls._boostrap_template_name)
+            timeseries_plotter = TimeseriesPlotter(
+                df, bootstrap_template=cls._boostrap_template_name
+            )
 
             return timeseries_plotter.plot()
 
@@ -502,7 +498,9 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            hist_plotter = HistogramPlotter(df, bootstrap_template=cls._boostrap_template_name)
+            hist_plotter = HistogramPlotter(
+                df, bootstrap_template=cls._boostrap_template_name
+            )
 
             return hist_plotter.plot()
 
@@ -517,7 +515,9 @@ class CallbackManager(AbstractAppManager):
             df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
                 data
             )
-            heatmap_plotter = HeatmapPlotter(df, bootstrap_template=cls._boostrap_template_name)
+            heatmap_plotter = HeatmapPlotter(
+                df, bootstrap_template=cls._boostrap_template_name
+            )
 
             if max_toggle:
                 title = (

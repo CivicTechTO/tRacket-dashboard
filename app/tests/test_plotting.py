@@ -10,7 +10,7 @@ from src.plotting import (
     MinAverageIndicatorPlotter,
     OutlierIndicatorPlotter,
     DeviceCountIndicatorPlotter,
-    BasePlotter
+    BasePlotter,
 )
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
@@ -54,7 +54,7 @@ def test_template_loading():
     plotter = BasePlotter(pd.DataFrame(), bootstrap_template=theme_name)
 
     assert isinstance(plotter.template, dict)
-    
+
 
 def test_min_indicator_and_save(dummy_system_df: pd.DataFrame):
     plotter = MinAverageIndicatorPlotter(dummy_system_df)
@@ -104,16 +104,20 @@ def test_date_filter():
         filtered2[COLUMN.TIMESTAMP].max() == pd.Timestamp("2023-01-05")
     )
 
+
 @pytest.mark.parametrize("template", [None, "BOOTSTRAP"])
 def test_histogram_and_save(dummy_df: pd.DataFrame, template):
     plotter = HistogramPlotter(dummy_df, bootstrap_template=template)
 
     figure = plotter.plot()
 
-    figure_out_path = os.path.join(CURRENT_DIR, f"plots/noise_histogram_template={template}.html")
+    figure_out_path = os.path.join(
+        CURRENT_DIR, f"plots/noise_histogram_template={template}.html"
+    )
     figure.write_html(figure_out_path)
 
     assert isinstance(figure, Figure)
+
 
 @pytest.mark.parametrize("template", [None, "BOOTSTRAP"])
 def test_noise_plot_and_save(dummy_df: pd.DataFrame, template):
@@ -123,7 +127,9 @@ def test_noise_plot_and_save(dummy_df: pd.DataFrame, template):
     plotter = TimeseriesPlotter(dummy_df, bootstrap_template=template)
     figure = plotter.plot()
 
-    figure_out_path = os.path.join(CURRENT_DIR, f"plots/noise_plot_template={template}.html")
+    figure_out_path = os.path.join(
+        CURRENT_DIR, f"plots/noise_plot_template={template}.html"
+    )
     figure.write_html(figure_out_path)
 
     assert isinstance(figure, Figure)
@@ -141,6 +147,7 @@ def dummy_hourly(data_formatter: DataFormatter) -> pd.DataFrame:
 
     return df
 
+
 @pytest.mark.parametrize("template", [None, "BOOTSTRAP"])
 def test_heatmap_and_save(dummy_hourly: pd.DataFrame, template: str):
     """
@@ -148,11 +155,15 @@ def test_heatmap_and_save(dummy_hourly: pd.DataFrame, template: str):
     """
     plotter = HeatmapPlotter(dummy_hourly, bootstrap_template=template)
     figure = plotter.plot(pivot_value=HEATMAP_VALUE.MIN, title="Ambient Noise")
-    figure_out_path = os.path.join(CURRENT_DIR, f"plots/min_heatmap_template={template}.html")
+    figure_out_path = os.path.join(
+        CURRENT_DIR, f"plots/min_heatmap_template={template}.html"
+    )
     figure.write_html(figure_out_path)
 
     figure = plotter.plot(pivot_value=HEATMAP_VALUE.MAX, title="Bang-bang")
-    figure_out_path = os.path.join(CURRENT_DIR, f"plots/max_heatmap_template={template}.html")
+    figure_out_path = os.path.join(
+        CURRENT_DIR, f"plots/max_heatmap_template={template}.html"
+    )
     figure.write_html(figure_out_path)
 
     assert isinstance(figure, Figure)

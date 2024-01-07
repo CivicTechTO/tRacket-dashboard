@@ -1,7 +1,14 @@
 """
 Classes for creating the plots on the dashboard.
 """
-from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config, get_current_dir, Logging
+from src.utils import (
+    COLUMN,
+    HEATMAP_VALUE,
+    filter_outliers,
+    load_config,
+    get_current_dir,
+    Logging,
+)
 import os
 import json
 import pandas as pd
@@ -19,12 +26,15 @@ class COLOR_ITEM(StrEnum):
     MIN = auto()
     MAX = auto()
 
+
 class BasePlotter:
     """
     Base class for plotting - loads config.
     """
 
-    def __init__(self, df: pd.DataFrame, bootstrap_template: str = None) -> None:
+    def __init__(
+        self, df: pd.DataFrame, bootstrap_template: str = None
+    ) -> None:
         self._config = load_config()
 
         self._validate_data(df)
@@ -34,7 +44,7 @@ class BasePlotter:
         self.template_name = bootstrap_template
         if self.template_name is not None:
             self.template = self._load_template(self.template_name)
-        
+
         self.colors = self._set_colors()
 
     def _set_colors(self) -> Dict[COLOR_ITEM, str]:
@@ -44,13 +54,13 @@ class BasePlotter:
         if self.template is None:
             colors = {
                 COLOR_ITEM.MIN: self._config["plot.colors"]["min"],
-                COLOR_ITEM.MAX: self._config["plot.colors"]["max"]
-                }
+                COLOR_ITEM.MAX: self._config["plot.colors"]["max"],
+            }
         else:
             colors = {
                 COLOR_ITEM.MIN: self.template["layout"]["colorway"][0],
-                COLOR_ITEM.MAX: self.template["layout"]["colorway"][1]
-                }
+                COLOR_ITEM.MAX: self.template["layout"]["colorway"][1],
+            }
 
         return colors
 
@@ -79,16 +89,20 @@ class BasePlotter:
         Load the Plotly template from file for a Bootstrap theme by its name.
         """
         name = name.lower()
-        file_name = name + ".json" 
-        file_path = os.path.join(get_current_dir(__file__), "templates", file_name)
-        
-        assert os.path.isfile(file_path), f"File at {file_path} does not exist."
-        
+        file_name = name + ".json"
+        file_path = os.path.join(
+            get_current_dir(__file__), "templates", file_name
+        )
+
+        assert os.path.isfile(
+            file_path
+        ), f"File at {file_path} does not exist."
+
         with open(file_path) as f:
             template = json.load(f)
 
         logger.debug(f"Bootstrap plotly template loaded from {file_path}")
-        
+
         return template
 
     def set_formatting(self, fig: go.Figure) -> None:
@@ -100,8 +114,6 @@ class BasePlotter:
             self._set_background(fig)
         else:
             fig.update_layout(template=self.template)
-            
-
 
     def set_start_end_date(self) -> None:
         """
@@ -397,11 +409,20 @@ class HeatmapPlotter(BasePlotter):
             color_continuous_scale=self._get_colorscale_from_value(
                 pivot_value
             ),
+            height=300,
         )
 
         if show_title:
             fig.update_layout(title=dict(text=title))
 
+        fig.update_layout(
+            margin=dict(t=10),
+            xaxis_title="Click a column to filter the line chart!",
+            yaxis_title="Hour of Day",
+            coloraxis_colorbar=dict(
+                title="dBA",
+            ),
+        )
         self.set_formatting(fig)
 
         return fig
@@ -456,8 +477,6 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
                 "decreasing.color": "red",
             },
         )
-
-        # self.add_invisible_scatter(fig)
 
         self.set_formatting(fig)
 

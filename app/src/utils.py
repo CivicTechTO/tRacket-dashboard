@@ -56,6 +56,7 @@ class HEATMAP_VALUE(Enum):
     MIN = COLUMN.MINNOISE
     MAX = COLUMN.MAXNOISE
 
+
 ### THEME UTILS ###
 
 dbc_themes_name_to_url = {
@@ -82,12 +83,10 @@ dbc_themes_name_to_url = {
     "SOLAR": dbc.themes.SOLAR,
     "SUPERHERO": dbc.themes.SUPERHERO,
     "QUARTZ": dbc.themes.QUARTZ,
-     "MORPH": dbc.themes.MORPH,
-     "VAPOR": dbc.themes.VAPOR,
-     "ZEPHYR": dbc.themes.ZEPHYR,
+    "MORPH": dbc.themes.MORPH,
+    "VAPOR": dbc.themes.VAPOR,
+    "ZEPHYR": dbc.themes.ZEPHYR,
 }
-
-
 
 
 ### GENERAL UTILS ###
