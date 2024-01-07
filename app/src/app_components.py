@@ -200,7 +200,7 @@ class InputManager(AbstractAppManager):
     def _initialize_heatmap_toggle(cls) -> None:
         cls.heatmap_toggle = dbc.Switch(
             id=COMPONENT_ID.heatmap_toggle,
-            label="Toggle Heatmap Min/Max",
+            label="Toggle Between Min & Max",
             value=False,
         )
 
