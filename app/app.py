@@ -54,7 +54,7 @@ app_data_manager.load_data()
 app = Dash(
     "Noise-App",
     title="Noise Pressure Monitor",
-    external_stylesheets=[theme_url],
+    external_stylesheets=[theme_url, dbc.icons.FONT_AWESOME],
 )
 server = app.server
 
@@ -82,7 +82,7 @@ app.layout = dbc.Container(
         dbc.Row(
             [
                 html.H2(
-                    children="7-Day System Statistics",
+                    children="Week in Numbers ",
                     style={"textAlign": "center"},
                 ),
                 dbc.Col([GraphManager.system_count_indicator]),

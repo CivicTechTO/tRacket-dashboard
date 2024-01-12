@@ -167,7 +167,7 @@ class MarkdownManager(AbstractAppManager):
         )
         cls.navbar = dbc.NavbarSimple(
             children=[about_modal],
-            brand="🎧 Toronto Noise Monitor 🎧",
+            brand=html.Span(["Toronto Noise Monitor ", html.I(className="fa-solid fa-tower-broadcast")]),
             color="primary",
             dark=True,
             fixed="top",
