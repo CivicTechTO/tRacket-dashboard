@@ -1,0 +1,18 @@
+# Development Checks - Test and Security Analysis
+
+name: "Dev Workflow"
+
+on:
+  push:
+    branches: [ "development" ]
+  pull_request:
+    branches: [ "development" ]
+
+jobs:
+  analyze:
+    name: codeql
+    uses: ./.github/workflows/codeql.yml
+  
+  tests:
+    name:  tests
+    uses: ./.github/workflows/test.yml
