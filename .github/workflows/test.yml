@@ -5,9 +5,9 @@ name: Pytest and Linting
 
 on:
   push:
-    branches: [ "main", "development" ]
+    branches: [ "development" ]
   pull_request:
-    branches: [ "main", "development" ]
+    branches: [ "development" ]
 
 permissions:
   contents: read
