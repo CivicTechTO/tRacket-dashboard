@@ -42,5 +42,7 @@ jobs:
     
     - name: Test with pytest
       shell: bash
+      env: 
+        TOKEN: ${{ secrets.TOKEN }} 
       run: |
         pytest .
