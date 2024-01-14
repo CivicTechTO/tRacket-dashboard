@@ -3,6 +3,7 @@
 name: "Dev Workflow"
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "development" ]
   pull_request:
