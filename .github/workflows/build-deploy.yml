@@ -16,7 +16,7 @@ jobs:
         env: 
           TOKEN: ${{ secrets.TOKEN }} 
         run: |
-          echo "API_TOKEN=$(TOKEN)" > config.env
+          echo "API_TOKEN=$TOKEN" > config.env
 
 
       - name: Docker build
