@@ -4,10 +4,10 @@ name: "Dev Workflow"
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "development" ]
-  pull_request:
-    branches: [ "development" ]
+  # push:
+  #   branches: [ "development" ]
+  # pull_request:
+  #   branches: [ "development" ]
 
 jobs:
   analyze:
