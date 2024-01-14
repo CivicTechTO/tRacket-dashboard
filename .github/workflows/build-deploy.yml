@@ -1,0 +1,26 @@
+# Deployment workflow to Heroku in a Docker container
+
+name: "Build-and-Deploy"
+
+on: [ workflow_call ]
+
+jobs:
+  build-and-deploy:
+    name: docker-build-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      
+      - name: Add API key from secret
+        run: |
+          echo "API_TOKEN=${{ secrets.TOKEN }}"
+
+
+      - name: Docker build
+        run: |
+          make prod_build
+
+      - name: Deploy to Heroku
+        uses: ./.github/workflows/heroku-deploy.yml
+

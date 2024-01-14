@@ -1,0 +1,32 @@
+# Heroku login and deploy workflow
+# Requires 
+# - GitHub secrets with Heroku credentials
+# - Access to the makefile 
+
+name: Heroku-Login-Deploy
+
+on: [ workflow_call ]
+
+jobs:
+  login-deploy:
+    name: login-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: login
+        run: |
+          cat <<EOF > ~/.netrc 
+machine api.heroku.com
+    login ${{ secrets.HEROKU_EMAIL }}
+    password ${ secrets.HEROKU_API_KEY }
+machine git.heroku.com
+    login ${{ secrets.HEROKU_EMAIL }}
+    password ${{ secrets.HEROKU_API_KEY }}
+EOF
+
+      - name: heroku-push
+        run: |
+          make heroku_push
+      
+      - name: heroku-release
+        run: |
+          make heroku_release
