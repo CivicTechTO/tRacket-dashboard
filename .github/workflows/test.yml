@@ -35,5 +35,5 @@ jobs:
       env: 
         TOKEN: ${{ secrets.TOKEN }} 
       run: |
-        cat "API_TOKEN=${{ secrets.TOKEN }}" > config.env 
+        echo "API_TOKEN=$(TOKEN)" > config.env 
         pytest .
