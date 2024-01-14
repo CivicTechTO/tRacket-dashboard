@@ -3,7 +3,10 @@
 
 name: "Test-and-Lint"
 
-on: [ workflow_call ]
+on: 
+  workflow_call:
+  push:
+    branches: [ "development" ]
 
 permissions:
   contents: read
