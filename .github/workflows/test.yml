@@ -3,10 +3,8 @@
 
 name: "Test-and-Lint"
 
-on: [ workflow_call ]
-
-permissions:
-  contents: read
+on:
+  workflow_call:
 
 jobs:
   build:
