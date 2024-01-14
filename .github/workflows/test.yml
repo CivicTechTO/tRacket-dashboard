@@ -42,8 +42,5 @@ jobs:
     
     - name: Test with pytest
       shell: bash
-      env: 
-        TOKEN: ${{ secrets.TOKEN }} 
       run: |
-        echo "API_TOKEN=$TOKEN" > config.env 
         pytest .
