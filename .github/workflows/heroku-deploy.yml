@@ -3,7 +3,7 @@
 # - GitHub secrets with Heroku credentials
 # - Access to the makefile 
 
-name: Heroku-Login-Deploy
+name: "Login Heroku and Deploy"
 
 on: [ workflow_call ]
 
