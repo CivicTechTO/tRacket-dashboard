@@ -9,6 +9,8 @@ import logging
 import inspect
 import requests
 import configparser
+import dash_bootstrap_components as dbc
+import json
 
 ### ENUMS ###
 
@@ -53,6 +55,38 @@ class HEATMAP_VALUE(Enum):
 
     MIN = COLUMN.MINNOISE
     MAX = COLUMN.MAXNOISE
+
+
+### THEME UTILS ###
+
+dbc_themes_name_to_url = {
+    "BOOTSTRAP": dbc.themes.BOOTSTRAP,
+    "CERULEAN": dbc.themes.CERULEAN,
+    "COSMO": dbc.themes.COSMO,
+    "FLATLY": dbc.themes.FLATLY,
+    "JOURNAL": dbc.themes.JOURNAL,
+    "LITERA": dbc.themes.LITERA,
+    "LUMEN": dbc.themes.LUMEN,
+    "LUX": dbc.themes.LUX,
+    "MATERIA": dbc.themes.MATERIA,
+    "MINTY": dbc.themes.MINTY,
+    "PULSE": dbc.themes.PULSE,
+    "SANDSTONE": dbc.themes.SANDSTONE,
+    "SIMPLEX": dbc.themes.SIMPLEX,
+    "SKETCHY": dbc.themes.SKETCHY,
+    "SPACELAB": dbc.themes.SPACELAB,
+    "UNITED": dbc.themes.UNITED,
+    "YETI": dbc.themes.YETI,
+    "CYBORG": dbc.themes.CYBORG,
+    "DARKLY": dbc.themes.DARKLY,
+    "SLATE": dbc.themes.SLATE,
+    "SOLAR": dbc.themes.SOLAR,
+    "SUPERHERO": dbc.themes.SUPERHERO,
+    "QUARTZ": dbc.themes.QUARTZ,
+    "MORPH": dbc.themes.MORPH,
+    "VAPOR": dbc.themes.VAPOR,
+    "ZEPHYR": dbc.themes.ZEPHYR,
+}
 
 
 ### GENERAL UTILS ###

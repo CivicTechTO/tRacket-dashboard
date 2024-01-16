@@ -12,7 +12,7 @@ from src.app_components import (
     MarkdownManager,
     DataStoreManager,
 )
-from src.utils import Logging
+from src.utils import Logging, dbc_themes_name_to_url
 import os
 
 ### Configs & Settings ###
@@ -20,6 +20,11 @@ import os
 config = configparser.ConfigParser()
 config.read("src/config.ini")
 
+# get theme
+theme_name = config["bootstrap"]["theme"]
+theme_url = dbc_themes_name_to_url[theme_name]
+
+# get secrets
 PORT = os.environ["PORT"]
 TOKEN = os.environ["TOKEN"]
 
@@ -49,7 +54,7 @@ app_data_manager.load_data()
 app = Dash(
     "Noise-App",
     title="Noise Pressure Monitor",
-    external_stylesheets=[dbc.themes.BOOTSTRAP],
+    external_stylesheets=[theme_url, dbc.icons.FONT_AWESOME],
 )
 server = app.server
 
@@ -69,86 +74,63 @@ app.layout = dbc.Container(
         html.Div([DataStoreManager.device_data_store]),
         html.Div([DataStoreManager.device_stats_store]),
         html.Div([DataStoreManager.hourly_device_data_store]),
+        html.Div([MarkdownManager.navbar]),
         html.Br(),
-        html.H1(
-            children="🎧 Noise Pressure Monitor 🎧",
-            style={"textAlign": "left", "margin-left": "30px"},
-        ),
         html.Br(),
-        dbc.Row([MarkdownManager.intro_markdown]),
+        html.Br(),
         html.Br(),
         dbc.Row(
             [
                 html.H2(
-                    children="System Statistics",
-                    style={"textAlign": "left", "margin-left": "30px"},
+                    children="Week in Numbers ",
+                    style={"textAlign": "center"},
                 ),
-                MarkdownManager.system_stats_markdown,
                 dbc.Col([GraphManager.system_count_indicator]),
                 dbc.Col([GraphManager.system_avg_indicator]),
                 dbc.Col([GraphManager.system_outlier_indicator]),
             ],
             align="start",
         ),
+        html.Br(),
+        html.Br(),
         dbc.Row(
             [
-                html.H2(
-                    children="Device Monitor",
-                    style={"textAlign": "left", "margin-left": "30px"},
-                ),
-                html.Br(),
-                html.Br(),
-                dcc.Markdown(
-                    "Start by selecting a device from the drop-down.",
-                    style={"textAlign": "left", "margin-left": "30px"},
-                ),
-                html.Br(),
                 dbc.Col(
-                    [
-                        html.Label(
-                            ["Select a Device:"],
-                            style={
-                                "font-weight": "bold",
-                                "text-align": "left",
-                            },
-                        ),
-                        InputManager.device_id_dropdown,
-                    ],
-                    width={"size": 4, "offset": 4},
-                ),
+                    [MarkdownManager.device_card],
+                    width={"size": 8, "offset": 2},
+                )
             ],
         ),
         html.Br(),
-        dbc.Row(
-            [MarkdownManager.heatmap_markdown],
-        ),
-        dbc.Row(
+        html.Br(),
+        dbc.Tabs(
             [
-                dbc.Col(dbc.Spinner(GraphManager.heatmap), width=9),
-                dbc.Col(
-                    [
-                        html.Br(),
-                        html.Br(),
-                        MarkdownManager.summary_card,
-                        html.Br(),
-                        InputManager.heatmap_toggle,
-                    ],
-                    width=3,
-                    align="start",
+                dbc.Tab(
+                    [dbc.Spinner(GraphManager.noise_line_graph)],
+                    label="Measurements",
                 ),
-            ],
-            align="center",
+                dbc.Tab(
+                    [dbc.Spinner(GraphManager.histogram)],
+                    label="More Stats",
+                ),
+            ]
         ),
-        dbc.Row(dbc.Spinner(GraphManager.noise_line_graph)),
         dbc.Row(
             [
-                dbc.Col(dbc.Spinner(GraphManager.histogram)),
+                dbc.Stack(
+                    [
+                        dbc.Col(
+                            [InputManager.heatmap_toggle], width={"offset": 1}
+                        ),
+                        dbc.Spinner(GraphManager.heatmap),
+                    ],
+                    gap=0,
+                )
             ],
             align="center",
         ),
     ],
     fluid=True,
-    style={"backgroundColor": config["app.colors"]["background"]},
 )
 
 

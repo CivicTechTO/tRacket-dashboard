@@ -1,5 +1,4 @@
-from dash import callback, Input, Output, dcc, html, no_update
-import dash_daq as daq
+from dash import callback, Input, Output, dcc, html, State
 import dash_bootstrap_components as dbc
 from typing import List, Dict, Any, Optional
 from src.data_loading import AppDataManager
@@ -39,7 +38,6 @@ class COMPONENT_ID(StrEnum):
     heatmap_toggle = auto()
 
     # markdowns
-    summary_card_header = auto()
     summary_card_text = auto()
 
     # store
@@ -91,10 +89,9 @@ class MarkdownManager(AbstractAppManager):
     Class for handling text components in the app.
     """
 
-    summary_card: dbc.Card = None
+    device_card: dbc.Card = None
     intro_markdown: dcc.Markdown = None
-    system_stats_markdown: dcc.Markdown = None
-    heatmap_markdown: dcc.Markdown = None
+    navbar: dbc.NavbarSimple
 
     style = {"textAlign": "left", "margin-left": "30px"}
 
@@ -104,36 +101,22 @@ class MarkdownManager(AbstractAppManager):
         Main call to initialize all app markdowns.
         """
         cls._set_app_data_manager(app_data_manager)
-        cls._initialize_summary_card()
-        cls._initialize_intro_mardown()
-        cls._initialize_system_markdown()
-        cls._initialize_heatmap_markdown()
+        cls._initialize_navbar()
+        cls._initialize_device_card()
 
     @classmethod
-    def _initialize_system_markdown(cls) -> None:
-        text = "The summary statistics are calculated by aggregating data for the past 7 days and comparing to the prior week."
-        cls.system_stats_markdown = dcc.Markdown(text, style=cls.style)
-
-    @classmethod
-    def _initialize_intro_mardown(cls) -> None:
-        """
-        Intro text after the title.
-        """
-        text = """
-                Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
-                >
-                > _"The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."_
-                >
-                Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
-                """
-
-        cls.intro_markdown = dcc.Markdown(text, style=cls.style)
-
-    @classmethod
-    def _initialize_summary_card(cls) -> None:
-        cls.summary_card = dbc.Card(
+    def _initialize_device_card(cls) -> None:
+        """Create main card for device selection and stats."""
+        cls.device_card = dbc.Card(
             [
-                dbc.CardHeader(id=COMPONENT_ID.summary_card_header),
+                dbc.CardHeader(
+                    [
+                        html.H2("Device Monitor", className="card-title"),
+                        html.Br(),
+                        InputManager.device_id_dropdown,
+                        html.Br(),
+                    ]
+                ),
                 dbc.CardBody(
                     [
                         html.H4("Summary", className="card-title"),
@@ -143,14 +126,52 @@ class MarkdownManager(AbstractAppManager):
                         ),
                     ]
                 ),
-            ],
-            style={"width": "18rem"},
+            ]
         )
 
     @classmethod
-    def _initialize_heatmap_markdown(cls) -> None:
-        text = f"To select a different week for the line graph, click the heatmap below."
-        cls.heatmap_markdown = dcc.Markdown(text, style=cls.style)
+    def _initialize_navbar(cls) -> None:
+        about_intro = dcc.Markdown(
+            """
+                Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
+            """
+        )
+        quote = html.Blockquote(
+            """
+                "The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."
+            """
+        )
+        about_outro = dcc.Markdown(
+            """
+                Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
+
+                Developed & maintained by the CivicTech TO community using [Plotly Dash](https://dash.plotly.com/) and hosted on [Heroku](https://www.heroku.com/). 
+                
+                Source: [Github](https://github.com/danieltsoukup/noise-dashboard)
+                """
+        )
+        about_body = html.Div([about_intro, quote, about_outro])
+
+        about_modal = html.Div(
+            [
+                dbc.Button("About", id="open", color="primary", n_clicks=0),
+                dbc.Modal(
+                    [
+                        dbc.ModalHeader(dbc.ModalTitle("About")),
+                        dbc.ModalBody(about_body),
+                    ],
+                    id="modal",
+                    is_open=False,
+                ),
+            ]
+        )
+        cls.navbar = dbc.NavbarSimple(
+            children=[about_modal],
+            brand=html.Span(["Toronto Noise Monitor ", html.I(className="fa-solid fa-tower-broadcast")]),
+            color="primary",
+            dark=True,
+            fixed="top",
+        )
 
 
 class InputManager(AbstractAppManager):
@@ -169,7 +190,7 @@ class InputManager(AbstractAppManager):
 
     @classmethod
     def _initialize_device_id_dropdown(cls) -> None:
-        cls.device_id_dropdown = dcc.Dropdown(
+        cls.device_id_dropdown = dbc.Select(
             cls.app_data_manager.unique_ids,
             cls.app_data_manager.unique_ids[0],
             id=COMPONENT_ID.device_id_input,
@@ -177,10 +198,10 @@ class InputManager(AbstractAppManager):
 
     @classmethod
     def _initialize_heatmap_toggle(cls) -> None:
-        cls.heatmap_toggle = daq.ToggleSwitch(
+        cls.heatmap_toggle = dbc.Switch(
             id=COMPONENT_ID.heatmap_toggle,
-            vertical=False,
-            label="Toggle Heatmap Min/Max",
+            label="Toggle Between Min & Max",
+            value=False,
         )
 
 
@@ -188,6 +209,8 @@ class GraphManager(AbstractAppManager):
     """
     Class to collect and initialize the graph components for the app.
     """
+
+    _config = load_config()
 
     # system-level indicators
     system_count_indicator: dcc.Graph = None
@@ -216,15 +239,21 @@ class GraphManager(AbstractAppManager):
 
     @classmethod
     def _setup_histogram(cls) -> None:
-        cls.histogram = dcc.Graph(id=COMPONENT_ID.histogram)
+        cls.histogram = dcc.Graph(
+            id=COMPONENT_ID.histogram, config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_heatmap_graph(cls) -> None:
-        cls.heatmap = dcc.Graph(id=COMPONENT_ID.heatmap)
+        cls.heatmap = dcc.Graph(
+            id=COMPONENT_ID.heatmap, config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_noise_line_graph(cls) -> None:
-        cls.noise_line_graph = dcc.Graph(id=COMPONENT_ID.noise_line_graph)
+        cls.noise_line_graph = dcc.Graph(
+            id=COMPONENT_ID.noise_line_graph, config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_system_indicators(cls) -> None:
@@ -243,16 +272,24 @@ class GraphManager(AbstractAppManager):
         system_count_fig = indicator_plotter.plot()
         cls.system_count_indicator = html.Div(
             [
-                dcc.Graph(
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_count_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                        )
+                    ],
                     id=COMPONENT_ID.count_indicator,
-                    figure=system_count_fig,
-                    style={"height": "40vh"},
-                    config={"displayModeBar": False},
-                    clear_on_unhover=True
                 ),
-                dcc.Tooltip(id=COMPONENT_ID.count_indicator_tooltip, direction="bottom")
+                dbc.Tooltip(
+                    "A device is active if it sent data to our server in the past 7 days. The small value below indicates the week-over-week difference.",
+                    target=COMPONENT_ID.count_indicator,
+                    id=COMPONENT_ID.count_indicator_tooltip,
+                    placement="bottom",
+                ),
             ]
-            )
+        )
 
     @classmethod
     def _setup_system_min_indicator(cls) -> None:
@@ -262,15 +299,25 @@ class GraphManager(AbstractAppManager):
         system_min_fig = indicator_plotter.plot()
         cls.system_avg_indicator = html.Div(
             [
-                dcc.Graph(
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_min_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                            clear_on_unhover=True,
+                        )
+                    ],
                     id=COMPONENT_ID.avg_indicator,
-                    figure=system_min_fig,
-                    style={"height": "40vh"},
-                    config={"displayModeBar": False},
-                    clear_on_unhover=True
                 ),
-                dcc.Tooltip(id=COMPONENT_ID.avg_indicator_tooltip, direction="bottom")
-            ])
+                dbc.Tooltip(
+                    "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference.",
+                    id=COMPONENT_ID.avg_indicator_tooltip,
+                    target=COMPONENT_ID.avg_indicator,
+                    placement="bottom",
+                ),
+            ]
+        )
 
     @classmethod
     def _setup_system_outlier_indicator(cls) -> None:
@@ -280,14 +327,22 @@ class GraphManager(AbstractAppManager):
         system_outlier_fig = indicator_plotter.plot()
         cls.system_outlier_indicator = html.Div(
             [
-                dcc.Graph(
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_outlier_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                        )
+                    ],
                     id=COMPONENT_ID.outlier_indicator,
-                    figure=system_outlier_fig,
-                    style={"height": "40vh"},
-                    config={"displayModeBar": False},
-                    clear_on_unhover=True
                 ),
-                dcc.Tooltip(id=COMPONENT_ID.outlier_indicator_tooltip, direction="bottom")
+                dbc.Tooltip(
+                    f"This is the number of recordings above {cls._config['constants']['noise_threshold']} dBA in the past 7 days. The small value below indicates the week-over-week difference.",
+                    id=COMPONENT_ID.outlier_indicator_tooltip,
+                    target=COMPONENT_ID.outlier_indicator,
+                    placement="bottom",
+                ),
             ]
         )
 
@@ -296,7 +351,9 @@ class CallbackManager(AbstractAppManager):
     """
     Class that organizes and  initializes the Dash app callbacks on app start.
     """
+
     _config = load_config()
+    _boostrap_template_name = _config["bootstrap"]["theme"]
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -333,15 +390,15 @@ class CallbackManager(AbstractAppManager):
             return text
 
         @callback(
-            Output(COMPONENT_ID.summary_card_header, "children"),
-            Input(COMPONENT_ID.device_id_input, "value"),
+            Output("modal", "is_open"),
+            Input("open", "n_clicks"),
+            [State("modal", "is_open")],
         )
-        def update_card_header(device_id: str) -> str:
-            """
-            Insert device id into the card.
-            """
-
-            return f"Device ID: {device_id}"
+        def toggle_modal(n1, is_open):
+            if n1:
+                return not is_open
+            else:
+                return is_open
 
         ### DATA CALLBACKS ###
 
@@ -412,82 +469,6 @@ class CallbackManager(AbstractAppManager):
         ### PLOT CALLBACKS ###
 
         @callback(
-            Output(COMPONENT_ID.outlier_indicator_tooltip, "show"),
-            Output(COMPONENT_ID.outlier_indicator_tooltip, "bbox"),
-            Output(COMPONENT_ID.outlier_indicator_tooltip, "children"),
-            Input(COMPONENT_ID.outlier_indicator, "hoverData"),
-        )
-        def display_outlier_indicator_tooltip(hoverData):
-            if hoverData is None:
-                return False, no_update, no_update
-            else:
-                pt = hoverData["points"][0]
-                bbox = pt["bbox"]
-
-                text = f"This is the number of recordings above {cls._config['constants']['noise_threshold']} dBA in the past 7 days. The small value below indicates the week-over-week difference."
-                
-                
-                children = [
-                    html.Div(
-                        [
-                            html.P(text)
-                        ], 
-                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
-                ]
-
-                return True, bbox, children
-
-        @callback(
-            Output(COMPONENT_ID.count_indicator_tooltip, "show"),
-            Output(COMPONENT_ID.count_indicator_tooltip, "bbox"),
-            Output(COMPONENT_ID.count_indicator_tooltip, "children"),
-            Input(COMPONENT_ID.count_indicator, "hoverData"),
-        )
-        def display_count_indicator_tooltip(hoverData):
-            if hoverData is None:
-                return False, no_update, no_update
-            else:
-                pt = hoverData["points"][0]
-                bbox = pt["bbox"]
-
-                text = "A device is active if it sent data to our server in the past 7 days. The small value below indicates the week-over-week difference."
-
-                children = [
-                    html.Div(
-                        [
-                            html.P(text)
-                        ], 
-                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
-                ]
-
-                return True, bbox, children
-
-        @callback(
-            Output(COMPONENT_ID.avg_indicator_tooltip, "show"),
-            Output(COMPONENT_ID.avg_indicator_tooltip, "bbox"),
-            Output(COMPONENT_ID.avg_indicator_tooltip, "children"),
-            Input(COMPONENT_ID.avg_indicator, "hoverData"),
-        )
-        def display_avg_indicator_tooltip(hoverData):
-            if hoverData is None:
-                return False, no_update, no_update
-            else:
-                pt = hoverData["points"][0]
-                bbox = pt["bbox"]
-
-                text = "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference."
-
-                children = [
-                    html.Div(
-                        [
-                            html.P(text)
-                        ], 
-                        style={'width': cls._config["tooltip"]["width"], 'white-space': cls._config["tooltip"]["white-space"]})
-                ]
-
-                return True, bbox, children
-
-        @callback(
             Output(COMPONENT_ID.noise_line_graph, "figure"),
             Input(COMPONENT_ID.device_data_store, "data"),
         )
@@ -499,7 +480,9 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            timeseries_plotter = TimeseriesPlotter(df)
+            timeseries_plotter = TimeseriesPlotter(
+                df, bootstrap_template=cls._boostrap_template_name
+            )
 
             return timeseries_plotter.plot()
 
@@ -515,7 +498,9 @@ class CallbackManager(AbstractAppManager):
                 data
             )
 
-            hist_plotter = HistogramPlotter(df)
+            hist_plotter = HistogramPlotter(
+                df, bootstrap_template=cls._boostrap_template_name
+            )
 
             return hist_plotter.plot()
 
@@ -530,7 +515,9 @@ class CallbackManager(AbstractAppManager):
             df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
                 data
             )
-            heatmap_plotter = HeatmapPlotter(df)
+            heatmap_plotter = HeatmapPlotter(
+                df, bootstrap_template=cls._boostrap_template_name
+            )
 
             if max_toggle:
                 title = (

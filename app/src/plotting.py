@@ -1,13 +1,30 @@
 """
 Classes for creating the plots on the dashboard.
 """
-from src.utils import COLUMN, HEATMAP_VALUE, filter_outliers, load_config
+from src.utils import (
+    COLUMN,
+    HEATMAP_VALUE,
+    filter_outliers,
+    load_config,
+    get_current_dir,
+    Logging,
+)
+import os
+import json
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from typing import Optional, List
+from typing import Optional, List, Dict
 from abc import abstractmethod
 import pandas.api.types as ptype
+from enum import StrEnum, auto
+
+logger = Logging.get_console_logger()
+
+
+class COLOR_ITEM(StrEnum):
+    MIN = auto()
+    MAX = auto()
 
 
 class BasePlotter:
@@ -15,11 +32,37 @@ class BasePlotter:
     Base class for plotting - loads config.
     """
 
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(
+        self, df: pd.DataFrame, bootstrap_template: str = None
+    ) -> None:
         self._config = load_config()
 
         self._validate_data(df)
         self.df = df
+
+        self.template = None
+        self.template_name = bootstrap_template
+        if self.template_name is not None:
+            self.template = self._load_template(self.template_name)
+
+        self.colors = self._set_colors()
+
+    def _set_colors(self) -> Dict[COLOR_ITEM, str]:
+        """
+        Determine the main colors for the chart to show min/max measurements. Based on the template if provided or the config as a fallback.
+        """
+        if self.template is None:
+            colors = {
+                COLOR_ITEM.MIN: self._config["plot.colors"]["min"],
+                COLOR_ITEM.MAX: self._config["plot.colors"]["max"],
+            }
+        else:
+            colors = {
+                COLOR_ITEM.MIN: self.template["layout"]["colorway"][0],
+                COLOR_ITEM.MAX: self.template["layout"]["colorway"][1],
+            }
+
+        return colors
 
     def _set_background(self, fig: go.Figure) -> None:
         """
@@ -40,12 +83,37 @@ class BasePlotter:
             ),
         )
 
+    @staticmethod
+    def _load_template(name: str) -> dict:
+        """
+        Load the Plotly template from file for a Bootstrap theme by its name.
+        """
+        name = name.lower()
+        file_name = name + ".json"
+        file_path = os.path.join(
+            get_current_dir(__file__), "templates", file_name
+        )
+
+        assert os.path.isfile(
+            file_path
+        ), f"File at {file_path} does not exist."
+
+        with open(file_path) as f:
+            template = json.load(f)
+
+        logger.debug(f"Bootstrap plotly template loaded from {file_path}")
+
+        return template
+
     def set_formatting(self, fig: go.Figure) -> None:
         """
-        Run all the formatting helpers on figure.
+        If template is provided, set it, otherwise run all the formatting helpers on figure.
         """
-        self._set_title_size(fig)
-        self._set_background(fig)
+        if self.template_name is None:
+            self._set_title_size(fig)
+            self._set_background(fig)
+        else:
+            fig.update_layout(template=self.template)
 
     def set_start_end_date(self) -> None:
         """
@@ -71,8 +139,8 @@ class BasePlotter:
 
 
 class HistogramPlotter(BasePlotter):
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
         self.set_start_end_date()
 
@@ -95,17 +163,18 @@ class HistogramPlotter(BasePlotter):
             color="variable",
             marginal="box",
             color_discrete_map={
-                "Min": self._config["plot.colors"]["min"],
-                "Max": self._config["plot.colors"]["max"],
+                "Min": self.colors[COLOR_ITEM.MIN],
+                "Max": self.colors[COLOR_ITEM.MAX],
             },
             labels={
                 "variable": "Measure",
             },
-            
         )
 
         if show_title:
-            title = f"Noise Level Distribution - {self.start_date} to {self.end_date}",
+            title = (
+                f"Noise Level Distribution - {self.start_date} to {self.end_date}",
+            )
             fig.update_layout(title=dict(text=title))
 
         fig.update_traces(opacity=0.75)
@@ -162,8 +231,8 @@ class TimeseriesPlotter(BasePlotter):
     Plotting the noise data over time.
     """
 
-    def __init__(self, *args) -> None:
-        super().__init__(*args)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.noise_threshold = int(
             self._config["constants"]["noise_threshold"]
         )
@@ -221,7 +290,7 @@ class TimeseriesPlotter(BasePlotter):
             mode="markers",
             marker=dict(
                 size=int(self._config["plot.sizes"]["marker"]),
-                color=self._config["plot.colors"]["outlier"],
+                color=self.colors[COLOR_ITEM.MAX],
             ),
         )
 
@@ -233,9 +302,9 @@ class TimeseriesPlotter(BasePlotter):
             y=self.df[COLUMN.MAX],
             name="max",
             mode="lines",
-            line_color=self._config["plot.colors"]["max"],
+            line_color=self.colors[COLOR_ITEM.MAX],
             fill="tonexty",
-            fillcolor=self._config["plot.colors"]["fill"],  # grey
+            fillcolor=self._config["plot.colors"]["fill"],
         )
 
         return trace
@@ -246,7 +315,7 @@ class TimeseriesPlotter(BasePlotter):
             y=self.df[COLUMN.MIN],
             name="min",
             mode="lines",
-            line_color=self._config["plot.colors"]["min"],
+            line_color=self.colors[COLOR_ITEM.MIN],
         )
         return trace
 
@@ -257,10 +326,10 @@ class TimeseriesPlotter(BasePlotter):
         indicator = go.Indicator(
             mode="number",
             value=self.outliers.shape[0],
-            number={"font_color": self._config["plot.colors"]["max"]},
+            number={"font_color": self.colors[COLOR_ITEM.MAX]},
             title={
                 "text": "# of outliers",
-                "font_color": self._config["plot.colors"]["max"],
+                "font_color": self.colors[COLOR_ITEM.MAX],
             },
             domain={"x": [0.8, 1], "y": [0.8, 1]},
         )
@@ -272,8 +341,8 @@ class HeatmapPlotter(BasePlotter):
     Create heatmap showing longterm trends in the data.
     """
 
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         assert all(
@@ -315,15 +384,18 @@ class HeatmapPlotter(BasePlotter):
         low_color = self._config["plot.colors"]["heatmap_low"]
 
         if value == HEATMAP_VALUE.MIN:
-            high_color = self._config["plot.colors"]["min_heatmap"]
+            high_color = self.colors[COLOR_ITEM.MIN]
         elif value == HEATMAP_VALUE.MAX:
-            high_color = self._config["plot.colors"]["max_heatmap"]
+            high_color = self.colors[COLOR_ITEM.MAX]
 
         return [low_color, high_color]
 
     def plot(
-        self, pivot_value: HEATMAP_VALUE, title: Optional[str] = None
-    , show_title: bool = False) -> go.Figure:
+        self,
+        pivot_value: HEATMAP_VALUE,
+        title: Optional[str] = None,
+        show_title: bool = False,
+    ) -> go.Figure:
         """
         Create a heatmap from the pivot table.
         """
@@ -337,20 +409,28 @@ class HeatmapPlotter(BasePlotter):
             color_continuous_scale=self._get_colorscale_from_value(
                 pivot_value
             ),
+            height=300,
         )
 
         if show_title:
             fig.update_layout(title=dict(text=title))
-        
-        
+
+        fig.update_layout(
+            margin=dict(t=10),
+            xaxis_title="Click a column to filter the line chart!",
+            yaxis_title="Hour of Day",
+            coloraxis_colorbar=dict(
+                title="dBA",
+            ),
+        )
         self.set_formatting(fig)
 
         return fig
 
 
 class AbstractIndicatorPlotter(BasePlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     @staticmethod
     def _get_indicator(
@@ -368,29 +448,10 @@ class AbstractIndicatorPlotter(BasePlotter):
 
         return fig
 
-    def add_invisible_scatter(self, fig: go.Figure) -> None:
-        """
-        Adds a transparent scatter plot above that is used by the dcc.Tooltip component.
-        """
-        fig.add_trace(
-            go.Scatter(
-                x=[0],
-                y=[0],
-                # text=[text],
-                mode="markers",
-                marker_symbol="square",
-                marker=dict(size=[200], color=["rgba(0, 0, 0, 0)"]),
-                hoverinfo="none",
-                hovertemplate=None,
-            )
-        )
-        fig.update_xaxes(visible=False)
-        fig.update_yaxes(visible=False)
-
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         for col in [COLUMN.DEVICEID, COLUMN.COUNT, COLUMN.COUNT_PRIOR]:
@@ -417,16 +478,14 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
             },
         )
 
-        self.add_invisible_scatter(fig)
-
         self.set_formatting(fig)
 
         return fig
 
 
 class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         for col in [
@@ -471,15 +530,14 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
             number={"suffix": " dBA"},
         )
 
-        self.add_invisible_scatter(fig)
         self.set_formatting(fig)
 
         return fig
 
 
 class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, df: pd.DataFrame) -> None:
-        super().__init__(df)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _validate_data(self, df: pd.DataFrame) -> None:
         assert COLUMN.OUTLIERCOUNT in df.columns
@@ -503,7 +561,6 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
             },
         )
 
-        self.add_invisible_scatter(fig)
         self.set_formatting(fig)
 
         return fig
