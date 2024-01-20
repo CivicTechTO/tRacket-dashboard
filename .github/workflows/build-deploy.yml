@@ -6,15 +6,15 @@ on:
   workflow_dispatch:
   workflow_call:
     secrets:
-        TOKEN:
-          description: 'WebCommand API token.'
-          required: True
-        HEROKU_EMAIL:
-          description: 'email used with Heroku app'
-          required: true
-        HEROKU_API_KEY:
-          description: 'API key for Heroku app'
-          required: true
+      TOKEN:
+        description: 'WebCommand API token.'
+        required: True
+      HEROKU_EMAIL:
+        description: 'email used with Heroku app'
+        required: true
+      HEROKU_API_KEY:
+        description: 'API key for Heroku app'
+        required: true
 
 jobs:
   build-and-deploy:
