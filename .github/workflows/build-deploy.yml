@@ -41,6 +41,10 @@ jobs:
         run: |
           make prod_build
 
+      - name: Heroku Install CLI
+        run: |
+          curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+
       - name: Heroku login 
         run: |
           make heroku_login
