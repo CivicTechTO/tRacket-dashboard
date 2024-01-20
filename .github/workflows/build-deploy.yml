@@ -26,9 +26,13 @@ jobs:
       
       - name: Add API key from secret
         env: 
-          TOKEN: ${{ secrets.TOKEN }} 
+          TOKEN: ${{ secrets.TOKEN }}
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
           echo "API_TOKEN=$TOKEN" > config.env
+          echo "HEROKU_EMAIL=$HEROKU_EMAIL" >> config.env
+          echo "HEROKU_API_KEY=$HEROKU_API_KEY" >> config.env
 
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
@@ -37,9 +41,14 @@ jobs:
         run: |
           make prod_build
 
-      - name: Deploy to Heroku
-        uses: ./.github/workflows/heroku-deploy.yml
-        # secrets:
-        #   HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
-        #   HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      - name: Heroku login 
+        run: |
+          make heroku_login
 
+      - name: Heroku push
+        run: |
+          make heroku_push
+      
+      - name: Heroku release
+        run: |
+          make heroku_release
