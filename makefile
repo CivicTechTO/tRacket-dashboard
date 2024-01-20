@@ -39,7 +39,9 @@ heroku_login:
 	echo "	password $(HEROKU_API_KEY)" >> ~/.netrc;\
 	echo "machine git.heroku.com" >> ~/.netrc;\
 	echo "	login $(HEROKU_EMAIL)" >> ~/.netrc;\
-	echo "	password $(HEROKU_API_KEY)" >> ~/.netrc;
+	echo "	password $(HEROKU_API_KEY)" >> ~/.netrc;\
+	docker login --username=$(HEROKU_EMAIL) --password=$(heroku auth:token) registry.heroku.com;
+
 	
 
 heroku_push:
