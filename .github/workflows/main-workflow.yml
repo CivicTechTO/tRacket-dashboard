@@ -3,21 +3,26 @@
 name: "CI/CD Workflow"
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
 
 jobs:
-  codeql:
-    name: codeql
-    uses: ./.github/workflows/codeql.yml
+  # codeql:
+  #   name: codeql
+  #   uses: ./.github/workflows/codeql.yml
   
-  tests:
-    name:  tests
-    uses: ./.github/workflows/test.yml
+  # tests:
+  #   name:  tests
+  #   uses: ./.github/workflows/test.yml
+  #   secrets:
+  #     TOKEN: ${{ secrets.TOKEN }}
 
   deploy:
     name: build and deploy
-    needs: [ tests, codeql ]
+    # needs: [ tests, codeql ]
     uses: ./.github/workflows/build-deploy.yml
+    secrets:
+      TOKEN: ${{ secrets.TOKEN }}

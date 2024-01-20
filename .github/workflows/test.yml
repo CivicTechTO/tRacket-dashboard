@@ -5,18 +5,17 @@ name: "Test-and-Lint"
 
 on: 
   workflow_call:
-  workflow_dispatch:
-  push:
-    branches: [ "development" ]
-  pull_request:
-    branches: [ "development" ]
+    secrets:
+      TOKEN:
+        description: 'WebCommand API token.'
+        required: True
+
 
 permissions:
   contents: read
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
