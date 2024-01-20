@@ -39,7 +39,7 @@ jobs:
 
       - name: Deploy to Heroku
         uses: ./.github/workflows/heroku-deploy.yml
-        secrets:
-          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        # secrets:
+        #   HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+        #   HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
