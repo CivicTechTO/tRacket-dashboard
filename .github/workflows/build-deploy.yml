@@ -2,7 +2,13 @@
 
 name: "Build-and-Deploy"
 
-on: [ workflow_call ]
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+        TOKEN:
+          description: 'WebCommand API token.'
+          required: True
 
 jobs:
   build-and-deploy:
@@ -18,11 +24,20 @@ jobs:
         run: |
           echo "API_TOKEN=$TOKEN" > config.env
 
+      - name: Setup Docker
+        uses: docker/setup-buildx-action@v3
+
+      # - name: Build production container
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     file: ./Dockerfile
+      #     push: false
 
       - name: Docker build
         run: |
           make prod_build
 
-      - name: Deploy to Heroku
-        uses: ./.github/workflows/heroku-deploy.yml
+      # - name: Deploy to Heroku
+      #   uses: ./.github/workflows/heroku-deploy.yml
 
