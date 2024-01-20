@@ -26,3 +26,5 @@ jobs:
     uses: ./.github/workflows/build-deploy.yml
     secrets:
       TOKEN: ${{ secrets.TOKEN }}
+      HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+      HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

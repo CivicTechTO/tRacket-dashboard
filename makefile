@@ -6,6 +6,8 @@
 #################
 
 API_TOKEN=`grep 'API_TOKEN' config.env | sed 's/^.*=//'`
+HEROKU_EMAIL=`grep 'HEROKU_EMAIL' config.env | sed 's/^.*=//'`
+HEROKU_API_KEY=`grep 'HEROKU_API_KEY' config.env | sed 's/^.*=//'`
 APP_PORT = 8501
 CONTAINER_NAME = noise-dashboard
 PROD_IMAGE_NAME = noise-dashboard
@@ -30,6 +32,15 @@ setup-pre-commit:
 ##############
 ### HEROKU ###
 ##############
+
+heroku_login:
+	echo "machine api.heroku.com" > ~/.netrc;\
+	echo "	login $(HEROKU_EMAIL)" >> ~/.netrc;\
+	echo "	password $(HEROKU_API_KEY)" >> ~/.netrc;\
+	echo "machine git.heroku.com" >> ~/.netrc;\
+	echo "	login $(HEROKU_EMAIL)" >> ~/.netrc;\
+	echo "	password $(HEROKU_API_KEY)" >> ~/.netrc;
+	
 
 heroku_push:
 	docker tag $(PROD_IMAGE_NAME) registry.heroku.com/$(HEROKU_APP_NAME)/web

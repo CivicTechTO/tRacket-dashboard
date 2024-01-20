@@ -5,23 +5,32 @@
 
 name: "Login Heroku and Deploy"
 
-on: [ workflow_call ]
+on:
+  workflow_call:
+    secrets:
+      HEROKU_EMAIL:
+        description: 'email used with Heroku app'
+        required: true
+      HEROKU_API_KEY:
+        description: 'API key for Heroku app'
+        required: true
 
 jobs:
   login-deploy:
     name: login-and-deploy
     runs-on: ubuntu-latest
     steps:
-      - name: login
+      - name: Add secrets to config.env for deployment
+        env: 
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         run: |
-          cat <<EOF > ~/.netrc 
-machine api.heroku.com
-    login ${{ secrets.HEROKU_EMAIL }}
-    password ${ secrets.HEROKU_API_KEY }
-machine git.heroku.com
-    login ${{ secrets.HEROKU_EMAIL }}
-    password ${{ secrets.HEROKU_API_KEY }}
-EOF
+          echo "HEROKU_EMAIL=$HEROKU_EMAIL" >> config.env
+          echo "HEROKU_API_KEY=$HEROKU_API_KEY" >> config.env
+
+      - name: Heroku login 
+        run: |
+          make heroku_login
 
       - name: heroku-push
         run: |

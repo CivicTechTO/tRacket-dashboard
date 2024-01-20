@@ -9,6 +9,12 @@ on:
         TOKEN:
           description: 'WebCommand API token.'
           required: True
+        HEROKU_EMAIL:
+          description: 'email used with Heroku app'
+          required: true
+        HEROKU_API_KEY:
+          description: 'API key for Heroku app'
+          required: true
 
 jobs:
   build-and-deploy:
@@ -27,17 +33,13 @@ jobs:
       - name: Setup Docker
         uses: docker/setup-buildx-action@v3
 
-      # - name: Build production container
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: .
-      #     file: ./Dockerfile
-      #     push: false
-
       - name: Docker build
         run: |
           make prod_build
 
-      # - name: Deploy to Heroku
-      #   uses: ./.github/workflows/heroku-deploy.yml
+      - name: Deploy to Heroku
+        uses: ./.github/workflows/heroku-deploy.yml
+        secrets:
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
