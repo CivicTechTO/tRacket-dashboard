@@ -46,6 +46,7 @@ class COLUMN(Enum):
     AVGMIN_PRIOR = "min_avg_prior"
     OUTLIERCOUNT = "outlier_count"
     OUTLIERCOUNT_PRIOR = "outlier_count_prior"
+    ACTIVE_ID = "active"
 
 
 class HEATMAP_VALUE(Enum):

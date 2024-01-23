@@ -61,7 +61,8 @@ class URLBuilder(object):
         """
         device_url = (
             f"{self._build_base_query_url()}"
-            f"SELECT {COLUMN.DEVICEID.value} "
+            f"SELECT {COLUMN.DEVICEID.value}, "
+            f"IF(MAX(DATE({COLUMN.TIMESTAMP.value})) >= '{get_date_string(7)}', True, False) AS {COLUMN.ACTIVE_ID.value} "
             f"FROM {TABLE.NOISE.value} "
             f"GROUP BY {COLUMN.DEVICEID.value} ORDER BY {COLUMN.DEVICEID.value} "
         )
@@ -420,6 +421,8 @@ class AppDataManager(object):
 
         # data store
         self.unique_ids = None
+        self.inactive_ids = None
+        self.active_ids = None
         self.system_stats_df = None
 
     def load_data(self) -> None:
@@ -433,9 +436,14 @@ class AppDataManager(object):
         unique_ids = self.data_formatter.process_records_to_dataframe(
             unique_ids
         )
-        unique_ids = unique_ids[COLUMN.DEVICEID]
 
-        self.unique_ids = unique_ids
+        self.unique_ids = unique_ids[COLUMN.DEVICEID]
+        self.active_ids = unique_ids.loc[
+            unique_ids[COLUMN.ACTIVE_ID] == True, COLUMN.DEVICEID
+        ]
+        self.inactive_ids = unique_ids.loc[
+            unique_ids[COLUMN.ACTIVE_ID] == False, COLUMN.DEVICEID
+        ]
 
     def _load_system_stats(self) -> None:
         """Load system level statistincs from the API."""

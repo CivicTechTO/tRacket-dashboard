@@ -102,6 +102,12 @@ def test_hourly_fetch_and_save(
             "GROUP BY date_, hour_  "
             "LIMIT 10"
         ),
+        (
+            f"SELECT {COLUMN.DEVICEID.value}, "
+            f"IF(MAX(DATE({COLUMN.TIMESTAMP.value})) >= '2024-01-21', True, False) AS test "
+            f"FROM {TABLE.NOISE.value} "
+            f"GROUP BY {COLUMN.DEVICEID.value} ORDER BY {COLUMN.DEVICEID.value} "
+        ),
     ],
 )
 def test_query_response_status(url_builder: URLBuilder, query: str):

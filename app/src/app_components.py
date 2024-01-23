@@ -167,7 +167,12 @@ class MarkdownManager(AbstractAppManager):
         )
         cls.navbar = dbc.NavbarSimple(
             children=[about_modal],
-            brand=html.Span(["Toronto Noise Monitor ", html.I(className="fa-solid fa-tower-broadcast")]),
+            brand=html.Span(
+                [
+                    "Toronto Noise Monitor ",
+                    html.I(className="fa-solid fa-tower-broadcast"),
+                ]
+            ),
             color="primary",
             dark=True,
             fixed="top",
@@ -181,6 +186,7 @@ class InputManager(AbstractAppManager):
 
     device_id_dropdown: dcc.Dropdown = None
     heatmap_toggle = None
+    config = load_config()
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -190,9 +196,24 @@ class InputManager(AbstractAppManager):
 
     @classmethod
     def _initialize_device_id_dropdown(cls) -> None:
+        """
+        Setup dropdown for device IDs marking which is active.
+        """
+        active_icon = cls.config["components.inputs"]["active_icon"]
+        inactive_icon = cls.config["components.inputs"]["inactive_icon"]
+
+        options = [
+            {"label": active_icon + " " + value, "value": value}
+            for value in cls.app_data_manager.active_ids
+        ]
+        options += [
+            {"label": inactive_icon + " " + value, "value": value}
+            for value in cls.app_data_manager.inactive_ids
+        ]
+
         cls.device_id_dropdown = dbc.Select(
-            cls.app_data_manager.unique_ids,
-            cls.app_data_manager.unique_ids[0],
+            options,
+            cls.app_data_manager.active_ids[0],
             id=COMPONENT_ID.device_id_input,
         )
 
