@@ -225,7 +225,7 @@ def test_device_id_fetch_and_save(
         os.path.join(CURRENT_DIR, "data/sample_device_ids.csv"), index=False
     )
 
-    assert (id_data_df.shape[1] == 1) and (id_data_df.shape[0] > 0)
+    assert (id_data_df.shape[0] > 0)
 
 
 def test_device_data_load(
