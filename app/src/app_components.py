@@ -483,9 +483,8 @@ class CallbackManager(AbstractAppManager):
                 end_date = click_end_date if (stats_min_date <= click_end_date <= stats_end_date) else stats_end_date
 
             else:
-                # last recorded date used as end              
-                end_date = stats_dict[COLUMN.MAXDATE.value]
-                end_date = pd.to_datetime(end_date).strftime(date_format)
+                # last recorded date used as end        
+                end_date = stats_end_date
 
             # look back 7 days
             start_date = pd.to_datetime(end_date) - pd.Timedelta(days=7)
