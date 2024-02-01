@@ -465,16 +465,26 @@ class CallbackManager(AbstractAppManager):
             """
 
             date_format = "%Y-%m-%d"
-            if clickData:
+            
+            
+            stats_dict = stats[0]
+            
+            # check if the clicked date is in the date range for the device
+            stats_min_date_str = stats_dict[COLUMN.MINDATE.value]
+            stats_min_date = pd.to_datetime(stats_min_date_str).strftime(date_format)
+            
+            stats_end_date_str = stats_dict[COLUMN.MAXDATE.value]
+            stats_end_date = pd.to_datetime(stats_end_date_str).strftime(date_format)
+            
+            if clickData:                
                 # user selects end date
-                date_string = clickData["points"][0]["x"]
-                end_date = pd.Timestamp(date_string).strftime(date_format)
+                date_string = clickData["points"][0]["x"]                
+                click_end_date = pd.Timestamp(date_string).strftime(date_format)
+                end_date = click_end_date if (stats_min_date <= click_end_date <= stats_end_date) else stats_end_date
 
             else:
-                # last recorded date used as end
-                stats_dict = stats[0]
-                end_date = stats_dict[COLUMN.MAXDATE.value]
-                end_date = pd.to_datetime(end_date).strftime(date_format)
+                # last recorded date used as end        
+                end_date = stats_end_date
 
             # look back 7 days
             start_date = pd.to_datetime(end_date) - pd.Timedelta(days=7)
