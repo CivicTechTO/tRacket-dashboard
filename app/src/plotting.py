@@ -535,6 +535,64 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
         return fig
 
 
+class TimedMinAverageIndicatorPlotter(AbstractIndicatorPlotter):
+    def __init__(self, time_of_day: str, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.time_of_day = time_of_day
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        for col in [
+            COLUMN.DEVICEID,
+            COLUMN.TIMEOFDAY,
+            COLUMN.AVGMIN,
+            COLUMN.COUNT,
+            COLUMN.AVGMIN_PRIOR,
+            COLUMN.COUNT_PRIOR,
+        ]:
+            assert col in df.columns
+
+    def _get_min_avg(
+        self, count_col: COLUMN, min_col: COLUMN, time_col: COLUMN
+    ) -> float:
+        """
+        Find system avg: individual device-level avg multiplied by device count for device total (disaggregate first) then get global average.
+        """
+        df_timed = self.df[self.df[time_col] == self.time_of_day]
+        total = sum(df_timed[min_col] * df_timed[count_col])
+        avg = total / sum(df_timed[count_col])
+
+        return round(avg, 2)
+
+    def _get_system_min_avg(self) -> float:
+        """Current week."""
+        return self._get_min_avg(COLUMN.COUNT, COLUMN.AVGMIN, COLUMN.TIMEOFDAY)
+
+    def _get_reference_avg(self) -> float:
+        """Prior week."""
+        return self._get_min_avg(
+            COLUMN.COUNT_PRIOR, COLUMN.AVGMIN_PRIOR, COLUMN.TIMEOFDAY
+        )
+
+    def plot(self) -> go.Figure:
+        fig = self._get_indicator(
+            value=self._get_system_min_avg(),
+            text=f"Average {self.time_of_day.title()} Ambient Noise",
+            delta={
+                "reference": self._get_reference_avg(),
+                "relative": True,
+                "valueformat": ".1%",
+                "increasing.color": "red",
+                "decreasing.color": "green",
+            },
+            number={"suffix": " dBA"},
+        )
+
+        self.set_formatting(fig)
+
+        return fig
+
+
 class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)

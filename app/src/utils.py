@@ -42,6 +42,7 @@ class COLUMN(Enum):
     MINNOISE = "minnoise"
     DATE = "date"
     HOUR = "hour"
+    TIMEOFDAY = "timeofday"
     AVGMIN = "min_avg"
     AVGMIN_PRIOR = "min_avg_prior"
     OUTLIERCOUNT = "outlier_count"

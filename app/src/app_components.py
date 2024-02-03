@@ -7,6 +7,7 @@ from enum import StrEnum, auto
 from abc import abstractclassmethod
 import pandas as pd
 from src.plotting import (
+    TimedMinAverageIndicatorPlotter,
     TimeseriesPlotter,
     HeatmapPlotter,
     HistogramPlotter,
@@ -32,6 +33,10 @@ class COMPONENT_ID(StrEnum):
     avg_indicator_tooltip = auto()
     outlier_indicator = auto()
     outlier_indicator_tooltip = auto()
+
+    day_avg_indicator = auto()
+    evening_avg_indicator = auto()
+    night_avg_indicator = auto()
 
     # inputs
     device_id_input = auto()
@@ -238,6 +243,10 @@ class GraphManager(AbstractAppManager):
     system_avg_indicator: dcc.Graph = None
     system_outlier_indicator: dcc.Graph = None
 
+    system_day_avg_indicator: dcc.Graph = None
+    system_evening_avg_indicator: dcc.Graph = None
+    system_night_avg_indicator: dcc.Graph = None
+
     # device level charts
     noise_line_graph: dcc.Graph = None
     heatmap: dcc.Graph = None
@@ -284,6 +293,8 @@ class GraphManager(AbstractAppManager):
         cls._setup_device_count_indicator()
         cls._setup_system_min_indicator()
         cls._setup_system_outlier_indicator()
+
+        cls._setup_system_timed_min_indicators()
 
     @classmethod
     def _setup_device_count_indicator(cls) -> None:
@@ -338,6 +349,52 @@ class GraphManager(AbstractAppManager):
                     placement="bottom",
                 ),
             ]
+        )
+
+    @classmethod
+    def _create_system_timed_min_indicator(
+        cls, time_of_day: str, indicator_id: str
+    ) -> None:
+        indicator_plotter = TimedMinAverageIndicatorPlotter(
+            time_of_day, cls.app_data_manager.system_stats_timed_df
+        )
+        system_min_fig = indicator_plotter.plot()
+        return html.Div(
+            [
+                html.Div(
+                    [
+                        dcc.Graph(
+                            figure=system_min_fig,
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                            clear_on_unhover=True,
+                        )
+                    ],
+                    id=indicator_id,
+                ),
+                dbc.Tooltip(
+                    "This is the system-wide average of recorded minimum noise levels for the past 7 days. The small value below indicates the week-over-week difference.",
+                    id=COMPONENT_ID.avg_indicator_tooltip,
+                    target=COMPONENT_ID.avg_indicator,
+                    placement="bottom",
+                ),
+            ]
+        )
+
+    @classmethod
+    def _setup_system_timed_min_indicators(cls) -> None:
+        cls.system_day_avg_indicator = cls._create_system_timed_min_indicator(
+            "day", COMPONENT_ID.day_avg_indicator
+        )
+        cls.system_evening_avg_indicator = (
+            cls._create_system_timed_min_indicator(
+                "evening", COMPONENT_ID.evening_avg_indicator
+            )
+        )
+        cls.system_night_avg_indicator = (
+            cls._create_system_timed_min_indicator(
+                "night", COMPONENT_ID.night_avg_indicator
+            )
         )
 
     @classmethod

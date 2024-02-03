@@ -176,6 +176,46 @@ class URLBuilder(object):
 
         return data_url
 
+    def build_timed_system_stats_fetch_url(self) -> str:
+        """
+        Build URL for fetching system/device aggregate stats for last two weeks.
+        The query organizes data into two columns - 1 and 2-weeks prior.
+        """
+        base_url = self._build_base_query_url()
+        threshold = int(self._config["constants"]["noise_threshold"])
+        two_week_prior_date = get_date_string(days_before_today=14)
+        one_week_prior_date = get_date_string(days_before_today=7)
+
+        current_week_condition = (
+            f"DATE({COLUMN.TIMESTAMP.value}) >= '{one_week_prior_date}'"
+        )
+        prior_week_condition = f"""
+            (DATE({COLUMN.TIMESTAMP.value}) >= '{two_week_prior_date}') AND (DATE({COLUMN.TIMESTAMP.value}) < '{one_week_prior_date}')
+            """
+
+        query_string = f"""
+            SELECT 
+                {COLUMN.DEVICEID.value},
+                IF (HOUR({COLUMN.TIMESTAMP.value}) > 7 
+                    AND HOUR({COLUMN.TIMESTAMP.value}) < 19, 'day',
+                IF (HOUR({COLUMN.TIMESTAMP.value}) > 19
+                    AND HOUR({COLUMN.TIMESTAMP.value}) < 23, 'evening', 'night')) 
+                AS {COLUMN.TIMEOFDAY.value},
+                COUNT(IF({current_week_condition}, 1, Null)) AS {COLUMN.COUNT.value},
+                COUNT(IF({prior_week_condition}, 1, Null)) AS {COLUMN.COUNT_PRIOR.value},
+                AVG(IF({current_week_condition}, {COLUMN.MIN.value}, Null)) AS {COLUMN.AVGMIN.value},
+                AVG(IF({prior_week_condition}, {COLUMN.MIN.value}, Null)) AS {COLUMN.AVGMIN_PRIOR.value},
+                SUM(IF(({COLUMN.MAX.value} > {threshold}) AND ({current_week_condition}), 1, 0)) AS {COLUMN.OUTLIERCOUNT.value},
+                SUM(IF(({COLUMN.MAX.value} > {threshold}) AND ({prior_week_condition}), 1, 0)) AS {COLUMN.OUTLIERCOUNT_PRIOR.value}
+            FROM {TABLE.NOISE.value}
+            WHERE DATE({COLUMN.TIMESTAMP.value}) >= '{two_week_prior_date}'
+            GROUP BY {COLUMN.DEVICEID.value}, {COLUMN.TIMEOFDAY.value}
+            """
+
+        data_url = self._add_query_to_base_url(base_url, query_string)
+
+        return data_url
+
 
 class DataFormatter(object):
     """
@@ -312,6 +352,9 @@ class CsvDataLoader(AbstractDataLoader):
     def load_system_stats(self, file_path: str) -> List[Dict[str, Any]]:
         return self._load_from_file(file_path)
 
+    def load_timed_system_stats(self, file_path: str) -> List[Dict[str, Any]]:
+        return self._load_from_file(file_path)
+
     def load_device_ids(self, file_path: str) -> List[Dict[str, Any]]:
         return self._load_from_file(file_path)
 
@@ -399,6 +442,15 @@ class WebcommandDataLoader(AbstractDataLoader):
 
         return raw_data
 
+    def load_timed_system_stats(self, **url_kwargs) -> List[Dict[str, Any]]:
+        """
+        Load the device stats form WebCommand.
+        """
+        url = self.url_builder.build_timed_system_stats_fetch_url(**url_kwargs)
+        raw_data = self._fetch_from_url(url)
+
+        return raw_data
+
     @staticmethod
     def _log_data_loading(raw_data: List[Dict[str, Any]], url_kwargs) -> None:
         if "device_id" in url_kwargs:
@@ -424,11 +476,13 @@ class AppDataManager(object):
         self.inactive_ids = None
         self.active_ids = None
         self.system_stats_df = None
+        self.system_stats_timed_df = None
 
     def load_data(self) -> None:
         """Load all data."""
         self._load_device_ids()
         self._load_system_stats()
+        self._load_timed_system_stats()
 
     def _load_device_ids(self):
         """Load unique device IDs for API"""
@@ -449,6 +503,13 @@ class AppDataManager(object):
         """Load system level statistincs from the API."""
         system_stats = self.data_loader.load_system_stats()
         self.system_stats_df = (
+            self.data_formatter.process_records_to_dataframe(system_stats)
+        )
+
+    def _load_timed_system_stats(self) -> None:
+        """Load system level statistics separated by by time of day from the API."""
+        system_stats = self.data_loader.load_timed_system_stats()
+        self.system_stats_timed_df = (
             self.data_formatter.process_records_to_dataframe(system_stats)
         )
 

@@ -91,6 +91,14 @@ app.layout = dbc.Container(
             ],
             align="start",
         ),
+        dbc.Row(
+            [
+                dbc.Col([GraphManager.system_day_avg_indicator]),
+                dbc.Col([GraphManager.system_evening_avg_indicator]),
+                dbc.Col([GraphManager.system_night_avg_indicator]),
+            ],
+            align="start",
+        ),
         html.Br(),
         html.Br(),
         dbc.Row(
