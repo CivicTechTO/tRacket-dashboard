@@ -57,7 +57,7 @@ class URLBuilder(object):
 
     def build_device_id_fetch_url(self) -> str:
         """
-        Get URL for fetching unique device IDs.
+        Get URL for fetching unique device IDs and mark active device.
         """
         device_url = (
             f"{self._build_base_query_url()}"
