@@ -11,6 +11,8 @@ from src.plotting import (
     OutlierIndicatorPlotter,
     DeviceCountIndicatorPlotter,
     BasePlotter,
+    TimeOfDayIndicatorPlotter,
+    TimeOfDay
 )
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
@@ -146,6 +148,30 @@ def dummy_hourly(data_formatter: DataFormatter) -> pd.DataFrame:
     df = data_formatter.process_records_to_dataframe(raw_data)
 
     return df
+
+
+def test_extract_hourly(dummy_hourly: pd.DataFrame):
+    """
+    Test that the slicing returns 48 hours.
+    """
+    plotter = TimeOfDayIndicatorPlotter(dummy_hourly)
+
+    current, previous = plotter._extract_last_two_days()
+
+    assert current.shape[0] == 24
+    assert previous.shape[0] == 24
+
+@pytest.mark.parametrize("time_of_day", [TimeOfDay.DAY, TimeOfDay.EVENING, TimeOfDay.NIGHT])
+def test_time_of_day_indicator(dummy_hourly: pd.DataFrame, time_of_day: TimeOfDay):
+    plotter = TimeOfDayIndicatorPlotter(dummy_hourly)
+
+    figure = plotter.plot(time_of_day=time_of_day)
+    figure_out_path = os.path.join(
+        CURRENT_DIR, f"plots/time_of_day_indicator_{time_of_day}.html"
+    )
+    figure.write_html(figure_out_path)
+
+    assert isinstance(figure, Figure)
 
 
 @pytest.mark.parametrize("template", [None, "BOOTSTRAP"])

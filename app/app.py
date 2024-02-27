@@ -101,6 +101,13 @@ app.layout = dbc.Container(
                 )
             ],
         ),
+        dbc.Row(
+            [
+                dbc.Col(GraphManager.day_time_indicator),
+                dbc.Col(GraphManager.evening_time_indicator),
+                dbc.Col(GraphManager.night_time_indicator),
+            ]
+        ),
         html.Br(),
         html.Br(),
         dbc.Tabs(

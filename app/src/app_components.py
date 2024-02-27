@@ -13,6 +13,8 @@ from src.plotting import (
     OutlierIndicatorPlotter,
     MinAverageIndicatorPlotter,
     DeviceCountIndicatorPlotter,
+    TimeOfDayIndicatorPlotter,
+    TimeOfDay
 )
 from plotly.graph_objects import Figure
 
@@ -32,6 +34,15 @@ class COMPONENT_ID(StrEnum):
     avg_indicator_tooltip = auto()
     outlier_indicator = auto()
     outlier_indicator_tooltip = auto()
+    day_indicator = auto()
+    day_indicator_div = auto()
+    day_indicator_tooltip = auto()
+    evening_indicator = auto()
+    evening_indicator_div = auto()
+    evening_indicator_tooltip = auto()
+    night_indicator = auto()
+    night_indicator_div = auto()
+    night_indicator_tooltip = auto()
 
     # inputs
     device_id_input = auto()
@@ -111,7 +122,7 @@ class MarkdownManager(AbstractAppManager):
             [
                 dbc.CardHeader(
                     [
-                        html.H2("Device Monitor", className="card-title"),
+                        html.H2("Pick a Device", className="card-title"),
                         html.Br(),
                         InputManager.device_id_dropdown,
                         html.Br(),
@@ -242,6 +253,9 @@ class GraphManager(AbstractAppManager):
     noise_line_graph: dcc.Graph = None
     heatmap: dcc.Graph = None
     histogram: dcc.Graph = None
+    day_time_indicator: dcc.Graph = None
+    evening_time_indicator: dcc.Graph = None
+    night_time_indicator: dcc.Graph = None
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -257,6 +271,7 @@ class GraphManager(AbstractAppManager):
         cls._setup_noise_line_graph()
         cls._setup_heatmap_graph()
         cls._setup_histogram()
+        cls._setup_time_of_day_indicators()
 
     @classmethod
     def _setup_histogram(cls) -> None:
@@ -367,6 +382,66 @@ class GraphManager(AbstractAppManager):
             ]
         )
 
+    @classmethod
+    def _create_indicator_component(
+        cls,
+        graph_id: COMPONENT_ID,
+        graph_div_id: COMPONENT_ID,
+        tooltip_id: COMPONENT_ID,
+        figure: Figure = None,
+        tooltip_text: str = ""
+        ) -> html.Div:
+        """
+        Create one time of day indicator component with given divs.
+        """
+
+        component = html.Div(
+            [
+                html.Div(
+                    [
+                        dcc.Graph(
+                            style={"height": "40vh"},
+                            config={"displayModeBar": False},
+                            id=graph_id
+                        ),
+                    ],
+                    id=graph_div_id,
+                ),
+                dbc.Tooltip(
+                    tooltip_text,
+                    id=tooltip_id,
+                    target=graph_div_id,
+                    placement="bottom",
+                ),
+            ]
+        )
+
+        return component
+
+
+    @classmethod
+    def _setup_time_of_day_indicators(cls) -> None:
+        cls.evening_time_indicator = cls._create_indicator_component(
+            graph_id=COMPONENT_ID.evening_indicator,
+            graph_div_id=COMPONENT_ID.evening_indicator_div,
+            tooltip_id=COMPONENT_ID.evening_indicator_tooltip,
+            tooltip_text=f"Average ambient noise level for the selected device during evening time. The small value below indicates the week-over-week difference."
+        )
+
+        cls.day_time_indicator = cls._create_indicator_component(
+            graph_id=COMPONENT_ID.day_indicator,
+            graph_div_id=COMPONENT_ID.day_indicator_div,
+            tooltip_id=COMPONENT_ID.day_indicator_tooltip,
+            tooltip_text=f"Average ambient noise level for the selected device during day time. The small value below indicates the week-over-week difference."
+        )
+
+        cls.night_time_indicator = cls._create_indicator_component(
+            graph_id=COMPONENT_ID.night_indicator,
+            graph_div_id=COMPONENT_ID.night_indicator_div,
+            tooltip_id=COMPONENT_ID.night_indicator_tooltip,
+            tooltip_text=f"Average ambient noise level for the selected device during night time. The small value below indicates the week-over-week difference."
+        )
+        
 
 class CallbackManager(AbstractAppManager):
     """
@@ -534,6 +609,43 @@ class CallbackManager(AbstractAppManager):
             )
 
             return hist_plotter.plot()
+
+        
+        @callback(
+            Output(COMPONENT_ID.day_indicator, "figure"),
+            Input(COMPONENT_ID.hourly_device_data_store, "data"),
+        )
+        def update_day_indicator(data: List[Dict[str, Any]]) -> Figure:
+            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
+            plotter = TimeOfDayIndicatorPlotter(df)
+
+            fig = plotter.plot(time_of_day=TimeOfDay.DAY)
+            
+            return fig
+        
+        @callback(
+            Output(COMPONENT_ID.evening_indicator, "figure"),
+            Input(COMPONENT_ID.hourly_device_data_store, "data"),
+        )
+        def update_evening_indicator(data: List[Dict[str, Any]]) -> Figure:
+            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
+            plotter = TimeOfDayIndicatorPlotter(df)
+
+            fig = plotter.plot(time_of_day=TimeOfDay.EVENING)
+            
+            return fig
+
+        @callback(
+            Output(COMPONENT_ID.night_indicator, "figure"),
+            Input(COMPONENT_ID.hourly_device_data_store, "data"),
+        )
+        def update_night_indicator(data: List[Dict[str, Any]]) -> Figure:
+            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
+            plotter = TimeOfDayIndicatorPlotter(df)
+
+            fig = plotter.plot(time_of_day=TimeOfDay.NIGHT)
+            
+            return fig
 
         @callback(
             Output(COMPONENT_ID.heatmap, "figure"),

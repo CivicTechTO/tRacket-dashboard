@@ -564,3 +564,90 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
         self.set_formatting(fig)
 
         return fig
+
+class TimeOfDay(StrEnum):
+    DAY = auto()
+    EVENING = auto()
+    NIGHT = auto()
+
+class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        """
+        Expects the hourly data for the calculation.
+        """
+        assert COLUMN.DATE in df.columns
+        assert COLUMN.HOUR in df.columns
+        assert COLUMN.MINNOISE in df.columns
+
+    def _get_time_bounds(self, time_of_day: TimeOfDay) -> tuple[int, int]:
+        """
+        Return the start/end for the time of day.
+        """
+        if time_of_day == TimeOfDay.DAY:
+            start, end = int(self._config["constants"]["day_start"]), int(self._config["constants"]["day_end"])
+        elif time_of_day == TimeOfDay.EVENING:
+            start, end = int(self._config["constants"]["evening_start"]), int(self._config["constants"]["evening_end"])
+        elif time_of_day == TimeOfDay.NIGHT:
+            start, end = int(self._config["constants"]["night_start"]), int(self._config["constants"]["night_end"])
+
+        return start, end
+
+    def _get_time_of_day_average(self, df: pd.DataFrame, time_of_day: TimeOfDay) -> float:
+        """
+        Calculate the time of day average for a given day.
+        """
+        start, end = self._get_time_bounds(time_of_day)
+        
+        if start < end:
+            hour_filter = (start <= df[COLUMN.HOUR]) & (df[COLUMN.HOUR] < end)
+        else:
+            hour_filter = (start <= df[COLUMN.HOUR]) | (df[COLUMN.HOUR] < end)
+
+        average = df.loc[hour_filter, COLUMN.MINNOISE].mean()
+
+        return average
+
+    def _extract_last_two_days(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Slice out the most current 48 hours of data and return it split into two 24 hour blocks.
+        """
+        self.df[COLUMN.DATE] = pd.to_datetime(self.df[COLUMN.DATE])
+        self.df.sort_values([COLUMN.DATE, COLUMN.HOUR], ascending=False, inplace=True)
+        
+        current_df = self.df.iloc[:24, :]
+        previous_df = self.df.iloc[24:48, :]
+
+        return current_df, previous_df
+
+    def plot(self, time_of_day: TimeOfDay) -> go.Figure:
+        """
+        Create indicator for time of day average with delta comparing to previous day value.
+        """
+        current_df, previous_df = self._extract_last_two_days()
+        
+        emoji = {
+            TimeOfDay.DAY: "🌅",
+            TimeOfDay.EVENING: "🌇",
+            TimeOfDay.NIGHT: "🌃"
+        }
+
+        indicator_text = f"{str(time_of_day).title()} {emoji[time_of_day]}"
+        
+        fig = self._get_indicator(
+            value=self._get_time_of_day_average(current_df, time_of_day),
+            text=indicator_text,
+            number={"suffix": " dBA"},
+            delta={
+                "reference": self._get_time_of_day_average(previous_df, time_of_day),
+                "relative": False,
+                "increasing.color": "red",
+                "decreasing.color": "green",
+            },
+        )
+        
+        self.set_formatting(fig)
+
+        return fig
