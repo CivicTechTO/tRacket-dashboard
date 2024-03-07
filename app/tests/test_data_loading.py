@@ -157,7 +157,7 @@ def test_device_id_fetch_url(url_builder: URLBuilder):
     assert get_url_response_status(url)
 
 
-def test_data_fetch_url(url_builder):
+def test_data_fetch_url(url_builder: URLBuilder):
     """
     Check that API replies to data request.
     """
@@ -165,6 +165,13 @@ def test_data_fetch_url(url_builder):
 
     assert get_url_response_status(url)
 
+def test_device_location_url(url_builder: URLBuilder):
+    """
+    Test loading the location data.
+    """
+    url = url_builder.build_device_location_fetch_url()
+
+    assert get_url_response_status(url)
 
 @pytest.fixture
 def raw_data(
@@ -211,6 +218,18 @@ def test_formatting_and_save(
         [col in COLUMN for col in df.columns]
     )
 
+
+def test_device_loc_fetch_and_save(
+    data_loader: WebcommandDataLoader, data_formatter: DataFormatter
+):
+    location_data = data_loader.load_location_data()
+    location_data_df = data_formatter.process_records_to_dataframe(location_data)
+
+    location_data_df.to_csv(
+        os.path.join(CURRENT_DIR, "data/sample_device_loc.csv"), index=False
+    )
+
+    assert location_data_df.shape[0] > 0
 
 def test_device_id_fetch_and_save(
     data_loader: WebcommandDataLoader, data_formatter: DataFormatter

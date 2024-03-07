@@ -14,7 +14,8 @@ from src.plotting import (
     MinAverageIndicatorPlotter,
     DeviceCountIndicatorPlotter,
     TimeOfDayIndicatorPlotter,
-    TimeOfDay
+    TimeOfDay,
+    MapPlotter
 )
 from plotly.graph_objects import Figure
 
@@ -43,6 +44,7 @@ class COMPONENT_ID(StrEnum):
     night_indicator = auto()
     night_indicator_div = auto()
     night_indicator_tooltip = auto()
+    location_map = auto()
 
     # inputs
     device_id_input = auto()
@@ -256,6 +258,7 @@ class GraphManager(AbstractAppManager):
     day_time_indicator: dcc.Graph = None
     evening_time_indicator: dcc.Graph = None
     night_time_indicator: dcc.Graph = None
+    location_map: dcc.Graph = None
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -266,12 +269,23 @@ class GraphManager(AbstractAppManager):
 
         # system level
         cls._setup_system_indicators()
+        cls._setup_location_map()
 
         # device level
         cls._setup_noise_line_graph()
         cls._setup_heatmap_graph()
         cls._setup_histogram()
         cls._setup_time_of_day_indicators()
+
+    @classmethod
+    def _setup_location_map(cls) -> None:
+        plotter = MapPlotter(cls.app_data_manager.device_locations)
+        fig = plotter.plot()
+        cls.location_map = dcc.Graph(
+            figure=fig, 
+            id=COMPONENT_ID.location_map,
+            config={"displayModeBar": False}
+        )
 
     @classmethod
     def _setup_histogram(cls) -> None:

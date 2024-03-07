@@ -176,6 +176,22 @@ class URLBuilder(object):
 
         return data_url
 
+    def build_device_location_fetch_url(self) -> str:
+        """
+        Build URL to load device locations.
+        """
+        base_url = self._build_base_query_url()
+        query_string = f"""
+            SELECT 
+                {COLUMN.DEVICEID.value}, 
+                {COLUMN.LAT.value}, 
+                {COLUMN.LON.value}
+            FROM {TABLE.DEVICE.value}
+        """
+
+        data_url = self._add_query_to_base_url(base_url, query_string)
+
+        return data_url
 
 class DataFormatter(object):
     """
@@ -289,6 +305,10 @@ class AbstractDataLoader(object):
     def load_hourly_data(self) -> List[Dict[str, Any]]:
         pass
 
+    @abstractmethod
+    def load_location_data(self) -> List[Dict[str, Any]]:
+        pass
+
 
 class CsvDataLoader(AbstractDataLoader):
     """
@@ -316,6 +336,9 @@ class CsvDataLoader(AbstractDataLoader):
         return self._load_from_file(file_path)
 
     def load_hourly_data(self, file_path: str) -> List[Dict[str, Any]]:
+        return self._load_from_file(file_path)
+
+    def load_location_data(self, file_path: str) -> List[Dict[str, Any]]:
         return self._load_from_file(file_path)
 
 
@@ -399,6 +422,17 @@ class WebcommandDataLoader(AbstractDataLoader):
 
         return raw_data
 
+    def load_location_data(self, **url_kwargs) -> List[Dict[str, Any]]:
+        """
+        Get the location data for devices.
+        """
+        url = self.url_builder.build_device_location_fetch_url(**url_kwargs)
+        raw_data = self._fetch_from_url(url)
+        
+        self._log_data_loading(raw_data, url_kwargs)
+
+        return raw_data
+
     @staticmethod
     def _log_data_loading(raw_data: List[Dict[str, Any]], url_kwargs) -> None:
         if "device_id" in url_kwargs:
@@ -424,11 +458,22 @@ class AppDataManager(object):
         self.inactive_ids = None
         self.active_ids = None
         self.system_stats_df = None
+        self.device_locations = None
 
     def load_data(self) -> None:
         """Load all data."""
         self._load_device_ids()
         self._load_system_stats()
+        self._load_device_locations()
+
+    def _load_device_locations(self) -> None:
+        """
+        Load the device locations.
+        """
+        raw_data = self.data_loader.load_location_data()
+        self.device_locations = self.data_formatter.process_records_to_dataframe(raw_data)
+
+
 
     def _load_device_ids(self):
         """Load unique device IDs for API"""

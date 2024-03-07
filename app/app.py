@@ -79,12 +79,13 @@ app.layout = dbc.Container(
         html.Br(),
         html.Br(),
         html.Br(),
-        dbc.Row(
-            [
                 html.H2(
                     children="Week in Numbers ",
                     style={"textAlign": "center"},
                 ),
+        dbc.Row([GraphManager.location_map]),
+        dbc.Row(
+            [
                 dbc.Col([GraphManager.system_count_indicator]),
                 dbc.Col([GraphManager.system_avg_indicator]),
                 dbc.Col([GraphManager.system_outlier_indicator]),

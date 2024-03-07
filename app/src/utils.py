@@ -21,6 +21,7 @@ class TABLE(Enum):
     """
 
     NOISE = "Noise"
+    DEVICE = "Device"
 
 
 class COLUMN(Enum):
@@ -47,6 +48,10 @@ class COLUMN(Enum):
     OUTLIERCOUNT = "outlier_count"
     OUTLIERCOUNT_PRIOR = "outlier_count_prior"
     ACTIVE_ID = "active"
+
+    # device table columns
+    LAT = "RandomizedLatitude"
+    LON = "RandomizedLongitude"
 
 
 class HEATMAP_VALUE(Enum):

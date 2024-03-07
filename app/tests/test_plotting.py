@@ -12,7 +12,8 @@ from src.plotting import (
     DeviceCountIndicatorPlotter,
     BasePlotter,
     TimeOfDayIndicatorPlotter,
-    TimeOfDay
+    TimeOfDay,
+    MapPlotter
 )
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
@@ -44,6 +45,15 @@ def dummy_df(data_formatter: DataFormatter) -> pd.DataFrame:
 @pytest.fixture
 def dummy_system_df(data_formatter: DataFormatter) -> pd.DataFrame:
     data_path = os.path.join(CURRENT_DIR, "data/dummy_system_data.csv")
+    loader = CsvDataLoader()
+    raw_data = loader.load_system_stats(data_path)
+    df = data_formatter.process_records_to_dataframe(raw_data)
+
+    return df
+
+@pytest.fixture
+def dummy_location_df(data_formatter: DataFormatter) -> pd.DataFrame:
+    data_path = os.path.join(CURRENT_DIR, "data/dummy_location.csv")
     loader = CsvDataLoader()
     raw_data = loader.load_system_stats(data_path)
     df = data_formatter.process_records_to_dataframe(raw_data)
@@ -189,6 +199,17 @@ def test_heatmap_and_save(dummy_hourly: pd.DataFrame, template: str):
     figure = plotter.plot(pivot_value=HEATMAP_VALUE.MAX, title="Bang-bang")
     figure_out_path = os.path.join(
         CURRENT_DIR, f"plots/max_heatmap_template={template}.html"
+    )
+    figure.write_html(figure_out_path)
+
+    assert isinstance(figure, Figure)
+
+def test_location_map_and_save(dummy_location_df: pd.DataFrame):
+    plotter = MapPlotter(dummy_location_df)
+    figure = plotter.plot()
+
+    figure_out_path = os.path.join(
+        CURRENT_DIR, f"plots/location_map.html"
     )
     figure.write_html(figure_out_path)
 

@@ -14,6 +14,7 @@ import json
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+from plotly.graph_objects import scattermapbox
 from typing import Optional, List, Dict
 from abc import abstractmethod
 import pandas.api.types as ptype
@@ -565,10 +566,12 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
 
         return fig
 
+
 class TimeOfDay(StrEnum):
     DAY = auto()
     EVENING = auto()
     NIGHT = auto()
+
 
 class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
     def __init__(self, *args, **kwargs) -> None:
@@ -647,6 +650,57 @@ class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
                 "decreasing.color": "green",
             },
         )
+        
+        self.set_formatting(fig)
+
+        return fig
+
+class MapPlotter(BasePlotter):
+    """
+    Class for creating maps.
+    """
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        assert COLUMN.DEVICEID in df.columns
+        assert COLUMN.LAT in df.columns
+        assert COLUMN.LON in df.columns
+
+    def plot(self) -> go.Figure:
+        """
+        Create marker map of device locations.
+        """        
+        fig = go.Figure(go.Scattermapbox(
+            lat=self.df[COLUMN.LAT],
+            lon=self.df[COLUMN.LON],
+            mode='markers',
+            marker=go.scattermapbox.Marker(
+                size=20
+            ),
+            hoverinfo="text",
+            hovertemplate="<b>%{hovertext}</b>"+
+                "<br><br>Lat: %{lat}"+
+                "<br>Lon: %{lon}",
+            hovertext=list(self.df[COLUMN.DEVICEID].values),
+            name = ""
+            ))
+            
+        
+        fig.update_layout(
+            height=400,
+            mapbox_style="open-street-map",
+            margin={"r": 0,"t": 0,"l": 0,"b": 0},
+            mapbox=dict(
+                zoom=11,
+                center=dict(
+                    lat=self.df.loc[0, COLUMN.LAT],
+                    lon=self.df.loc[0, COLUMN.LON],
+                ),
+                style='carto-positron'
+                )
+            )
+        
         
         self.set_formatting(fig)
 
