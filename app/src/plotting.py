@@ -645,7 +645,8 @@ class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
             number={"suffix": " dBA"},
             delta={
                 "reference": self._get_time_of_day_average(previous_df, time_of_day),
-                "relative": False,
+                "relative": True,
+                "valueformat": ".1%",
                 "increasing.color": "red",
                 "decreasing.color": "green",
             },
