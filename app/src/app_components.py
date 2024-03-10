@@ -44,7 +44,8 @@ class COMPONENT_ID(StrEnum):
     night_indicator = auto()
     night_indicator_div = auto()
     night_indicator_tooltip = auto()
-    location_map = auto()
+    system_map = auto()
+    device_map = auto()
 
     # inputs
     device_id_input = auto()
@@ -245,6 +246,7 @@ class GraphManager(AbstractAppManager):
     """
 
     _config = load_config()
+    _boostrap_template_name = _config["bootstrap"]["theme"]
 
     # system-level indicators
     system_count_indicator: dcc.Graph = None
@@ -258,7 +260,8 @@ class GraphManager(AbstractAppManager):
     day_time_indicator: dcc.Graph = None
     evening_time_indicator: dcc.Graph = None
     night_time_indicator: dcc.Graph = None
-    location_map: dcc.Graph = None
+    system_map: dcc.Graph = None
+    device_map: dcc.Graph = None
 
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
@@ -269,23 +272,32 @@ class GraphManager(AbstractAppManager):
 
         # system level
         cls._setup_system_indicators()
-        cls._setup_location_map()
+        cls._setup_system_map()
 
         # device level
         cls._setup_noise_line_graph()
         cls._setup_heatmap_graph()
         cls._setup_histogram()
         cls._setup_time_of_day_indicators()
+        cls._setup_device_map()
 
     @classmethod
-    def _setup_location_map(cls) -> None:
-        plotter = MapPlotter(cls.app_data_manager.device_locations)
+    def _setup_system_map(cls) -> None:
+        plotter = MapPlotter(cls.app_data_manager.device_locations, bootstrap_template=cls._boostrap_template_name)
         fig = plotter.plot()
-        cls.location_map = dcc.Graph(
+        cls.system_map = dcc.Graph(
             figure=fig, 
-            id=COMPONENT_ID.location_map,
+            id=COMPONENT_ID.system_map,
             config={"displayModeBar": False}
         )
+
+    @classmethod
+    def _setup_device_map(cls) -> None:
+        cls.device_map = dcc.Graph(
+            id=COMPONENT_ID.device_map,
+            config={"displayModeBar": False}
+        )
+
 
     @classmethod
     def _setup_histogram(cls) -> None:
@@ -587,6 +599,21 @@ class CallbackManager(AbstractAppManager):
             return raw_device_data
 
         ### PLOT CALLBACKS ###
+
+        @callback(
+            Output(COMPONENT_ID.device_map, "figure"),
+            Input(COMPONENT_ID.device_id_input, "value")
+        )
+        def update_device_map(device_id: str) -> Figure:
+            """
+            Set the map for a single device location based on device id.
+            """
+            location_df = cls.app_data_manager.device_locations
+            device_location = location_df.loc[location_df[COLUMN.DEVICEID] == device_id, :]
+
+            plotter = MapPlotter(device_location, bootstrap_template=cls._boostrap_template_name)
+            
+            return plotter.plot()
 
         @callback(
             Output(COMPONENT_ID.noise_line_graph, "figure"),

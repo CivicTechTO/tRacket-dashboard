@@ -454,11 +454,11 @@ class AppDataManager(object):
         self.data_formatter = DataFormatter()
 
         # data store
-        self.unique_ids = None
-        self.inactive_ids = None
-        self.active_ids = None
-        self.system_stats_df = None
-        self.device_locations = None
+        self.unique_ids: pd.Series = None
+        self.inactive_ids: pd.Series = None
+        self.active_ids: pd.Series = None
+        self.system_stats_df: pd.DataFrame = None
+        self.device_locations: pd.DataFrame = None
 
     def load_data(self) -> None:
         """Load all data."""

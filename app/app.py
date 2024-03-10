@@ -83,7 +83,7 @@ app.layout = dbc.Container(
                     children="Week in Numbers ",
                     style={"textAlign": "center"},
                 ),
-        dbc.Row([GraphManager.location_map]),
+        dbc.Row([GraphManager.system_map]),
         dbc.Row(
             [
                 dbc.Col([GraphManager.system_count_indicator]),
@@ -98,7 +98,10 @@ app.layout = dbc.Container(
             [
                 dbc.Col(
                     [MarkdownManager.device_card],
-                    width={"size": 8, "offset": 2},
+                    # width={"size": 8, "offset": 2},
+                ),
+                dbc.Col(
+                    [GraphManager.device_map]
                 )
             ],
         ),

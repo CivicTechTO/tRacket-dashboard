@@ -686,23 +686,37 @@ class MapPlotter(BasePlotter):
             hovertext=list(self.df[COLUMN.DEVICEID].values),
             name = ""
             ))
-            
+        
+        lat, lon = self._get_map_center()
         
         fig.update_layout(
             height=400,
-            mapbox_style="open-street-map",
             margin={"r": 0,"t": 0,"l": 0,"b": 0},
             mapbox=dict(
-                zoom=11,
+                zoom=int(self._config["map"]["zoom"]),
                 center=dict(
-                    lat=self.df.loc[0, COLUMN.LAT],
-                    lon=self.df.loc[0, COLUMN.LON],
+                    lat=lat,
+                    lon=lon,
                 ),
-                style='carto-positron'
+                style=self._config["map"]["style"]
                 )
             )
-        
         
         self.set_formatting(fig)
 
         return fig
+
+    def _get_map_center(self) -> tuple[float, float]:
+        """
+        Read the map center from the data provided, or fall back on the default from config.
+        Returns lat, lon tuple.
+        """
+
+        if self.df.shape[0] > 0:
+            return self.df[COLUMN.LAT].values[0], self.df[COLUMN.LON].values[0]
+        
+        else:
+            lat = float(self._config["constants"]["map_center_lat"])
+            lon = float(self._config["constants"]["map_center_lon"])
+            
+            return lat, lon
