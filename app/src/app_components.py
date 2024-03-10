@@ -478,10 +478,10 @@ class CallbackManager(AbstractAppManager):
     _boostrap_template_name = _config["bootstrap"]["theme"]
 
     @classmethod
-    def initialize(cls, app_data_manager: AppDataManager) -> None:
-        cls._set_app_data_manager(app_data_manager)
-        ### CARD CALLBACKS ###
-
+    def _initialize_card_callbacks(cls) -> None:
+        """
+        Initialize callbacks updating cards.
+        """
         @callback(
             Output(COMPONENT_ID.summary_card_text, "children"),
             Input(COMPONENT_ID.device_stats_store, "data"),
@@ -522,8 +522,11 @@ class CallbackManager(AbstractAppManager):
             else:
                 return is_open
 
-        ### DATA CALLBACKS ###
-
+    @classmethod
+    def _initialize_data_callbacks(cls) -> None:
+        """
+        Define callbacks responsible for data loading and store.
+        """
         @callback(
             Output(COMPONENT_ID.device_stats_store, "data"),
             Input(COMPONENT_ID.device_id_input, "value"),
@@ -598,8 +601,11 @@ class CallbackManager(AbstractAppManager):
 
             return raw_device_data
 
-        ### PLOT CALLBACKS ###
-
+    @classmethod
+    def _initialize_plot_callbacks(cls) -> None:
+        """
+        Define methods for updating plots.
+        """
         @callback(
             Output(COMPONENT_ID.device_map, "figure"),
             Input(COMPONENT_ID.device_id_input, "value")
@@ -713,3 +719,14 @@ class CallbackManager(AbstractAppManager):
                 pivot_value = HEATMAP_VALUE.MIN
 
             return heatmap_plotter.plot(pivot_value=pivot_value, title=title)
+
+
+    @classmethod
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
+        cls._set_app_data_manager(app_data_manager)
+
+        cls._initialize_card_callbacks()
+        cls._initialize_data_callbacks()
+        cls._initialize_plot_callbacks()
+
+       
