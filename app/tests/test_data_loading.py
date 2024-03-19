@@ -13,6 +13,7 @@ import pandas as pd
 TOKEN = os.environ["TOKEN"]
 CURRENT_DIR = get_current_dir(__file__)
 
+TEST_DEVICE_ID = "pcb-2"
 
 @pytest.fixture
 def url_builder() -> URLBuilder:
@@ -60,7 +61,7 @@ def test_device_stats(url_builder: URLBuilder):
 
 @pytest.fixture
 def hourly_query(url_builder: URLBuilder, limit=None):
-    return url_builder.build_hourly_fetch_url(device_id="gabe3", limit=limit)
+    return url_builder.build_hourly_fetch_url(device_id=TEST_DEVICE_ID, limit=limit)
 
 
 def test_hourly_fetch_and_save(
@@ -253,7 +254,7 @@ def test_device_data_load(
     """
     Test loading data for 1 device.
     """
-    raw_data = data_loader.load_noise_data(device_id="gabe3", limit=10)
+    raw_data = data_loader.load_noise_data(device_id=TEST_DEVICE_ID, limit=10)
     df = data_formatter.process_records_to_dataframe(raw_data)
 
     assert df[COLUMN.DEVICEID].nunique() == 1

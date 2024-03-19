@@ -504,10 +504,16 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
         """
         Find system avg: individual device-level avg multiplied by device count for device total (disaggregate first) then get global average.
         """
-        total = sum(self.df[min_col] * self.df[count_col])
-        avg = total / sum(self.df[count_col])
+        total_noise = sum(self.df[min_col] * self.df[count_col])
+        total_count = sum(self.df[count_col])
+        
+        if total_count > 0:
+            avg = total_noise / total_count
+            avg = round(avg, 2)
+        else:
+            avg = None
 
-        return round(avg, 2)
+        return avg
 
     def _get_system_min_avg(self) -> float:
         """Current week."""
