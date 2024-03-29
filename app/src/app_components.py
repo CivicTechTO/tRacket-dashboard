@@ -227,7 +227,7 @@ class InputManager(AbstractAppManager):
 
         cls.device_id_dropdown = dbc.Select(
             options,
-            cls.app_data_manager.active_ids[0],
+            options[0],
             id=COMPONENT_ID.device_id_input,
         )
 
