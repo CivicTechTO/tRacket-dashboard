@@ -15,7 +15,7 @@ from src.plotting import (
     DeviceCountIndicatorPlotter,
     TimeOfDayIndicatorPlotter,
     TimeOfDay,
-    MapPlotter
+    MapPlotter,
 )
 from plotly.graph_objects import Figure
 
@@ -283,21 +283,22 @@ class GraphManager(AbstractAppManager):
 
     @classmethod
     def _setup_system_map(cls) -> None:
-        plotter = MapPlotter(cls.app_data_manager.device_locations, bootstrap_template=cls._boostrap_template_name)
+        plotter = MapPlotter(
+            cls.app_data_manager.device_locations,
+            bootstrap_template=cls._boostrap_template_name,
+        )
         fig = plotter.plot()
         cls.system_map = dcc.Graph(
-            figure=fig, 
+            figure=fig,
             id=COMPONENT_ID.system_map,
-            config={"displayModeBar": False}
+            config={"displayModeBar": False},
         )
 
     @classmethod
     def _setup_device_map(cls) -> None:
         cls.device_map = dcc.Graph(
-            id=COMPONENT_ID.device_map,
-            config={"displayModeBar": False}
+            id=COMPONENT_ID.device_map, config={"displayModeBar": False}
         )
-
 
     @classmethod
     def _setup_histogram(cls) -> None:
@@ -415,8 +416,8 @@ class GraphManager(AbstractAppManager):
         graph_div_id: COMPONENT_ID,
         tooltip_id: COMPONENT_ID,
         figure: Figure = None,
-        tooltip_text: str = ""
-        ) -> html.Div:
+        tooltip_text: str = "",
+    ) -> html.Div:
         """
         Create one time of day indicator component with given divs.
         """
@@ -428,7 +429,7 @@ class GraphManager(AbstractAppManager):
                         dcc.Graph(
                             style={"height": "40vh"},
                             config={"displayModeBar": False},
-                            id=graph_id
+                            id=graph_id,
                         ),
                     ],
                     id=graph_div_id,
@@ -444,30 +445,29 @@ class GraphManager(AbstractAppManager):
 
         return component
 
-
     @classmethod
     def _setup_time_of_day_indicators(cls) -> None:
         cls.evening_time_indicator = cls._create_indicator_component(
             graph_id=COMPONENT_ID.evening_indicator,
             graph_div_id=COMPONENT_ID.evening_indicator_div,
             tooltip_id=COMPONENT_ID.evening_indicator_tooltip,
-            tooltip_text=f"Average ambient noise level for the selected device during evening time. The small value below indicates the week-over-week difference."
+            tooltip_text=f"Average ambient noise level for the selected device during evening time. The small value below indicates the week-over-week difference.",
         )
 
         cls.day_time_indicator = cls._create_indicator_component(
             graph_id=COMPONENT_ID.day_indicator,
             graph_div_id=COMPONENT_ID.day_indicator_div,
             tooltip_id=COMPONENT_ID.day_indicator_tooltip,
-            tooltip_text=f"Average ambient noise level for the selected device during day time. The small value below indicates the week-over-week difference."
+            tooltip_text=f"Average ambient noise level for the selected device during day time. The small value below indicates the week-over-week difference.",
         )
 
         cls.night_time_indicator = cls._create_indicator_component(
             graph_id=COMPONENT_ID.night_indicator,
             graph_div_id=COMPONENT_ID.night_indicator_div,
             tooltip_id=COMPONENT_ID.night_indicator_tooltip,
-            tooltip_text=f"Average ambient noise level for the selected device during night time. The small value below indicates the week-over-week difference."
+            tooltip_text=f"Average ambient noise level for the selected device during night time. The small value below indicates the week-over-week difference.",
         )
-        
+
 
 class CallbackManager(AbstractAppManager):
     """
@@ -482,6 +482,7 @@ class CallbackManager(AbstractAppManager):
         """
         Initialize callbacks updating cards.
         """
+
         @callback(
             Output(COMPONENT_ID.summary_card_text, "children"),
             Input(COMPONENT_ID.device_stats_store, "data"),
@@ -527,6 +528,7 @@ class CallbackManager(AbstractAppManager):
         """
         Define callbacks responsible for data loading and store.
         """
+
         @callback(
             Output(COMPONENT_ID.device_stats_store, "data"),
             Input(COMPONENT_ID.device_id_input, "value"),
@@ -569,25 +571,34 @@ class CallbackManager(AbstractAppManager):
             """
 
             date_format = "%Y-%m-%d"
-            
-            
+
             stats_dict = stats[0]
-            
+
             # check if the clicked date is in the date range for the device
             stats_min_date_str = stats_dict[COLUMN.MINDATE.value]
-            stats_min_date = pd.to_datetime(stats_min_date_str).strftime(date_format)
-            
+            stats_min_date = pd.to_datetime(stats_min_date_str).strftime(
+                date_format
+            )
+
             stats_end_date_str = stats_dict[COLUMN.MAXDATE.value]
-            stats_end_date = pd.to_datetime(stats_end_date_str).strftime(date_format)
-            
-            if clickData:                
+            stats_end_date = pd.to_datetime(stats_end_date_str).strftime(
+                date_format
+            )
+
+            if clickData:
                 # user selects end date
-                date_string = clickData["points"][0]["x"]                
-                click_end_date = pd.Timestamp(date_string).strftime(date_format)
-                end_date = click_end_date if (stats_min_date <= click_end_date <= stats_end_date) else stats_end_date
+                date_string = clickData["points"][0]["x"]
+                click_end_date = pd.Timestamp(date_string).strftime(
+                    date_format
+                )
+                end_date = (
+                    click_end_date
+                    if (stats_min_date <= click_end_date <= stats_end_date)
+                    else stats_end_date
+                )
 
             else:
-                # last recorded date used as end        
+                # last recorded date used as end
                 end_date = stats_end_date
 
             # look back 7 days
@@ -606,19 +617,24 @@ class CallbackManager(AbstractAppManager):
         """
         Define methods for updating plots.
         """
+
         @callback(
             Output(COMPONENT_ID.device_map, "figure"),
-            Input(COMPONENT_ID.device_id_input, "value")
+            Input(COMPONENT_ID.device_id_input, "value"),
         )
         def update_device_map(device_id: str) -> Figure:
             """
             Set the map for a single device location based on device id.
             """
             location_df = cls.app_data_manager.device_locations
-            device_location = location_df.loc[location_df[COLUMN.DEVICEID] == device_id, :]
+            device_location = location_df.loc[
+                location_df[COLUMN.DEVICEID] == device_id, :
+            ]
 
-            plotter = MapPlotter(device_location, bootstrap_template=cls._boostrap_template_name)
-            
+            plotter = MapPlotter(
+                device_location, bootstrap_template=cls._boostrap_template_name
+            )
+
             return plotter.plot()
 
         @callback(
@@ -657,29 +673,32 @@ class CallbackManager(AbstractAppManager):
 
             return hist_plotter.plot()
 
-        
         @callback(
             Output(COMPONENT_ID.day_indicator, "figure"),
             Input(COMPONENT_ID.hourly_device_data_store, "data"),
         )
         def update_day_indicator(data: List[Dict[str, Any]]) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
+            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
+                data
+            )
             plotter = TimeOfDayIndicatorPlotter(df)
 
             fig = plotter.plot(time_of_day=TimeOfDay.DAY)
-            
+
             return fig
-        
+
         @callback(
             Output(COMPONENT_ID.evening_indicator, "figure"),
             Input(COMPONENT_ID.hourly_device_data_store, "data"),
         )
         def update_evening_indicator(data: List[Dict[str, Any]]) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
+            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
+                data
+            )
             plotter = TimeOfDayIndicatorPlotter(df)
 
             fig = plotter.plot(time_of_day=TimeOfDay.EVENING)
-            
+
             return fig
 
         @callback(
@@ -687,11 +706,13 @@ class CallbackManager(AbstractAppManager):
             Input(COMPONENT_ID.hourly_device_data_store, "data"),
         )
         def update_night_indicator(data: List[Dict[str, Any]]) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
+            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
+                data
+            )
             plotter = TimeOfDayIndicatorPlotter(df)
 
             fig = plotter.plot(time_of_day=TimeOfDay.NIGHT)
-            
+
             return fig
 
         @callback(
@@ -720,7 +741,6 @@ class CallbackManager(AbstractAppManager):
 
             return heatmap_plotter.plot(pivot_value=pivot_value, title=title)
 
-
     @classmethod
     def initialize(cls, app_data_manager: AppDataManager) -> None:
         cls._set_app_data_manager(app_data_manager)
@@ -728,5 +748,3 @@ class CallbackManager(AbstractAppManager):
         cls._initialize_card_callbacks()
         cls._initialize_data_callbacks()
         cls._initialize_plot_callbacks()
-
-       

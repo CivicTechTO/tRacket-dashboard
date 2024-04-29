@@ -506,7 +506,7 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
         """
         total_noise = sum(self.df[min_col] * self.df[count_col])
         total_count = sum(self.df[count_col])
-        
+
         if total_count > 0:
             avg = total_noise / total_count
             avg = round(avg, 2)
@@ -596,20 +596,28 @@ class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
         Return the start/end for the time of day.
         """
         if time_of_day == TimeOfDay.DAY:
-            start, end = int(self._config["constants"]["day_start"]), int(self._config["constants"]["day_end"])
+            start, end = int(self._config["constants"]["day_start"]), int(
+                self._config["constants"]["day_end"]
+            )
         elif time_of_day == TimeOfDay.EVENING:
-            start, end = int(self._config["constants"]["evening_start"]), int(self._config["constants"]["evening_end"])
+            start, end = int(self._config["constants"]["evening_start"]), int(
+                self._config["constants"]["evening_end"]
+            )
         elif time_of_day == TimeOfDay.NIGHT:
-            start, end = int(self._config["constants"]["night_start"]), int(self._config["constants"]["night_end"])
+            start, end = int(self._config["constants"]["night_start"]), int(
+                self._config["constants"]["night_end"]
+            )
 
         return start, end
 
-    def _get_time_of_day_average(self, df: pd.DataFrame, time_of_day: TimeOfDay) -> float:
+    def _get_time_of_day_average(
+        self, df: pd.DataFrame, time_of_day: TimeOfDay
+    ) -> float:
         """
         Calculate the time of day average for a given day.
         """
         start, end = self._get_time_bounds(time_of_day)
-        
+
         if start < end:
             hour_filter = (start <= df[COLUMN.HOUR]) & (df[COLUMN.HOUR] < end)
         else:
@@ -624,8 +632,10 @@ class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
         Slice out the most current 48 hours of data and return it split into two 24 hour blocks.
         """
         self.df[COLUMN.DATE] = pd.to_datetime(self.df[COLUMN.DATE])
-        self.df.sort_values([COLUMN.DATE, COLUMN.HOUR], ascending=False, inplace=True)
-        
+        self.df.sort_values(
+            [COLUMN.DATE, COLUMN.HOUR], ascending=False, inplace=True
+        )
+
         current_df = self.df.iloc[:24, :]
         previous_df = self.df.iloc[24:48, :]
 
@@ -636,36 +646,40 @@ class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
         Create indicator for time of day average with delta comparing to previous day value.
         """
         current_df, previous_df = self._extract_last_two_days()
-        
+
         emoji = {
             TimeOfDay.DAY: "🌅",
             TimeOfDay.EVENING: "🌇",
-            TimeOfDay.NIGHT: "🌃"
+            TimeOfDay.NIGHT: "🌃",
         }
 
         indicator_text = f"{str(time_of_day).title()} {emoji[time_of_day]}"
-        
+
         fig = self._get_indicator(
             value=self._get_time_of_day_average(current_df, time_of_day),
             text=indicator_text,
             number={"suffix": " dBA"},
             delta={
-                "reference": self._get_time_of_day_average(previous_df, time_of_day),
+                "reference": self._get_time_of_day_average(
+                    previous_df, time_of_day
+                ),
                 "relative": True,
                 "valueformat": ".1%",
                 "increasing.color": "red",
                 "decreasing.color": "green",
             },
         )
-        
+
         self.set_formatting(fig)
 
         return fig
+
 
 class MapPlotter(BasePlotter):
     """
     Class for creating maps.
     """
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -677,37 +691,37 @@ class MapPlotter(BasePlotter):
     def plot(self) -> go.Figure:
         """
         Create marker map of device locations.
-        """        
-        fig = go.Figure(go.Scattermapbox(
-            lat=self.df[COLUMN.LAT],
-            lon=self.df[COLUMN.LON],
-            mode='markers',
-            marker=go.scattermapbox.Marker(
-                size=20
-            ),
-            hoverinfo="text",
-            hovertemplate="<b>%{hovertext}</b>"+
-                "<br><br>Lat: %{lat}"+
-                "<br>Lon: %{lon}",
-            hovertext=list(self.df[COLUMN.DEVICEID].values),
-            name = ""
-            ))
-        
+        """
+        fig = go.Figure(
+            go.Scattermapbox(
+                lat=self.df[COLUMN.LAT],
+                lon=self.df[COLUMN.LON],
+                mode="markers",
+                marker=go.scattermapbox.Marker(size=20),
+                hoverinfo="text",
+                hovertemplate="<b>%{hovertext}</b>"
+                + "<br><br>Lat: %{lat}"
+                + "<br>Lon: %{lon}",
+                hovertext=list(self.df[COLUMN.DEVICEID].values),
+                name="",
+            )
+        )
+
         lat, lon = self._get_map_center()
-        
+
         fig.update_layout(
             height=400,
-            margin={"r": 0,"t": 0,"l": 0,"b": 0},
+            margin={"r": 0, "t": 0, "l": 0, "b": 0},
             mapbox=dict(
                 zoom=int(self._config["map"]["zoom"]),
                 center=dict(
                     lat=lat,
                     lon=lon,
                 ),
-                style=self._config["map"]["style"]
-                )
-            )
-        
+                style=self._config["map"]["style"],
+            ),
+        )
+
         self.set_formatting(fig)
 
         return fig
@@ -720,9 +734,9 @@ class MapPlotter(BasePlotter):
 
         if self.df.shape[0] > 0:
             return self.df[COLUMN.LAT].values[0], self.df[COLUMN.LON].values[0]
-        
+
         else:
             lat = float(self._config["constants"]["map_center_lat"])
             lon = float(self._config["constants"]["map_center_lon"])
-            
+
             return lat, lon

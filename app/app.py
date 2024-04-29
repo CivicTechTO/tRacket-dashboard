@@ -79,10 +79,10 @@ app.layout = dbc.Container(
         html.Br(),
         html.Br(),
         html.Br(),
-                html.H2(
-                    children="Week in Numbers ",
-                    style={"textAlign": "center"},
-                ),
+        html.H2(
+            children="Week in Numbers ",
+            style={"textAlign": "center"},
+        ),
         dbc.Row([GraphManager.system_map]),
         dbc.Row(
             [
@@ -100,9 +100,7 @@ app.layout = dbc.Container(
                     [MarkdownManager.device_card],
                     # width={"size": 8, "offset": 2},
                 ),
-                dbc.Col(
-                    [GraphManager.device_map]
-                )
+                dbc.Col([GraphManager.device_map]),
             ],
         ),
         dbc.Row(

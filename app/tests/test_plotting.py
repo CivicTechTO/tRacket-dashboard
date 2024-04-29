@@ -13,7 +13,7 @@ from src.plotting import (
     BasePlotter,
     TimeOfDayIndicatorPlotter,
     TimeOfDay,
-    MapPlotter
+    MapPlotter,
 )
 from src.data_loading import CsvDataLoader, DataFormatter
 from src.utils import get_current_dir, HEATMAP_VALUE, COLUMN, filter_by_date
@@ -50,6 +50,7 @@ def dummy_system_df(data_formatter: DataFormatter) -> pd.DataFrame:
     df = data_formatter.process_records_to_dataframe(raw_data)
 
     return df
+
 
 @pytest.fixture
 def dummy_location_df(data_formatter: DataFormatter) -> pd.DataFrame:
@@ -171,8 +172,13 @@ def test_extract_hourly(dummy_hourly: pd.DataFrame):
     assert current.shape[0] == 24
     assert previous.shape[0] == 24
 
-@pytest.mark.parametrize("time_of_day", [TimeOfDay.DAY, TimeOfDay.EVENING, TimeOfDay.NIGHT])
-def test_time_of_day_indicator(dummy_hourly: pd.DataFrame, time_of_day: TimeOfDay):
+
+@pytest.mark.parametrize(
+    "time_of_day", [TimeOfDay.DAY, TimeOfDay.EVENING, TimeOfDay.NIGHT]
+)
+def test_time_of_day_indicator(
+    dummy_hourly: pd.DataFrame, time_of_day: TimeOfDay
+):
     plotter = TimeOfDayIndicatorPlotter(dummy_hourly)
 
     figure = plotter.plot(time_of_day=time_of_day)
@@ -204,13 +210,12 @@ def test_heatmap_and_save(dummy_hourly: pd.DataFrame, template: str):
 
     assert isinstance(figure, Figure)
 
+
 def test_location_map_and_save(dummy_location_df: pd.DataFrame):
     plotter = MapPlotter(dummy_location_df)
     figure = plotter.plot()
 
-    figure_out_path = os.path.join(
-        CURRENT_DIR, f"plots/location_map.html"
-    )
+    figure_out_path = os.path.join(CURRENT_DIR, f"plots/location_map.html")
     figure.write_html(figure_out_path)
 
     assert isinstance(figure, Figure)

@@ -3,20 +3,43 @@ Classes that handle the dataloading and transformations for the dashboard.
 """
 import requests
 import pandas as pd
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from src.utils import COLUMN, TABLE, Logging, load_config, get_date_string
 from abc import abstractmethod
 from pydantic import BaseModel, Field, field_validator
 from urllib.parse import urljoin
 from datetime import datetime
+from enum import StrEnum
 
 logger = Logging.get_console_logger()
 
 
+class Granularity(StrEnum):
+    """
+    API param for specifying noise measure aggregation.
+    """
+
+    raw = "raw"
+    hourly = "hourly"
+    life_time = "life-time"
+
+
+class NoiseAPIParams(BaseModel):
+    """
+    API params for getting noise measurements.
+    """
+
+    granularity: Optional[Granularity] = None
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None
+    page: Optional[int] = Field(default=None, ge=0)
+
+
 class Location(BaseModel):
     """
-    Single location.
+    Single location model.
     """
+
     id: str
     label: str
     latitude: float
@@ -28,33 +51,54 @@ class Location(BaseModel):
     def id_to_str(cls, value):
         return str(value)
 
+
 class LocationData(BaseModel):
     """
-    Device location data.
+    Device location dataset.
     """
+
     locations: List[Location]
     query: str
 
+
 class Noise(BaseModel):
     """
-    Single noise measurement.
+    Single noise measurement / hourly aggregate model.
     """
     timestamp: datetime
     min: float
     max: float
     mean: float
 
+class AggregateNoise(BaseModel):
+    """
+    Noise measurement aggregate corresponding to a time frame. 
+    Format returned for granularity=life-time requests.
+    """
+    start: datetime
+    end: datetime
+    min: float
+    max: float
+    mean: float
+
+
+
+# TODO: better use TypeAdapter and return a list from the get_ functions?
+# https://docs.pydantic.dev/latest/concepts/type_adapter/
 class NoiseData(BaseModel):
     """
-    Noise measure dataset.
+    Noise measure dataset, a list of Noise or AggregateNoise models.
     """
-    measurements: List[Noise]
+
+    measurements: List[Noise] | List[AggregateNoise]
     query: str
+
 
 class NoiseAPI(object):
     """
     Data loader from the WebCommand API v1.
     """
+
     def __init__(self) -> None:
         self.base_url = "https://noisemeter.webcomand.com/api/v1/"
         self.location_endpoint = "locations"
@@ -65,8 +109,10 @@ class NoiseAPI(object):
         General GET request to the Noise database API, returns the data JSON from the request.
         """
         get_result = requests.get(url, params=payload)
-        logger.debug(f"Request sent to {get_result.url}, status {get_result.status_code}.")
-        
+        logger.debug(
+            f"Request sent to {get_result.url}, status {get_result.status_code}."
+        )
+
         # TODO: raise error if request failed? how to fail here gracefully?
         get_result.raise_for_status()
 
@@ -81,28 +127,28 @@ class NoiseAPI(object):
 
         return LocationData(**result)
 
-
-    # TODO: add parameters to function and pass to _get as payload
-    def get_location_noise(self, id: str) -> NoiseData:
+    def get_location_noise(self, id: str, params: NoiseAPIParams = NoiseAPIParams()) -> NoiseData:
         """
         Get noise data for a given location based on its id.
+
+        Payload params:
+        granularity - “raw”, “hourly”, “life-time”
+        start - Optional start time in format recognized by strtotime (e.g. 2024-03-19 14:00:12).
+        end - Optional end time in format recognized by strtotime (e.g. 2024-03-19 14:00:12).
+        page - Optional zero-based  page index into long result sets (100 results per page).
         """
         path = f"{self.location_endpoint}/{id}/{self.noise_endpoint}"
         url = urljoin(self.base_url, path)
 
         # TODO: need to address pagination?
-        result = self._get(url)
+        result = self._get(url, payload=params.model_dump())
 
         return NoiseData(**result)
-
-
-
 
 
 #################################
 ### LEGACY WEBCOMMAND LOADING ###
 #################################
-
 
 
 class URLBuilder(object):
@@ -287,6 +333,7 @@ class URLBuilder(object):
         data_url = self._add_query_to_base_url(base_url, query_string)
 
         return data_url
+
 
 class DataFormatter(object):
     """
@@ -523,7 +570,7 @@ class WebcommandDataLoader(AbstractDataLoader):
         """
         url = self.url_builder.build_device_location_fetch_url(**url_kwargs)
         raw_data = self._fetch_from_url(url)
-        
+
         self._log_data_loading(raw_data, url_kwargs)
 
         return raw_data
@@ -566,9 +613,9 @@ class AppDataManager(object):
         Load the device locations.
         """
         raw_data = self.data_loader.load_location_data()
-        self.device_locations = self.data_formatter.process_records_to_dataframe(raw_data)
-
-
+        self.device_locations = (
+            self.data_formatter.process_records_to_dataframe(raw_data)
+        )
 
     def _load_device_ids(self):
         """Load unique device IDs for API"""

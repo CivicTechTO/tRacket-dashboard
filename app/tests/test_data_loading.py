@@ -1,20 +1,36 @@
-from src.data_loading import WebcommandDataLoader, URLBuilder, DataFormatter, NoiseAPI, LocationData, NoiseData
+from src.data_loading import (
+    WebcommandDataLoader,
+    URLBuilder,
+    DataFormatter,
+    NoiseAPI,
+    LocationData,
+    NoiseData,
+    NoiseAPIParams,
+    Granularity
+)
 from src.utils import (
     get_current_dir,
     COLUMN,
     TABLE,
     get_url_response_status,
-    pydantic_to_pandas
+    pydantic_to_pandas,
 )
 import pytest
 import os
 from typing import List
 import pandas as pd
+from pydantic import ValidationError
 
 TOKEN = os.environ["TOKEN"]
 CURRENT_DIR = get_current_dir(__file__)
 
 TEST_DEVICE_ID = "pcb-2"
+
+V1_API_TEST_ID = "572250"
+
+def test_noise_api_params():
+    with pytest.raises(ValidationError) as e:
+        NoiseAPIParams(page=-1)
 
 def test_noise_api_locations():
     """
@@ -24,28 +40,43 @@ def test_noise_api_locations():
     result = noise_api.get_locations()
 
     df = pydantic_to_pandas(result.locations)
-    df.to_csv(os.path.join(CURRENT_DIR, "data/location_api_sample.csv"), index=False)
+    df.to_csv(
+        os.path.join(CURRENT_DIR, "data/location_api_sample.csv"), index=False
+    )
 
     assert isinstance(result, LocationData)
+
 
 def test_noise_api_measurements():
     """
     Load locations from the API and save.
     """
     noise_api = NoiseAPI()
-    result = noise_api.get_location_noise(id="572250")
+    api_params = NoiseAPIParams(page=1)
+    result = noise_api.get_location_noise(id=V1_API_TEST_ID, params=api_params)
 
     df = pydantic_to_pandas(result.measurements)
-    df.to_csv(os.path.join(CURRENT_DIR, "data/location_noise_api_sample.csv"), index=False)
+    df.to_csv(
+        os.path.join(CURRENT_DIR, "data/location_noise_api_sample.csv"),
+        index=False,
+    )
 
     assert isinstance(result, NoiseData)
 
 
+def test_noise_api_measurements_lifetime():
+    """
+    Load locations from the API and save.
+    """
+    noise_api = NoiseAPI()
+    api_params = NoiseAPIParams(granularity=Granularity.life_time)
+    result = noise_api.get_location_noise(id=V1_API_TEST_ID, params=api_params)
+
+    assert len(result.measurements) == 1
+
 #################################
 ### LEGACY WEBCOMMAND LOADING ###
 #################################
-
-
 
 
 @pytest.fixture
@@ -94,7 +125,9 @@ def test_device_stats(url_builder: URLBuilder):
 
 @pytest.fixture
 def hourly_query(url_builder: URLBuilder, limit=None):
-    return url_builder.build_hourly_fetch_url(device_id=TEST_DEVICE_ID, limit=limit)
+    return url_builder.build_hourly_fetch_url(
+        device_id=TEST_DEVICE_ID, limit=limit
+    )
 
 
 def test_hourly_fetch_and_save(
@@ -199,6 +232,7 @@ def test_data_fetch_url(url_builder: URLBuilder):
 
     assert get_url_response_status(url)
 
+
 def test_device_location_url(url_builder: URLBuilder):
     """
     Test loading the location data.
@@ -206,6 +240,7 @@ def test_device_location_url(url_builder: URLBuilder):
     url = url_builder.build_device_location_fetch_url()
 
     assert get_url_response_status(url)
+
 
 @pytest.fixture
 def raw_data(
@@ -257,13 +292,16 @@ def test_device_loc_fetch_and_save(
     data_loader: WebcommandDataLoader, data_formatter: DataFormatter
 ):
     location_data = data_loader.load_location_data()
-    location_data_df = data_formatter.process_records_to_dataframe(location_data)
+    location_data_df = data_formatter.process_records_to_dataframe(
+        location_data
+    )
 
     location_data_df.to_csv(
         os.path.join(CURRENT_DIR, "data/sample_device_loc.csv"), index=False
     )
 
     assert location_data_df.shape[0] > 0
+
 
 def test_device_id_fetch_and_save(
     data_loader: WebcommandDataLoader, data_formatter: DataFormatter
@@ -278,7 +316,7 @@ def test_device_id_fetch_and_save(
         os.path.join(CURRENT_DIR, "data/sample_device_ids.csv"), index=False
     )
 
-    assert (id_data_df.shape[0] > 0)
+    assert id_data_df.shape[0] > 0
 
 
 def test_device_data_load(

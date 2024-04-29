@@ -132,13 +132,14 @@ def get_current_dir(__file__) -> str:
 
 ### DATA PROC UTILS ###
 
+
 def pydantic_to_pandas(models: List[BaseModel]):
     """
     Turn a list of pydantic models into pandas dataframe.
     """
     df = pd.DataFrame([data.model_dump() for data in models])
     return df
-    
+
 
 def filter_by_date(
     df: pd.DataFrame, start: pd.Timestamp = None, end: pd.Timestamp = None
