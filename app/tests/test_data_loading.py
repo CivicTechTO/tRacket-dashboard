@@ -1,9 +1,10 @@
-from src.data_loading import WebcommandDataLoader, URLBuilder, DataFormatter
+from src.data_loading import WebcommandDataLoader, URLBuilder, DataFormatter, NoiseAPI, LocationData, NoiseData
 from src.utils import (
     get_current_dir,
     COLUMN,
     TABLE,
     get_url_response_status,
+    pydantic_to_pandas
 )
 import pytest
 import os
@@ -14,6 +15,38 @@ TOKEN = os.environ["TOKEN"]
 CURRENT_DIR = get_current_dir(__file__)
 
 TEST_DEVICE_ID = "pcb-2"
+
+def test_noise_api_locations():
+    """
+    Load locations from the API and save.
+    """
+    noise_api = NoiseAPI()
+    result = noise_api.get_locations()
+
+    df = pydantic_to_pandas(result.locations)
+    df.to_csv(os.path.join(CURRENT_DIR, "data/location_api_sample.csv"), index=False)
+
+    assert isinstance(result, LocationData)
+
+def test_noise_api_measurements():
+    """
+    Load locations from the API and save.
+    """
+    noise_api = NoiseAPI()
+    result = noise_api.get_location_noise(id="572250")
+
+    df = pydantic_to_pandas(result.measurements)
+    df.to_csv(os.path.join(CURRENT_DIR, "data/location_noise_api_sample.csv"), index=False)
+
+    assert isinstance(result, NoiseData)
+
+
+#################################
+### LEGACY WEBCOMMAND LOADING ###
+#################################
+
+
+
 
 @pytest.fixture
 def url_builder() -> URLBuilder:

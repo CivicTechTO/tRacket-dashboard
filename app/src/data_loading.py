@@ -6,8 +6,103 @@ import pandas as pd
 from typing import List, Optional, Dict, Any
 from src.utils import COLUMN, TABLE, Logging, load_config, get_date_string
 from abc import abstractmethod
+from pydantic import BaseModel, Field, field_validator
+from urllib.parse import urljoin
+from datetime import datetime
 
 logger = Logging.get_console_logger()
+
+
+class Location(BaseModel):
+    """
+    Single location.
+    """
+    id: str
+    label: str
+    latitude: float
+    longitude: float
+    radius: int
+    active: bool
+
+    @field_validator("id", mode="before")
+    def id_to_str(cls, value):
+        return str(value)
+
+class LocationData(BaseModel):
+    """
+    Device location data.
+    """
+    locations: List[Location]
+    query: str
+
+class Noise(BaseModel):
+    """
+    Single noise measurement.
+    """
+    timestamp: datetime
+    min: float
+    max: float
+    mean: float
+
+class NoiseData(BaseModel):
+    """
+    Noise measure dataset.
+    """
+    measurements: List[Noise]
+    query: str
+
+class NoiseAPI(object):
+    """
+    Data loader from the WebCommand API v1.
+    """
+    def __init__(self) -> None:
+        self.base_url = "https://noisemeter.webcomand.com/api/v1/"
+        self.location_endpoint = "locations"
+        self.noise_endpoint = "noise"
+
+    def _get(self, url: str, payload: Dict[str, str] = None) -> dict:
+        """
+        General GET request to the Noise database API, returns the data JSON from the request.
+        """
+        get_result = requests.get(url, params=payload)
+        logger.debug(f"Request sent to {get_result.url}, status {get_result.status_code}.")
+        
+        # TODO: raise error if request failed? how to fail here gracefully?
+        get_result.raise_for_status()
+
+        return get_result.json()
+
+    def get_locations(self) -> LocationData:
+        """
+        Get device location data.
+        """
+        url = urljoin(self.base_url, self.location_endpoint)
+        result = self._get(url)
+
+        return LocationData(**result)
+
+
+    # TODO: add parameters to function and pass to _get as payload
+    def get_location_noise(self, id: str) -> NoiseData:
+        """
+        Get noise data for a given location based on its id.
+        """
+        path = f"{self.location_endpoint}/{id}/{self.noise_endpoint}"
+        url = urljoin(self.base_url, path)
+
+        # TODO: need to address pagination?
+        result = self._get(url)
+
+        return NoiseData(**result)
+
+
+
+
+
+#################################
+### LEGACY WEBCOMMAND LOADING ###
+#################################
+
 
 
 class URLBuilder(object):
