@@ -65,22 +65,24 @@ class Noise(BaseModel):
     """
     Single noise measurement / hourly aggregate model.
     """
+
     timestamp: datetime
     min: float
     max: float
     mean: float
 
+
 class AggregateNoise(BaseModel):
     """
-    Noise measurement aggregate corresponding to a time frame. 
+    Noise measurement aggregate corresponding to a time frame.
     Format returned for granularity=life-time requests.
     """
+
     start: datetime
     end: datetime
     min: float
     max: float
     mean: float
-
 
 
 # TODO: better use TypeAdapter and return a list from the get_ functions?
@@ -127,7 +129,9 @@ class NoiseAPI(object):
 
         return LocationData(**result)
 
-    def get_location_noise(self, id: str, params: NoiseAPIParams = NoiseAPIParams()) -> NoiseData:
+    def get_location_noise(
+        self, id: str, params: NoiseAPIParams = NoiseAPIParams()
+    ) -> NoiseData:
         """
         Get noise data for a given location based on its id.
 

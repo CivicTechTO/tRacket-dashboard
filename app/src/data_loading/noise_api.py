@@ -32,11 +32,12 @@ class NoiseApi:
         return LocationsData(**response)
 
     def get_location_noise_data(
-            self, location_id: str,
-            params: NoiseRequestParams) -> LocationNoiseData:
+        self, location_id: str, params: NoiseRequestParams
+    ) -> LocationNoiseData:
         """
         Get noise data for a location.
         """
-        noise_data = self._get(f"locations/{location_id}/noise",
-                               params=params.model_dump())
+        noise_data = self._get(
+            f"locations/{location_id}/noise", params=params.model_dump()
+        )
         return LocationNoiseData(**noise_data)

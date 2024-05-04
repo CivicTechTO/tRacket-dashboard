@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 from typing import List
 import pandas as pd
-from src.utils import Logging
+from src.utils import Logging, pydantic_to_pandas
 from src.data_loading.noise_api import NoiseApi
 from src.data_loading.models import LocationNoiseData, NoiseRequestParams
 from dotenv import load_dotenv
@@ -18,7 +18,12 @@ const_since_aliases = {
 }
 
 
-def since_to_datetime(alias: str):
+def since_to_datetime(alias: str) -> datetime:
+    """
+    Based on a string represented time delta `alias`, 
+    create the datetime representing current time minus `alias`.
+    E.g. alias = "2 w" is mapped to the date time two weeks before.
+    """
     num = re.search(r"\d+", alias).group()
     num = int(num)
     unit = re.search(r"[a-zA-Z]+", alias).group()
@@ -28,29 +33,47 @@ def since_to_datetime(alias: str):
     if unit in ["s", "m", "h", "d"]:
         unit = const_since_aliases[unit]
         time = timedelta(**{unit: num})
-        return now - time
+        
+        result = now - time
     elif unit == "w":
         time = timedelta(days=num * 7)
-        return now - time
+        
+        result = now - time
     elif unit == "M":
         time = timedelta(days=num * 30)
-        return now - time
+        
+        result = now - time
     elif unit == "y":
         year = now.year - num
-        return now.replace(year=year)
+
+        result = now.replace(year=year)
     else:
         raise ValueError("Invalid time unit")
 
+    return result
 
-def get_location_stats(api: NoiseApi, location_id: str, since: str):
+
+def get_location_stats(api: NoiseApi, location_id: str, since: str) -> pd.DataFrame:
+    """
+    Make an API request for noise data at a specific location, in a specific time frame.
+    """
     params = NoiseRequestParams(start=since_to_datetime(since))
     location_data = api.get_location_noise_data(location_id, params)
-    stats = pd.DataFrame(data.measurements.model_dump())
+    stats = pydantic_to_pandas(location_data.measurements)
+   
     return stats
 
 
-def get_locations(api: NoiseApi):
-    return api.get_locations()
+def get_locations(api: NoiseApi) -> pd.DataFrame:
+    """
+    Make an API request for the device locations.
+    """
+    locations = api.get_locations()
+    locations_df = pydantic_to_pandas(locations.locations)
+
+    logger.info(f"Received {locations_df.shape[0]} locations.")
+    
+    return locations_df
 
 
 def get_location_noise(
@@ -66,6 +89,7 @@ def get_location_noise(
 
     params = NoiseRequestParams(start=start_time, end=end_time)
     location_data = api.get_location_noise_data(location_id, params)
+    
     return location_data
 
 

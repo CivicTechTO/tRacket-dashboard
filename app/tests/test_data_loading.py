@@ -6,7 +6,7 @@ from src.data_loading import (
     LocationData,
     NoiseData,
     NoiseAPIParams,
-    Granularity
+    Granularity,
 )
 from src.utils import (
     get_current_dir,
@@ -28,9 +28,11 @@ TEST_DEVICE_ID = "pcb-2"
 
 V1_API_TEST_ID = "572250"
 
+
 def test_noise_api_params():
     with pytest.raises(ValidationError) as e:
         NoiseAPIParams(page=-1)
+
 
 def test_noise_api_locations():
     """
@@ -73,6 +75,7 @@ def test_noise_api_measurements_lifetime():
     result = noise_api.get_location_noise(id=V1_API_TEST_ID, params=api_params)
 
     assert len(result.measurements) == 1
+
 
 #################################
 ### LEGACY WEBCOMMAND LOADING ###
