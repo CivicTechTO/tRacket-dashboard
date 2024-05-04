@@ -31,11 +31,17 @@ class COLUMN(Enum):
     Columns to use and their name from API call, Noise table.
     """
 
-    TIMESTAMP = "Timestamp"
-    DEVICEID = "DeviceID"
-    MIN = "Min"
-    MAX = "Max"
-    MEAN = "Mean"
+    # v1 API columns
+    DEVICEID = "id"
+    LABEL = "label"
+    MIN = "min"
+    MAX = "max"
+    MEAN = "mean"
+    LAT = "latitude"
+    LON = "longitude"
+    ACTIVE = "active"
+    TIMESTAMP = "timestamp"
+
     # aggregate columns
     COUNT = "count"
     COUNT_PRIOR = "count_prior"
@@ -49,11 +55,6 @@ class COLUMN(Enum):
     AVGMIN_PRIOR = "min_avg_prior"
     OUTLIERCOUNT = "outlier_count"
     OUTLIERCOUNT_PRIOR = "outlier_count_prior"
-    ACTIVE_ID = "active"
-
-    # device table columns
-    LAT = "RandomizedLatitude"
-    LON = "RandomizedLongitude"
 
 
 class HEATMAP_VALUE(Enum):

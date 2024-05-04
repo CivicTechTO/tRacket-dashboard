@@ -7,7 +7,8 @@ import configparser
 from src.utils import Logging, dbc_themes_name_to_url
 import os
 from src.data_loading.main import get_locations, create_api
-
+from src.plotting import MapPlotter
+from src.data_loading_legacy import DataFormatter
 
 ### Configs & Settings ###
 
@@ -45,7 +46,14 @@ server = app.server
 api = create_api()
 locations = get_locations(api)
 
-app.layout = dbc.Container([html.Div("text")])
+# map string col names to enum
+dataformatter = DataFormatter()
+locations = dataformatter._string_col_names_to_enum(locations)
+
+map_plotter = MapPlotter(locations)
+figure = map_plotter.plot()
+
+app.layout = dbc.Container(dbc.Row([dcc.Graph(id="map", figure=figure)]), fluid=True)
 
 
 if __name__ == "__main__":
