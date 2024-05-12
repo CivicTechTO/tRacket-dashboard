@@ -1,14 +1,14 @@
 """
 Main dash application.
 """
-from dash import Dash, html, dcc
+from dash import Dash
 import dash_bootstrap_components as dbc
 import configparser
-from src.utils import Logging, dbc_themes_name_to_url
+from src.utils import Logging, dbc_themes_name_to_url, COLUMN
 import os
 from src.data_loading.main import get_locations, create_api
-from src.plotting import MapPlotter
 from src.data_loading_legacy import DataFormatter
+import dash_leaflet as dl
 
 ### Configs & Settings ###
 
@@ -50,10 +50,36 @@ locations = get_locations(api)
 dataformatter = DataFormatter()
 locations = dataformatter._string_col_names_to_enum(locations)
 
-map_plotter = MapPlotter(locations)
-figure = map_plotter.plot()
+### Mapping ###
 
-app.layout = dbc.Container(dbc.Row([dcc.Graph(id="map", figure=figure)]), fluid=True)
+# get map center
+lat = float(config["constants"]["map_center_lat"])
+lon = float(config["constants"]["map_center_lon"])
+center = [lat, lon]
+
+markers = [
+    dl.CircleMarker(
+        center=[lat, lon],
+        radius=config["map"]["radius-pixel"],
+        fillColor=config["map"]["marker_color"],
+        color=config["map"]["marker_color"]
+    )
+    for lat, lon in zip(locations[COLUMN.LAT], locations[COLUMN.LON])
+]
+
+app.layout = dl.Map(
+    [
+        dl.TileLayer(
+            url=config["map"]["layer_url"],
+            attribution=config["map"]["layer_attribution"]
+            ), 
+        dl.LayerGroup(markers),
+        dl.GestureHandling()
+    ],
+    center=center,
+    zoom=config["map"]["zoom"],
+    style={"height": "100vh"},
+)
 
 
 if __name__ == "__main__":
