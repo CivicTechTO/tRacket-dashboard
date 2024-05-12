@@ -101,9 +101,13 @@ dbc_themes_name_to_url = {
 ### GENERAL UTILS ###
 
 
-def load_config() -> configparser.ConfigParser:
+def load_config(config_path: str = None) -> configparser.ConfigParser:
+    """
+    Load a config file from the current dir or a given location.
+    """
     config = configparser.ConfigParser()
-    config_path = os.path.join(get_current_dir(__file__), "config.ini")
+    if config_path is None:
+        config_path = os.path.join(get_current_dir(__file__), "config.ini")
     config.read(config_path)
 
     return config

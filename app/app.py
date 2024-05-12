@@ -35,7 +35,7 @@ app = Dash(
     "Noise-App",
     title="Noise Pressure Monitor",
     external_stylesheets=[theme_url, dbc.icons.FONT_AWESOME],
-    use_pages=True
+    use_pages=True,
 )
 server = app.server
 
