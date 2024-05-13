@@ -3,6 +3,7 @@ The main map page of the application.
 """
 
 import dash
+import dash_bootstrap_components as dbc
 from src.data_loading.main import get_locations, create_api
 from src.data_loading_legacy import DataFormatter
 from src.app_components import LeafletMapComponentManager
@@ -20,11 +21,16 @@ locations = dataformatter._string_col_names_to_enum(locations)
 ### Dash Page Definition ###
 
 
-dash.register_page(__name__, title="tRacket")
+dash.register_page(
+    __name__,
+    path="/locations", 
+    title="tRacket",
+    path_template="/locations/<device_id>",
+)
 
 
-def layout(**kwargs):
+def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(locations)
-    map = leaflet_manager.get_map()
+    map = leaflet_manager.get_map(device_id=device_id)
 
     return map

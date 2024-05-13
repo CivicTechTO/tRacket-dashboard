@@ -32,8 +32,8 @@ theme_url = dbc_themes_name_to_url[theme_name]
 ### Setup App ###
 
 app = Dash(
-    "Noise-App",
-    title="Noise Pressure Monitor",
+    "tRacket Dashboard",
+    title="tRacket Dashboard",
     external_stylesheets=[theme_url, dbc.icons.FONT_AWESOME],
     use_pages=True,
 )
