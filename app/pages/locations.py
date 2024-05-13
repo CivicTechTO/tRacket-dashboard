@@ -3,6 +3,7 @@ The main map page of the application.
 """
 
 import dash
+from dash import html
 import dash_bootstrap_components as dbc
 from src.data_loading.main import get_locations, create_api
 from src.data_loading_legacy import DataFormatter
@@ -33,4 +34,18 @@ def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(locations)
     map = leaflet_manager.get_map(device_id=device_id)
 
-    return map
+    if device_id is None:
+        layout = map
+    else:
+        layout = dbc.Container(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(html.P("Indicator placeholder")), 
+                        dbc.Col(html.P("Line graph placeholder"))
+                    ]
+                ),
+                dbc.Row([map])]
+        )
+    
+    return layout
