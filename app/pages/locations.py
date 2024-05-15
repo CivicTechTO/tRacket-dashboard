@@ -24,7 +24,7 @@ locations = dataformatter._string_col_names_to_enum(locations)
 
 dash.register_page(
     __name__,
-    path="/locations", 
+    path="/locations",
     title="tRacket",
     path_template="/locations/<device_id>",
 )
@@ -37,15 +37,17 @@ def layout(device_id: str = None, **kwargs):
     if device_id is None:
         layout = map
     else:
+
         layout = dbc.Container(
             [
                 dbc.Row(
                     [
-                        dbc.Col(html.P("Indicator placeholder")), 
-                        dbc.Col(html.P("Line graph placeholder"))
+                        dbc.Col(html.P("Indicator placeholder")),
+                        dbc.Col(html.P("Line graph placeholder")),
                     ]
                 ),
-                dbc.Row([map])]
+                dbc.Row([map]),
+            ]
         )
-    
+
     return layout

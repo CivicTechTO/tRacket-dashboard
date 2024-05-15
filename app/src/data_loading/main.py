@@ -3,12 +3,13 @@ import os
 from datetime import datetime, timedelta
 from typing import List
 import pandas as pd
-from src.utils import Logging, pydantic_to_pandas
+from src.utils import Logging, pydantic_to_pandas, load_config
 from src.data_loading.noise_api import NoiseApi
-from src.data_loading.models import LocationNoiseData, NoiseRequestParams
+from src.data_loading.models import NoiseRequestParams
 from dotenv import load_dotenv
 
 logger = Logging.get_console_logger()
+config = load_config()
 
 const_since_aliases = {
     "s": "seconds",
@@ -68,7 +69,7 @@ def get_location_stats(
 
 def get_locations(api: NoiseApi) -> pd.DataFrame:
     """
-    Make an API request for the device locations.
+    Make an API request for all device locations.
     """
     locations = api.get_locations()
     locations_df = pydantic_to_pandas(locations.locations)
@@ -107,11 +108,7 @@ def get_location_average_noise(
 
 
 def create_api(url: str = None):
-    if not url:
-        load_dotenv()
-        url = os.getenv("API_URL")
-
-    if not url:
-        url = "https://noisemeter.webcomand.com/api/v1/"
+    if url is None:
+        url = config["api"]["url"]
 
     return NoiseApi(url)

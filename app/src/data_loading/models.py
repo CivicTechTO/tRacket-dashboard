@@ -44,9 +44,9 @@ class Noise(BaseModel):
     Noise measurement value.
     """
 
-    min: int
-    max: int
-    avg: int
+    min: float
+    max: float
+    mean: float
 
 
 class NoiseTimed(Noise):
@@ -62,4 +62,4 @@ class LocationNoiseData(BaseModel):
     Location noise data.
     """
 
-    measurements: List[NoiseTimed]
+    measurements: List[Noise]

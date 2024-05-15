@@ -60,8 +60,6 @@ class COMPONENT_ID(StrEnum):
     hourly_device_data_store = auto()
 
 
-
-
 class AbstractAppManager(object):
     """
     Base class for managing app components.

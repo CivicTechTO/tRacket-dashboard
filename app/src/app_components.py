@@ -9,6 +9,7 @@ class COMPONENT_ID(StrEnum):
     """
     Component IDs for the app.
     """
+
     system_map = auto()
 
 
@@ -48,20 +49,22 @@ class LeafletMapComponentManager:
         Build the markers for the map.
         """
         if device_id:
-            selected_device = self.locations[self.locations[COLUMN.DEVICEID] == device_id]
-           
+            selected_device = self.locations[
+                self.locations[COLUMN.DEVICEID] == device_id
+            ]
+
             lat = list(selected_device[COLUMN.LAT])[0]
-            lon = list(selected_device[COLUMN.LON])[0] 
+            lon = list(selected_device[COLUMN.LON])[0]
 
             selected_device_marker = dl.Circle(
-                    center=[lat, lon],
-                    radius=self.config["map"]["radius-meter"],
-                    fillColor=self.config["map"]["marker_color_highlight"],
-                    color=self.config["map"]["marker_color_highlight"],
-                )
+                center=[lat, lon],
+                radius=self.config["map"]["radius-meter"],
+                fillColor=self.config["map"]["marker_color_highlight"],
+                color=self.config["map"]["marker_color_highlight"],
+            )
 
             markers = [selected_device_marker]
-        
+
         else:
             markers = [
                 dl.CircleMarker(
@@ -82,8 +85,10 @@ class LeafletMapComponentManager:
         Read the map center from the configs.
         """
         if device_id:
-            device_row = self.locations[self.locations[COLUMN.DEVICEID] == device_id]
-        
+            device_row = self.locations[
+                self.locations[COLUMN.DEVICEID] == device_id
+            ]
+
         if device_id and device_row.shape[0] > 0:
             lat = list(device_row[COLUMN.LAT])[0]
             lon = list(device_row[COLUMN.LON])[0]
@@ -98,7 +103,7 @@ class LeafletMapComponentManager:
         Create the location map.
         """
 
-        zoom = self._get_zoom(default = (device_id is None))
+        zoom = self._get_zoom(default=(device_id is None))
 
         map = dl.Map(
             [
@@ -109,7 +114,7 @@ class LeafletMapComponentManager:
             center=self._get_map_center(device_id=device_id),
             zoom=zoom,
             style={"height": "100vh"},
-            id=COMPONENT_ID.system_map
+            id=COMPONENT_ID.system_map,
         )
 
         return map
@@ -120,6 +125,5 @@ class LeafletMapComponentManager:
         """
         default_zoom = int(self.config["map"]["zoom"])
         zoom = default_zoom if default else default_zoom + 4
-        
-        return zoom
 
+        return zoom
