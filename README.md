@@ -1,5 +1,6 @@
 # 🚨 LEGACY VERSION OF THE DASHBOARD 🚨
 
+The API for this version is not supported any more - keeping this as archive.
 
 ---
 
