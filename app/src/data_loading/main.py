@@ -1,3 +1,6 @@
+"""
+Main data loading functionalities.
+"""
 import re
 from datetime import datetime, timedelta
 import pandas as pd

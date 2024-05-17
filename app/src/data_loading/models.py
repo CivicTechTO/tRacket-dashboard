@@ -1,3 +1,6 @@
+"""
+Data models to define the expected API reply and data validation using the `pydantic` library.
+"""
 from datetime import datetime
 from typing import List, Literal, Optional
 from pydantic import BaseModel, Field, field_validator, AwareDatetime
