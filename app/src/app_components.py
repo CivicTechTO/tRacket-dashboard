@@ -1,23 +1,8 @@
-from dash import callback, Input, Output, dcc, html, State
-import dash_bootstrap_components as dbc
-from typing import List, Dict, Any, Optional
-from src.data_loading import AppDataManager
-from src.utils import COLUMN, HEATMAP_VALUE, load_config
+from typing import List
+from src.utils import COLUMN, load_config
 from enum import StrEnum, auto
-from abc import abstractclassmethod
 import pandas as pd
-from src.plotting import (
-    TimeseriesPlotter,
-    HeatmapPlotter,
-    HistogramPlotter,
-    OutlierIndicatorPlotter,
-    MinAverageIndicatorPlotter,
-    DeviceCountIndicatorPlotter,
-    TimeOfDayIndicatorPlotter,
-    TimeOfDay,
-    MapPlotter
-)
-from plotly.graph_objects import Figure
+import dash_leaflet as dl
 
 
 class COMPONENT_ID(StrEnum):
@@ -25,140 +10,53 @@ class COMPONENT_ID(StrEnum):
     Component IDs for the app.
     """
 
-    # graphs
-    histogram = auto()
-    noise_line_graph = auto()
-    heatmap = auto()
-    count_indicator = auto()
-    count_indicator_tooltip = auto()
-    avg_indicator = auto()
-    avg_indicator_tooltip = auto()
-    outlier_indicator = auto()
-    outlier_indicator_tooltip = auto()
-    day_indicator = auto()
-    day_indicator_div = auto()
-    day_indicator_tooltip = auto()
-    evening_indicator = auto()
-    evening_indicator_div = auto()
-    evening_indicator_tooltip = auto()
-    night_indicator = auto()
-    night_indicator_div = auto()
-    night_indicator_tooltip = auto()
     system_map = auto()
-    device_map = auto()
-
-    # inputs
-    device_id_input = auto()
-    heatmap_toggle = auto()
-
-    # markdowns
-    summary_card_text = auto()
-
-    # store
-    device_data_store = auto()
-    device_stats_store = auto()
-    hourly_device_data_store = auto()
 
 
-class AbstractAppManager(object):
-    """
-    Base class for managing app components.
-    """
-
-    app_data_manager: AppDataManager = None
-
-    @classmethod
-    def _set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
-        cls.app_data_manager = app_data_manager
-
-    @abstractclassmethod
-    def initialize(
-        cls, app_data_manager: Optional[AppDataManager] = None
-    ) -> None:
-        if app_data_manager:
-            cls._set_app_data_manager(app_data_manager)
-        pass
+### Mapping ###
 
 
-class DataStoreManager(AbstractAppManager):
-    """
-    Class for initializing the clien-side data stores for re-use.
-    """
+class LeafletMapComponentManager:
+    def __init__(self, locations: pd.DataFrame) -> None:
+        """
+        Initialize with the location data.
+        """
+        self.config = load_config()
 
-    device_data_store: dcc.Store = None
-    device_stats_store: dcc.Store = None
-    hourly_device_data_store: dcc.Store = None
+        self._validate_data(locations)
+        self.locations = locations
 
-    @classmethod
-    def initialize(cls) -> None:
-        cls.device_data_store = dcc.Store(id=COMPONENT_ID.device_data_store)
-        cls.device_stats_store = dcc.Store(id=COMPONENT_ID.device_stats_store)
-        cls.hourly_device_data_store = dcc.Store(
-            id=COMPONENT_ID.hourly_device_data_store
+    def _validate_data(self, locations: pd.DataFrame) -> None:
+        """
+        Check that required columns are present.
+        """
+        assert COLUMN.LAT in locations.columns
+        assert COLUMN.LON in locations.columns
+
+    def _get_tile(self) -> dl.TileLayer:
+        """
+        Create the map tile layer.
+        """
+        tile_layer = dl.TileLayer(
+            url=self.config["map"]["layer_url"],
+            attribution=self.config["map"]["layer_attribution"],
         )
 
+        return tile_layer
 
-class MarkdownManager(AbstractAppManager):
-    """
-    Class for handling text components in the app.
-    """
-
-    device_card: dbc.Card = None
-    intro_markdown: dcc.Markdown = None
-    navbar: dbc.NavbarSimple
-
-    style = {"textAlign": "left", "margin-left": "30px"}
-
-    @classmethod
-    def initialize(cls, app_data_manager: AppDataManager) -> None:
+    def _get_markers(self, device_id: str = None) -> List[dl.CircleMarker]:
         """
-        Main call to initialize all app markdowns.
+        Build the markers for the map.
         """
-        cls._set_app_data_manager(app_data_manager)
-        cls._initialize_navbar()
-        cls._initialize_device_card()
-
-    @classmethod
-    def _initialize_device_card(cls) -> None:
-        """Create main card for device selection and stats."""
-        cls.device_card = dbc.Card(
-            [
-                dbc.CardHeader(
-                    [
-                        html.H2("Pick a Device", className="card-title"),
-                        html.Br(),
-                        InputManager.device_id_dropdown,
-                        html.Br(),
-                    ]
-                ),
-                dbc.CardBody(
-                    [
-                        html.H4("Summary", className="card-title"),
-                        html.P(
-                            id=COMPONENT_ID.summary_card_text,
-                            className="card-text",
-                        ),
-                    ]
-                ),
+        if device_id:
+            selected_device = self.locations[
+                self.locations[COLUMN.DEVICEID] == device_id
             ]
-        )
 
-    @classmethod
-    def _initialize_navbar(cls) -> None:
-        about_intro = dcc.Markdown(
-            """
-                Environmental noise, especially in urban settings, is a [known public health concern](https://www.toronto.ca/wp-content/uploads/2017/11/8f98-tph-How-Loud-is-Too-Loud-Health-Impacts-Environmental-Noise.pdf):
-            """
-        )
-        quote = html.Blockquote(
-            """
-                "The growing body of evidence indicates that exposure to excessive environmental noise does not only impact quality of life and cause hearing loss but also has other health impacts, such as cardiovascular effects, cognitive impacts, sleep disturbance and mental health effects."
-            """
-        )
-        about_outro = dcc.Markdown(
-            """
-                Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
+            lat = list(selected_device[COLUMN.LAT])[0]
+            lon = list(selected_device[COLUMN.LON])[0]
 
+<<<<<<< HEAD
                 Developed & maintained by the CivicTech TO community using [Plotly Dash](https://dash.plotly.com/) and hosted on [Heroku](https://www.heroku.com/). 
                 
                 Source: [Github](https://github.com/danieltsoukup/noise-dashboard)
@@ -507,226 +405,76 @@ class CallbackManager(AbstractAppManager):
                 f"This device has recorder a total of {count} measurements between "
                 f" {formatted_min_date} and {formatted_max_date}. "
                 f" The loudest measurement recorded to date was at {max_noise} dBA."
+=======
+            selected_device_marker = dl.Circle(
+                center=[lat, lon],
+                radius=self.config["map"]["radius-meter"],
+                fillColor=self.config["map"]["marker_color_highlight"],
+                color=self.config["map"]["marker_color_highlight"],
+>>>>>>> api_redesign
             )
 
-            return text
+            markers = [selected_device_marker]
 
-        @callback(
-            Output("modal", "is_open"),
-            Input("open", "n_clicks"),
-            [State("modal", "is_open")],
-        )
-        def toggle_modal(n1, is_open):
-            if n1:
-                return not is_open
-            else:
-                return is_open
-
-    @classmethod
-    def _initialize_data_callbacks(cls) -> None:
-        """
-        Define callbacks responsible for data loading and store.
-        """
-        @callback(
-            Output(COMPONENT_ID.device_stats_store, "data"),
-            Input(COMPONENT_ID.device_id_input, "value"),
-        )
-        def load_device_stats(device_id: str) -> List[Dict[str, Any]]:
-            """
-            Load the data from the API.
-            """
-            raw_stats = cls.app_data_manager.load_device_stats(
-                device_id=device_id
-            )
-
-            return raw_stats
-
-        @callback(
-            Output(COMPONENT_ID.hourly_device_data_store, "data"),
-            Input(COMPONENT_ID.device_id_input, "value"),
-        )
-        def load_hourly_data(device_id: str) -> List[Dict[str, Any]]:
-            """
-            Load the data from the API.
-            """
-            raw_hourly_data = cls.app_data_manager.load_hourly_data(
-                device_id=device_id
-            )
-
-            return raw_hourly_data
-
-        @callback(
-            Output(COMPONENT_ID.device_data_store, "data"),
-            Input(COMPONENT_ID.device_id_input, "value"),
-            Input(COMPONENT_ID.device_stats_store, "data"),
-            Input(COMPONENT_ID.heatmap, "clickData"),
-        )
-        def load_data(
-            device_id: str, stats: List[dict], clickData: Dict
-        ) -> List[Dict[str, Any]]:
-            """
-            Load the data from the API.
-            """
-
-            date_format = "%Y-%m-%d"
-            
-            
-            stats_dict = stats[0]
-            
-            # check if the clicked date is in the date range for the device
-            stats_min_date_str = stats_dict[COLUMN.MINDATE.value]
-            stats_min_date = pd.to_datetime(stats_min_date_str).strftime(date_format)
-            
-            stats_end_date_str = stats_dict[COLUMN.MAXDATE.value]
-            stats_end_date = pd.to_datetime(stats_end_date_str).strftime(date_format)
-            
-            if clickData:                
-                # user selects end date
-                date_string = clickData["points"][0]["x"]                
-                click_end_date = pd.Timestamp(date_string).strftime(date_format)
-                end_date = click_end_date if (stats_min_date <= click_end_date <= stats_end_date) else stats_end_date
-
-            else:
-                # last recorded date used as end        
-                end_date = stats_end_date
-
-            # look back 7 days
-            start_date = pd.to_datetime(end_date) - pd.Timedelta(days=7)
-            start_date = start_date.strftime(date_format)
-
-            # load data from API
-            raw_device_data = cls.app_data_manager.load_noise_data(
-                device_id=device_id, end_date=end_date, start_date=start_date
-            )
-
-            return raw_device_data
-
-    @classmethod
-    def _initialize_plot_callbacks(cls) -> None:
-        """
-        Define methods for updating plots.
-        """
-        @callback(
-            Output(COMPONENT_ID.device_map, "figure"),
-            Input(COMPONENT_ID.device_id_input, "value")
-        )
-        def update_device_map(device_id: str) -> Figure:
-            """
-            Set the map for a single device location based on device id.
-            """
-            location_df = cls.app_data_manager.device_locations
-            device_location = location_df.loc[location_df[COLUMN.DEVICEID] == device_id, :]
-
-            plotter = MapPlotter(device_location, bootstrap_template=cls._boostrap_template_name)
-            
-            return plotter.plot()
-
-        @callback(
-            Output(COMPONENT_ID.noise_line_graph, "figure"),
-            Input(COMPONENT_ID.device_data_store, "data"),
-        )
-        def update_noise_level_fig(data: List[Dict[str, Any]]) -> Figure:
-            """
-            Filter the line for a single device id.
-            """
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
-                data
-            )
-
-            timeseries_plotter = TimeseriesPlotter(
-                df, bootstrap_template=cls._boostrap_template_name
-            )
-
-            return timeseries_plotter.plot()
-
-        @callback(
-            Output(COMPONENT_ID.histogram, "figure"),
-            Input(COMPONENT_ID.device_data_store, "data"),
-        )
-        def update_histogram(data: List[Dict[str, Any]]) -> Figure:
-            """
-            Histogram of min/max distribution.
-            """
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
-                data
-            )
-
-            hist_plotter = HistogramPlotter(
-                df, bootstrap_template=cls._boostrap_template_name
-            )
-
-            return hist_plotter.plot()
-
-        
-        @callback(
-            Output(COMPONENT_ID.day_indicator, "figure"),
-            Input(COMPONENT_ID.hourly_device_data_store, "data"),
-        )
-        def update_day_indicator(data: List[Dict[str, Any]]) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
-            plotter = TimeOfDayIndicatorPlotter(df)
-
-            fig = plotter.plot(time_of_day=TimeOfDay.DAY)
-            
-            return fig
-        
-        @callback(
-            Output(COMPONENT_ID.evening_indicator, "figure"),
-            Input(COMPONENT_ID.hourly_device_data_store, "data"),
-        )
-        def update_evening_indicator(data: List[Dict[str, Any]]) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
-            plotter = TimeOfDayIndicatorPlotter(df)
-
-            fig = plotter.plot(time_of_day=TimeOfDay.EVENING)
-            
-            return fig
-
-        @callback(
-            Output(COMPONENT_ID.night_indicator, "figure"),
-            Input(COMPONENT_ID.hourly_device_data_store, "data"),
-        )
-        def update_night_indicator(data: List[Dict[str, Any]]) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(data)
-            plotter = TimeOfDayIndicatorPlotter(df)
-
-            fig = plotter.plot(time_of_day=TimeOfDay.NIGHT)
-            
-            return fig
-
-        @callback(
-            Output(COMPONENT_ID.heatmap, "figure"),
-            Input(COMPONENT_ID.hourly_device_data_store, "data"),
-            Input(COMPONENT_ID.heatmap_toggle, "value"),
-        )
-        def update_heatmap(
-            data: List[Dict[str, Any]], max_toggle: bool
-        ) -> Figure:
-            df = cls.app_data_manager.data_formatter.process_records_to_dataframe(
-                data
-            )
-            heatmap_plotter = HeatmapPlotter(
-                df, bootstrap_template=cls._boostrap_template_name
-            )
-
-            if max_toggle:
-                title = (
-                    "Hourly Highest Measures - click to filter for the week!"
+        else:
+            markers = [
+                dl.CircleMarker(
+                    center=[lat, lon],
+                    radius=self.config["map"]["radius-pixel"],
+                    fillColor=self.config["map"]["marker_color"],
+                    color=self.config["map"]["marker_color"],
                 )
-                pivot_value = HEATMAP_VALUE.MAX
-            else:
-                title = "Hourly Ambient Noise - click to filter for the week!"
-                pivot_value = HEATMAP_VALUE.MIN
+                for lat, lon in zip(
+                    self.locations[COLUMN.LAT], self.locations[COLUMN.LON]
+                )
+            ]
 
-            return heatmap_plotter.plot(pivot_value=pivot_value, title=title)
+        return markers
 
+    def _get_map_center(self, device_id: str = None) -> tuple[float]:
+        """
+        Read the map center from the configs.
+        """
+        if device_id:
+            device_row = self.locations[
+                self.locations[COLUMN.DEVICEID] == device_id
+            ]
 
-    @classmethod
-    def initialize(cls, app_data_manager: AppDataManager) -> None:
-        cls._set_app_data_manager(app_data_manager)
+        if device_id and device_row.shape[0] > 0:
+            lat = list(device_row[COLUMN.LAT])[0]
+            lon = list(device_row[COLUMN.LON])[0]
+        else:
+            lat = float(self.config["constants"]["map_center_lat"])
+            lon = float(self.config["constants"]["map_center_lon"])
 
-        cls._initialize_card_callbacks()
-        cls._initialize_data_callbacks()
-        cls._initialize_plot_callbacks()
+        return (lat, lon)
 
-       
+    def get_map(self, device_id: str = None) -> dl.Map:
+        """
+        Create the location map.
+        """
+
+        zoom = self._get_zoom(default=(device_id is None))
+
+        map = dl.Map(
+            [
+                self._get_tile(),
+                dl.LayerGroup(self._get_markers(device_id=device_id)),
+                dl.GestureHandling(),
+            ],
+            center=self._get_map_center(device_id=device_id),
+            zoom=zoom,
+            style={"height": "100vh"},
+            id=COMPONENT_ID.system_map,
+        )
+
+        return map
+
+    def _get_zoom(self, default: bool = True):
+        """
+        Find level of zoom, default is system level (higher), non defailt is device focus.
+        """
+        default_zoom = int(self.config["map"]["zoom"])
+        zoom = default_zoom if default else default_zoom + 4
+
+        return zoom
