@@ -6,7 +6,7 @@ import dash
 from dash import html
 import dash_bootstrap_components as dbc
 from src.data_loading.main import get_locations, create_api
-from src.data_loading_legacy import DataFormatter
+from src.utils import DataFormatter
 from src.app_components import LeafletMapComponentManager
 
 ### Data loading ###

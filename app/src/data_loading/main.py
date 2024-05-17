@@ -1,12 +1,9 @@
 import re
-import os
 from datetime import datetime, timedelta
-from typing import List
 import pandas as pd
 from src.utils import Logging, pydantic_to_pandas, load_config
 from src.data_loading.noise_api import NoiseApi
 from src.data_loading.models import NoiseRequestParams
-from dotenv import load_dotenv
 
 logger = Logging.get_console_logger()
 config = load_config()

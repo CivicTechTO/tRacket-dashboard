@@ -10,9 +10,8 @@ import inspect
 import requests
 import configparser
 import dash_bootstrap_components as dbc
-import json
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any
 
 ### ENUMS ###
 
@@ -136,6 +135,99 @@ def get_current_dir(__file__) -> str:
 
 
 ### DATA PROC UTILS ###
+
+
+
+class DataFormatter(object):
+    """
+    Base class for handling data formatting for the dashboard.
+    """
+
+    def __init__(self) -> None:
+        pass
+
+    @staticmethod
+    def _string_col_names_to_enum(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Map the string col names to enums, filter rest to only the enums.
+        """
+        new_df = df.rename(
+            columns={column_enum.value: column_enum for column_enum in COLUMN}
+        )
+
+        new_df = new_df[[col for col in COLUMN if col in new_df.columns]]
+
+        return new_df
+
+    @staticmethod
+    def _enum_col_names_to_string(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Map the COLUMN enums to their value in the column names.
+        """
+        new_df = df.rename(
+            columns={col_enum: col_enum.value for col_enum in COLUMN}
+        )
+
+        return new_df
+
+    @staticmethod
+    def _set_data_types(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Sets the right data types for noise data columns in place.
+        """
+        mapper = {
+            COLUMN.TIMESTAMP: "datetime64[ns]",
+            COLUMN.MIN: int,
+            COLUMN.MAX: int,
+            COLUMN.MEAN: float,
+            COLUMN.COUNT: int,
+            COLUMN.DATE: "datetime64[ns]",
+            COLUMN.HOUR: int,
+            COLUMN.MAXNOISE: int,
+            COLUMN.MINNOISE: int,
+            COLUMN.MINDATE: "datetime64[ns]",
+            COLUMN.MAXDATE: "datetime64[ns]",
+        }
+
+        for col, type_ in mapper.items():
+            if col in df.columns:
+                df[col] = df[col].astype(type_)
+
+        return df
+
+    @staticmethod
+    def _raw_to_dataframe(raw_data: List[Dict[str, Any]]) -> pd.DataFrame:
+        """
+        Turn the API response to a pandas df.
+        """
+
+        return pd.DataFrame(raw_data)
+
+    def process_records_to_dataframe(
+        self, raw_data: List[Dict[str, Any]]
+    ) -> pd.DataFrame:
+        """
+        Turn the raw, records format into a dataframe with preset column names and datatypes.
+        """
+        # list of dict to dataframe
+        df = self._raw_to_dataframe(raw_data)
+
+        # col name reset and filter by column enum
+        df = self._string_col_names_to_enum(df)
+
+        df = self._set_data_types(df)
+
+        return df
+
+    def process_dataframe_to_records(
+        self, df: pd.DataFrame
+    ) -> List[Dict[str, Any]]:
+        """
+        Map the processed dataframe format back to records that can be jsonified.
+        """
+        df = self._enum_col_names_to_string(df)
+
+        return df.to_dict("records")
 
 
 def pydantic_to_pandas(models: List[BaseModel]):
