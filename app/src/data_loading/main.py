@@ -108,6 +108,9 @@ def get_location_average_noise(
 
 
 def create_api(url: str = None):
+    """
+    Create noise api for data loading.
+    """
     if url is None:
         url = config["api"]["url"]
 

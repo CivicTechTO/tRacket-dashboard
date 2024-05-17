@@ -1,7 +1,13 @@
 from urllib.parse import urljoin
 import httpx
 from src.utils import Logging
-from src.data_loading.models import *
+from src.data_loading.models import (
+    AggregateLocationNoiseData,
+    TimedLocationNoiseData,
+    NoiseRequestParams,
+    LocationsData,
+    AbstractLocationNoiseData,
+)
 
 logger = Logging.get_console_logger()
 
@@ -38,10 +44,15 @@ class NoiseApi:
 
     def get_location_noise_data(
         self, location_id: str, params: NoiseRequestParams = None
-    ) -> LocationNoiseData:
+    ) -> AbstractLocationNoiseData:
         """
         Get noise data for a location.
         """
         noise_data = self._get(f"locations/{location_id}/noise", params=params)
 
-        return LocationNoiseData(**noise_data)
+        if params and params.granularity == "life-time":
+            noise_data = AggregateLocationNoiseData(**noise_data)
+        else:
+            noise_data = TimedLocationNoiseData(**noise_data)
+
+        return noise_data

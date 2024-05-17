@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, AwareDatetime
 
 
 class NoiseRequestParams(BaseModel):
@@ -51,15 +51,40 @@ class Noise(BaseModel):
 
 class NoiseTimed(Noise):
     """
-    Noise measurement value with timestamp.
+    Point-in-time noise measurement value with timestamp.
     """
 
-    timestamp: datetime
+    timestamp: AwareDatetime
 
 
-class LocationNoiseData(BaseModel):
+class NoiseAggregate(Noise):
     """
-    Location noise data.
+    Aggregate noise measurement corresponding to a time interval.
+    """
+
+    start: datetime
+    end: datetime
+
+
+class AbstractLocationNoiseData(BaseModel):
+    """
+    Abstract class for collecting noise data.
     """
 
     measurements: List[Noise]
+
+
+class TimedLocationNoiseData(AbstractLocationNoiseData):
+    """
+    Timed location noise data.
+    """
+
+    measurements: List[NoiseTimed]
+
+
+class AggregateLocationNoiseData(AbstractLocationNoiseData):
+    """
+    Aggregate noise data for a location.
+    """
+
+    measurements: List[NoiseAggregate]
