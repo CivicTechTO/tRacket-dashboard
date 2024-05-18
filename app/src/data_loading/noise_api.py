@@ -11,6 +11,7 @@ from src.data_loading.models import (
     LocationsData,
     AbstractLocationNoiseData,
 )
+from src.data_loading.models import Granularity
 
 logger = Logging.get_console_logger()
 
@@ -64,7 +65,7 @@ class NoiseApi:
                 noise_data = self._get(f"locations/{location_id}/noise", params=params)
                 collected_noise_data["measurements"].extend(noise_data["measurements"])
 
-        if params and params.granularity == "life-time":
+        if params and params.granularity == Granularity.life_time:
             noise_data = AggregateLocationNoiseData(**collected_noise_data)
         else:
             noise_data = TimedLocationNoiseData(**collected_noise_data)
@@ -74,7 +75,7 @@ class NoiseApi:
     def _paginate_check(self, params: NoiseRequestParams) -> tuple[NoiseRequestParams, bool]:
         """
         Decide if the API request should be paginated and set up the params accordingly.
-        Only paginate if the user did not provide page and its not an aggregate call.
+        Only paginate if the user did not provide params or page and if its not an aggregate call.
         """
 
         paginate = False
@@ -83,7 +84,7 @@ class NoiseApi:
             params = NoiseRequestParams(**{"page": 0})
             paginate = True
         
-        elif params.page is None and params.granularity != "life-time":
+        elif params.page is None and params.granularity != Granularity.life_time:
             params.page = 0
             paginate = True
         

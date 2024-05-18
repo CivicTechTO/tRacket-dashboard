@@ -6,7 +6,7 @@ from src.data_loading.models import (
     AggregateLocationNoiseData,
 )
 from src.data_loading.main import create_api
-
+from src.data_loading.models import Granularity
 from src.utils import get_current_dir, pydantic_to_pandas, load_config
 import pytest
 import os
@@ -96,10 +96,10 @@ def test_plain_get_request(noise_api: NoiseApi):
     assert len(df) > 0
 
 
-def test_plain_get_request_lifetime(noise_api: NoiseApi):
+def test_plain_lifetime_get_request_lifetime(noise_api: NoiseApi):
     result = noise_api._get(
         f"locations/{V1_API_TEST_ID}/noise",
-        params=NoiseRequestParams(**{"granularity": "life-time"}),
+        params=NoiseRequestParams(granularity=Granularity.life_time),
     )
     df = pydantic_to_pandas(AggregateLocationNoiseData(**result).measurements)
     assert len(df) > 0
@@ -123,7 +123,7 @@ def test_noise_api_measurements_lifetime(noise_api: NoiseApi):
     """
     Load locations from the API and save.
     """
-    api_params = NoiseRequestParams(granularity="life-time")
+    api_params = NoiseRequestParams(granularity=Granularity.life_time)
     result = noise_api.get_location_noise_data(
         location_id=V1_API_TEST_ID, params=api_params
     )
@@ -140,7 +140,7 @@ def test_noise_api_measurements_hourly(noise_api: NoiseApi):
     """
     Load locations from the API and save.
     """
-    api_params = NoiseRequestParams(granularity="hourly", page=1)
+    api_params = NoiseRequestParams(granularity=Granularity.hourly, page=1)
     result = noise_api.get_location_noise_data(
         location_id=V1_API_TEST_ID, params=api_params
     )

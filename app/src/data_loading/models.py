@@ -2,16 +2,24 @@
 Data models to define the expected API reply and data validation using the `pydantic` library.
 """
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator, AwareDatetime
+from enum import StrEnum, auto
 
+class Granularity(StrEnum):
+    """
+    Granularity options.
+    """
+    raw = auto()
+    hourly = auto()
+    life_time = "life-time"
 
 class NoiseRequestParams(BaseModel):
     """
     Model for data in API request made for getting noise measurements.
     """
 
-    granularity: Literal["raw", "hourly", "life-time"] = "raw"
+    granularity: Granularity = Granularity.raw
     start: Optional[datetime] = None
     end: Optional[datetime] = None
     page: Optional[int] = Field(default=None, ge=0)
