@@ -109,7 +109,7 @@ def test_noise_api_measurements(noise_api: NoiseApi):
     """
     Load locations from the API and save.
     """
-    result = noise_api.get_location_noise_data(location_id=V1_API_TEST_ID)
+    result = noise_api.get_location_noise_data(location_id=V1_API_TEST_ID, params=NoiseRequestParams(page=1))
     df = pydantic_to_pandas(result.measurements)
     df.to_csv(
         os.path.join(CURRENT_DIR, "data/location_noise_api_sample.csv"),
@@ -140,7 +140,7 @@ def test_noise_api_measurements_hourly(noise_api: NoiseApi):
     """
     Load locations from the API and save.
     """
-    api_params = NoiseRequestParams(granularity="hourly")
+    api_params = NoiseRequestParams(granularity="hourly", page=1)
     result = noise_api.get_location_noise_data(
         location_id=V1_API_TEST_ID, params=api_params
     )

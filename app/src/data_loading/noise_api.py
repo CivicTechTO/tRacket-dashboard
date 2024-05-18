@@ -49,13 +49,42 @@ class NoiseApi:
         self, location_id: str, params: NoiseRequestParams = None
     ) -> AbstractLocationNoiseData:
         """
-        Get noise data for a location.
+        Get noise data for a location. Loading is paginated by default unless caller provides explicit page.
         """
         noise_data = self._get(f"locations/{location_id}/noise", params=params)
+        
+        collected_noise_data = {"measurements": []}
+        collected_noise_data["measurements"].extend(noise_data["measurements"])
+        
+        params, paginate = self._paginate_check(params)
+        
+        if paginate:
+            while len(noise_data["measurements"]) > 0:
+                params.page += 1
+                noise_data = self._get(f"locations/{location_id}/noise", params=params)
+                collected_noise_data["measurements"].extend(noise_data["measurements"])
 
         if params and params.granularity == "life-time":
-            noise_data = AggregateLocationNoiseData(**noise_data)
+            noise_data = AggregateLocationNoiseData(**collected_noise_data)
         else:
-            noise_data = TimedLocationNoiseData(**noise_data)
+            noise_data = TimedLocationNoiseData(**collected_noise_data)
 
         return noise_data
+
+    def _paginate_check(self, params: NoiseRequestParams) -> tuple[NoiseRequestParams, bool]:
+        """
+        Decide if the API request should be paginated and set up the params accordingly.
+        Only paginate if the user did not provide page and its not an aggregate call.
+        """
+
+        paginate = False
+        
+        if params is None:
+            params = NoiseRequestParams(**{"page": 0})
+            paginate = True
+        
+        elif params.page is None and params.granularity != "life-time":
+            params.page = 0
+            paginate = True
+        
+        return params, paginate

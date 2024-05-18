@@ -67,6 +67,7 @@ class NoiseAggregate(Noise):
 
     start: datetime
     end: datetime
+    count: int
 
 
 class AbstractLocationNoiseData(BaseModel):
