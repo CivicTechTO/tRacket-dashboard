@@ -35,12 +35,13 @@ dash.register_page(
 
 def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(locations)
-    map = leaflet_manager.get_map(device_id=device_id)
 
     if device_id is None:
+        map = leaflet_manager.get_map(device_id=device_id)
         layout = map
 
     else:
+        map = leaflet_manager.get_map(device_id=device_id, style={"height": "50vh"})
         data_manager.load_and_format_location_noise(location_id=device_id)
         plotter = TimeseriesPlotter(data_manager.location_noise)
         fig = plotter.plot()
@@ -48,7 +49,7 @@ def layout(device_id: str = None, **kwargs):
         noise_line_graph = dcc.Graph(
             figure=fig,
             id=COMPONENT_ID.noise_line_graph,
-            config={"displayModeBar": False}
+            config={"displayModeBar": False},
         )
 
         layout = dbc.Container(

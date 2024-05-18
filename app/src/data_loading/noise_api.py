@@ -29,7 +29,11 @@ class NoiseApi:
         Get data from the API and return as a json/dict.
         """
         full_url = urljoin(self.url, endpoint)
-        params = params.model_dump(exclude_unset=True, exclude_none=True) if params else None
+        params = (
+            params.model_dump(exclude_unset=True, exclude_none=True)
+            if params
+            else None
+        )
 
         response = httpx.get(full_url, params=params)
         logger.info(f"GET Request: {response.url}")
@@ -53,17 +57,21 @@ class NoiseApi:
         Get noise data for a location. Loading is paginated by default unless caller provides explicit page.
         """
         noise_data = self._get(f"locations/{location_id}/noise", params=params)
-        
+
         collected_noise_data = {"measurements": []}
         collected_noise_data["measurements"].extend(noise_data["measurements"])
-        
+
         params, paginate = self._paginate_check(params)
-        
+
         if paginate:
             while len(noise_data["measurements"]) > 0:
                 params.page += 1
-                noise_data = self._get(f"locations/{location_id}/noise", params=params)
-                collected_noise_data["measurements"].extend(noise_data["measurements"])
+                noise_data = self._get(
+                    f"locations/{location_id}/noise", params=params
+                )
+                collected_noise_data["measurements"].extend(
+                    noise_data["measurements"]
+                )
 
         if params and params.granularity == Granularity.life_time:
             noise_data = AggregateLocationNoiseData(**collected_noise_data)
@@ -72,20 +80,24 @@ class NoiseApi:
 
         return noise_data
 
-    def _paginate_check(self, params: NoiseRequestParams) -> tuple[NoiseRequestParams, bool]:
+    def _paginate_check(
+        self, params: NoiseRequestParams
+    ) -> tuple[NoiseRequestParams, bool]:
         """
         Decide if the API request should be paginated and set up the params accordingly.
         Only paginate if the user did not provide params or page and if its not an aggregate call.
         """
 
         paginate = False
-        
+
         if params is None:
             params = NoiseRequestParams(**{"page": 0})
             paginate = True
-        
-        elif params.page is None and params.granularity != Granularity.life_time:
+
+        elif (
+            params.page is None and params.granularity != Granularity.life_time
+        ):
             params.page = 0
             paginate = True
-        
+
         return params, paginate

@@ -82,8 +82,20 @@ def test_hourly_noise_model():
 
     assert len(timed_noise_data.measurements) == 1
 
+
 def test_life_time_noise_model():
-    dummy_data = {"measurements":[{"start":"2024-02-04 23:32:58","end":"2024-03-27 17:54:30","count":14341,"min":35.77902985,"max":92.33490753,"mean":46.82144099}]}
+    dummy_data = {
+        "measurements": [
+            {
+                "start": "2024-02-04 23:32:58",
+                "end": "2024-03-27 17:54:30",
+                "count": 14341,
+                "min": 35.77902985,
+                "max": 92.33490753,
+                "mean": 46.82144099,
+            }
+        ]
+    }
     aggregate_noise_data = AggregateLocationNoiseData(**dummy_data)
 
     assert len(aggregate_noise_data.measurements) == 1
@@ -109,7 +121,9 @@ def test_noise_api_measurements(noise_api: NoiseApi):
     """
     Load locations from the API and save.
     """
-    result = noise_api.get_location_noise_data(location_id=V1_API_TEST_ID, params=NoiseRequestParams(page=1))
+    result = noise_api.get_location_noise_data(
+        location_id=V1_API_TEST_ID, params=NoiseRequestParams(page=1)
+    )
     df = pydantic_to_pandas(result.measurements)
     df.to_csv(
         os.path.join(CURRENT_DIR, "data/location_noise_api_sample.csv"),

@@ -9,6 +9,7 @@ from dash import callback, Input, Output, dcc, html, State
 import dash_bootstrap_components as dbc
 from abc import abstractclassmethod
 
+
 class COMPONENT_ID(StrEnum):
     """
     Component IDs for the app.
@@ -18,12 +19,11 @@ class COMPONENT_ID(StrEnum):
     noise_line_graph = auto()
 
 
-
-
 class AbstractAppManager(object):
     """
     Base class for managing app components and making data available through the AppDataManager.
     """
+
     _config = load_config()
     app_data_manager: AppDataManager = None
 
@@ -43,7 +43,7 @@ class AbstractAppManager(object):
 ### Mapping ###
 
 
-class LeafletMapComponentManager():
+class LeafletMapComponentManager:
     def __init__(self, locations: pd.DataFrame) -> None:
         """
         Initialize with the location data.
@@ -125,7 +125,7 @@ class LeafletMapComponentManager():
 
         return (lat, lon)
 
-    def get_map(self, device_id: str = None) -> dl.Map:
+    def get_map(self, device_id: str = None, style: dict = {"height": "100vh"}) -> dl.Map:
         """
         Create the location map.
         """
@@ -140,7 +140,7 @@ class LeafletMapComponentManager():
             ],
             center=self._get_map_center(device_id=device_id),
             zoom=zoom,
-            style={"height": "100vh"},
+            style=style,
             id=COMPONENT_ID.system_map,
         )
 
@@ -160,6 +160,7 @@ class GraphManager(AbstractAppManager):
     """
     Class to collect and initialize the graph components for the app.
     """
+
     noise_line_graph: dcc.Graph = None
 
     @classmethod
@@ -169,7 +170,6 @@ class GraphManager(AbstractAppManager):
         """
         cls._set_app_data_manager(app_data_manager)
         cls._setup_noise_line_graph()
-    
 
     @classmethod
     def _setup_noise_line_graph(cls) -> None:
@@ -179,8 +179,5 @@ class GraphManager(AbstractAppManager):
         cls.noise_line_graph = dcc.Graph(
             id=COMPONENT_ID.noise_line_graph,
             fig=fig,
-            config={"displayModeBar": False}
+            config={"displayModeBar": False},
         )
-
-
-

@@ -59,7 +59,7 @@ class BasePlotter:
                 COLOR_ITEM.MIN: self._config["plot.colors"]["min"],
                 COLOR_ITEM.MAX: self._config["plot.colors"]["max"],
                 COLOR_ITEM.MAP_MARKER: self._config["map"]["marker_color"],
-                COLOR_ITEM.MEAN: self._config["plot.colors"]["mean"]
+                COLOR_ITEM.MEAN: self._config["plot.colors"]["mean"],
             }
         else:
             colors = {
@@ -276,6 +276,13 @@ class TimeseriesPlotter(BasePlotter):
         figure.update_layout(
             showlegend=False,
             hovermode="x unified",
+            height=300,
+            margin=dict(
+                l=100,
+                r=10,
+                b=10,
+                t=20,
+            ),
         )
 
         if show_title:
@@ -330,7 +337,7 @@ class TimeseriesPlotter(BasePlotter):
             name="Mean",
             mode="lines",
             line_color=self.colors[COLOR_ITEM.MEAN],
-            line_width=int(self._config["plot.sizes"]["mean_line_width"])
+            line_width=int(self._config["plot.sizes"]["mean_line_width"]),
         )
         return trace
 

@@ -45,7 +45,6 @@ class COLUMN(Enum):
     START = "start"
     END = "end"
 
-
     # aggregate columns
     COUNT_PRIOR = "count_prior"
     MINDATE = "mindate"
@@ -141,7 +140,6 @@ def get_current_dir(__file__) -> str:
 ### DATA PROC UTILS ###
 
 
-
 class DataFormatter(object):
     """
     Base class for handling data formatting for the dashboard.
@@ -191,7 +189,9 @@ class DataFormatter(object):
                 df[col] = df[col].astype(type_)
 
         if COLUMN.TIMESTAMP in df.columns:
-            df[COLUMN.TIMESTAMP] = pd.to_datetime(df[COLUMN.TIMESTAMP]).dt.tz_localize(None)
+            df[COLUMN.TIMESTAMP] = pd.to_datetime(
+                df[COLUMN.TIMESTAMP]
+            ).dt.tz_localize(None)
 
         return df
 

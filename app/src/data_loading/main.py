@@ -4,7 +4,13 @@ Main data loading functionalities.
 import re
 from datetime import datetime, timedelta
 import pandas as pd
-from src.utils import Logging, pydantic_to_pandas, load_config, DataFormatter, COLUMN
+from src.utils import (
+    Logging,
+    pydantic_to_pandas,
+    load_config,
+    DataFormatter,
+    COLUMN,
+)
 from src.data_loading.noise_api import NoiseApi
 from src.data_loading.models import NoiseRequestParams, Granularity
 
@@ -17,9 +23,6 @@ const_since_aliases = {
     "h": "hours",
     "d": "days",
 }
-
-
-
 
 
 def since_to_datetime(alias: str) -> datetime:
@@ -57,9 +60,7 @@ def since_to_datetime(alias: str) -> datetime:
     return result
 
 
-def get_location_stats(
-    api: NoiseApi, location_id: str
-) -> pd.DataFrame:
+def get_location_stats(api: NoiseApi, location_id: str) -> pd.DataFrame:
     """
     Make an API request for noise data at a specific location, in a specific time frame.
     """
@@ -94,7 +95,9 @@ def get_location_noise(
     """
     Pull noise data for a given location and timeframe.
     """
-    params = NoiseRequestParams(start=start_time, end=end_time, granularity=Granularity.hourly)
+    params = NoiseRequestParams(
+        start=start_time, end=end_time, granularity=Granularity.hourly
+    )
     noise_data = api.get_location_noise_data(location_id, params)
     noise_df = pydantic_to_pandas(noise_data.measurements)
 
@@ -124,10 +127,11 @@ def create_api(url: str = None):
     return NoiseApi(url)
 
 
-class AppDataManager():
+class AppDataManager:
     """
     Class for collecting all the required data for the dashboard.
     """
+
     def __init__(self) -> None:
         self.api = create_api()
         self.data_formatter = DataFormatter()
@@ -143,7 +147,7 @@ class AppDataManager():
 
         self.locations = locations
 
-    def load_and_format_location_stats(self, location_id = str) -> None:
+    def load_and_format_location_stats(self, location_id=str) -> None:
         """
         Load the life-time stats for the location.
         """
@@ -151,10 +155,9 @@ class AppDataManager():
         stats = self.data_formatter._string_col_names_to_enum(stats)
         stats = self.data_formatter._set_data_types(stats)
 
-
         self.location_stats = stats
-    
-    def load_and_format_location_noise(self, location_id = str):
+
+    def load_and_format_location_noise(self, location_id=str):
         """
         Load the last seven days of the location data.
         """
@@ -162,11 +165,10 @@ class AppDataManager():
         end = self.location_stats.loc[0, COLUMN.END]
         start = end - timedelta(days=7)
 
-        noise_data = get_location_noise(self.api, location_id=location_id, start_time=start, end_time=end)
+        noise_data = get_location_noise(
+            self.api, location_id=location_id, start_time=start, end_time=end
+        )
         noise_data = self.data_formatter._string_col_names_to_enum(noise_data)
         noise_data = self.data_formatter._set_data_types(noise_data)
-        
+
         self.location_noise = noise_data
-
-
-        

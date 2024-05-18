@@ -3,16 +3,25 @@ Data models to define the expected API reply and data validation using the `pyda
 """
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field, field_validator, AwareDatetime, field_serializer
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+    AwareDatetime,
+    field_serializer,
+)
 from enum import StrEnum, auto
+
 
 class Granularity(StrEnum):
     """
     Granularity options.
     """
+
     raw = auto()
     hourly = auto()
     life_time = "life-time"
+
 
 class NoiseRequestParams(BaseModel):
     """
@@ -24,11 +33,11 @@ class NoiseRequestParams(BaseModel):
     end: Optional[datetime] = None
     page: Optional[int] = Field(default=None, ge=0)
 
-    @field_serializer('start')
+    @field_serializer("start")
     def serialize_dt(self, start: datetime, _info):
         return start.strftime("%Y-%m-%dT%H:%i:%s")
 
-    @field_serializer('end')
+    @field_serializer("end")
     def serialize_dt(self, end: datetime, _info):
         return end.strftime("%Y-%m-%dT%H:%i:%s")
 
