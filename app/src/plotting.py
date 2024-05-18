@@ -26,6 +26,7 @@ logger = Logging.get_console_logger()
 class COLOR_ITEM(StrEnum):
     MIN = auto()
     MAX = auto()
+    MEAN = auto()
     MAP_MARKER = auto()
 
 
@@ -58,6 +59,7 @@ class BasePlotter:
                 COLOR_ITEM.MIN: self._config["plot.colors"]["min"],
                 COLOR_ITEM.MAX: self._config["plot.colors"]["max"],
                 COLOR_ITEM.MAP_MARKER: self._config["map"]["marker_color"],
+                COLOR_ITEM.MEAN: self._config["plot.colors"]["mean"]
             }
         else:
             colors = {
@@ -246,7 +248,7 @@ class TimeseriesPlotter(BasePlotter):
         )
 
     def _validate_data(self, df: pd.DataFrame) -> None:
-        for column in [COLUMN.MIN, COLUMN.MAX, COLUMN.TIMESTAMP]:
+        for column in [COLUMN.MIN, COLUMN.MAX, COLUMN.MEAN, COLUMN.TIMESTAMP]:
             assert (
                 column in df.columns
             ), f"Column {column} missing from the data columns ({df.columns})."
@@ -265,12 +267,11 @@ class TimeseriesPlotter(BasePlotter):
             [
                 self._get_min_line_trace(),
                 self._get_max_line_trace(),
-                self._get_outlier_trace(),
-                self._get_indicator_trace(),
+                self._get_mean_line_trace(),
             ]
         )
 
-        figure.update_xaxes(rangeslider_visible=True)
+        figure.update_xaxes(rangeslider_visible=False)
         figure.update_yaxes(title_text="Noise Level (dBA)")
         figure.update_layout(
             showlegend=False,
@@ -302,8 +303,8 @@ class TimeseriesPlotter(BasePlotter):
     def _get_max_line_trace(self) -> go.Scatter:
         trace = go.Scatter(
             x=self.df[COLUMN.TIMESTAMP],
-            y=self.df[COLUMN.MAX],
-            name="max",
+            y=self.df[COLUMN.MAX].round(1),
+            name="Max",
             mode="lines",
             line_color=self.colors[COLOR_ITEM.MAX],
             fill="tonexty",
@@ -315,10 +316,20 @@ class TimeseriesPlotter(BasePlotter):
     def _get_min_line_trace(self) -> go.Scatter:
         trace = go.Scatter(
             x=self.df[COLUMN.TIMESTAMP],
-            y=self.df[COLUMN.MIN],
-            name="min",
+            y=self.df[COLUMN.MIN].round(1),
+            name="Min",
             mode="lines",
             line_color=self.colors[COLOR_ITEM.MIN],
+        )
+        return trace
+
+    def _get_mean_line_trace(self) -> go.Scatter:
+        trace = go.Scatter(
+            x=self.df[COLUMN.TIMESTAMP],
+            y=self.df[COLUMN.MEAN].round(1),
+            name="Mean",
+            mode="lines",
+            line_color=self.colors[COLOR_ITEM.MEAN],
         )
         return trace
 

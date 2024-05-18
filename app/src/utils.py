@@ -12,6 +12,7 @@ import configparser
 import dash_bootstrap_components as dbc
 from pydantic import BaseModel
 from typing import List, Dict, Any
+from datetime import datetime
 
 ### ENUMS ###
 
@@ -176,22 +177,18 @@ class DataFormatter(object):
         Sets the right data types for noise data columns in place.
         """
         mapper = {
-            COLUMN.TIMESTAMP: "datetime64[ns]",
-            COLUMN.MIN: int,
-            COLUMN.MAX: int,
+            COLUMN.MIN: float,
+            COLUMN.MAX: float,
             COLUMN.MEAN: float,
             COLUMN.COUNT: int,
-            COLUMN.DATE: "datetime64[ns]",
-            COLUMN.HOUR: int,
-            COLUMN.MAXNOISE: int,
-            COLUMN.MINNOISE: int,
-            COLUMN.MINDATE: "datetime64[ns]",
-            COLUMN.MAXDATE: "datetime64[ns]",
         }
 
         for col, type_ in mapper.items():
             if col in df.columns:
                 df[col] = df[col].astype(type_)
+
+        if COLUMN.TIMESTAMP in df.columns:
+            df[COLUMN.TIMESTAMP] = pd.to_datetime(df[COLUMN.TIMESTAMP]).dt.tz_localize(None)
 
         return df
 
@@ -228,6 +225,14 @@ class DataFormatter(object):
         df = self._enum_col_names_to_string(df)
 
         return df.to_dict("records")
+
+    def format_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Map string col names to enum and set datatypes.
+        """
+        df = self._string_col_names_to_enum(df)
+        df = self._set_data_types(df)
+        return df
 
 
 def pydantic_to_pandas(models: List[BaseModel]):
