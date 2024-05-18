@@ -1,4 +1,17 @@
-DeviceID,RandomizedLatitude,RandomizedLongitude
-gabe1,43.6701,-79.4293
-b88,43.6481,-79.376
-nick3,43.6685,-79.4524
+id,label,latitude,longitude,radius,active
+572227,Scott St & Wellington St,43.6481,-79.376,25,False
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572234,Ossington Ave & Dupont St,43.6701,-79.4293,50,True
+572250,Kingsley Ave & Symington Ave,43.6685,-79.4524,50,True
+637770,,43.648,-79.376,100,False
+637773,Scott St. & Wellington St.,43.648,-79.376,50,True
+664429,Bayview Ave & Sheppard Ave E,43.7666,-79.388,50,True
