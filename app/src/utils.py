@@ -41,9 +41,12 @@ class COLUMN(Enum):
     LON = "longitude"
     ACTIVE = "active"
     TIMESTAMP = "timestamp"
+    COUNT = "count"
+    START = "start"
+    END = "end"
+
 
     # aggregate columns
-    COUNT = "count"
     COUNT_PRIOR = "count_prior"
     MINDATE = "mindate"
     MAXDATE = "maxdate"

@@ -1,9 +1,13 @@
-from typing import List
+from typing import List, Optional
 from src.utils import COLUMN, load_config
+from src.data_loading.main import AppDataManager
+from src.plotting import TimeseriesPlotter
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
-
+from dash import callback, Input, Output, dcc, html, State
+import dash_bootstrap_components as dbc
+from abc import abstractclassmethod
 
 class COMPONENT_ID(StrEnum):
     """
@@ -11,12 +15,35 @@ class COMPONENT_ID(StrEnum):
     """
 
     system_map = auto()
+    noise_line_graph = auto()
+
+
+
+
+class AbstractAppManager(object):
+    """
+    Base class for managing app components and making data available through the AppDataManager.
+    """
+    _config = load_config()
+    app_data_manager: AppDataManager = None
+
+    @classmethod
+    def _set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
+        cls.app_data_manager = app_data_manager
+
+    @abstractclassmethod
+    def initialize(
+        cls, app_data_manager: Optional[AppDataManager] = None
+    ) -> None:
+        if app_data_manager:
+            cls._set_app_data_manager(app_data_manager)
+        pass
 
 
 ### Mapping ###
 
 
-class LeafletMapComponentManager:
+class LeafletMapComponentManager():
     def __init__(self, locations: pd.DataFrame) -> None:
         """
         Initialize with the location data.
@@ -127,3 +154,33 @@ class LeafletMapComponentManager:
         zoom = default_zoom if default else default_zoom + 4
 
         return zoom
+
+
+class GraphManager(AbstractAppManager):
+    """
+    Class to collect and initialize the graph components for the app.
+    """
+    noise_line_graph: dcc.Graph = None
+
+    @classmethod
+    def initialize(cls, app_data_manager: AppDataManager) -> None:
+        """
+        Main call to setup all graph components for the app.
+        """
+        cls._set_app_data_manager(app_data_manager)
+        cls._setup_noise_line_graph()
+    
+
+    @classmethod
+    def _setup_noise_line_graph(cls) -> None:
+        plotter = TimeseriesPlotter(cls.app_data_manager.hourly_data)
+        fig = plotter.plot()
+
+        cls.noise_line_graph = dcc.Graph(
+            id=COMPONENT_ID.noise_line_graph,
+            fig=fig,
+            config={"displayModeBar": False}
+        )
+
+
+

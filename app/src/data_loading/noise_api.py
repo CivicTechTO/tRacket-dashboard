@@ -29,7 +29,7 @@ class NoiseApi:
         Get data from the API and return as a json/dict.
         """
         full_url = urljoin(self.url, endpoint)
-        params = params.model_dump(exclude_unset=True) if params else None
+        params = params.model_dump(exclude_unset=True, exclude_none=True) if params else None
 
         response = httpx.get(full_url, params=params)
         logger.info(f"GET Request: {response.url}")

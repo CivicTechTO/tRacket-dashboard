@@ -330,6 +330,7 @@ class TimeseriesPlotter(BasePlotter):
             name="Mean",
             mode="lines",
             line_color=self.colors[COLOR_ITEM.MEAN],
+            line_width=int(self._config["plot.sizes"]["mean_line_width"])
         )
         return trace
 
