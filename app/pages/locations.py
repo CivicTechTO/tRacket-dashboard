@@ -7,7 +7,10 @@ from dash import html
 import dash_bootstrap_components as dbc
 from src.data_loading.main import get_locations, create_api, AppDataManager
 from src.utils import DataFormatter
-from src.app_components import LeafletMapComponentManager
+from src.app_components import LeafletMapComponentManager, COMPONENT_ID
+from src.plotting import TimeseriesPlotter
+from dash import callback, Input, Output, dcc, html, State
+
 
 ### Data loading ###
 
@@ -39,16 +42,24 @@ def layout(device_id: str = None, **kwargs):
 
     else:
         data_manager.load_and_format_location_noise(location_id=device_id)
+        plotter = TimeseriesPlotter(data_manager.location_noise)
+        fig = plotter.plot()
+
+        noise_line_graph = dcc.Graph(
+            figure=fig,
+            id=COMPONENT_ID.noise_line_graph,
+            config={"displayModeBar": False}
+        )
 
         layout = dbc.Container(
             [
                 dbc.Row(
                     [
-                        dbc.Col(html.P("Indicator placeholder")),
-                        dbc.Col(html.P("Line graph placeholder")),
+                        dbc.Col(html.P("Indicator placeholder"), width=4),
+                        dbc.Col(noise_line_graph, width=8),
                     ]
                 ),
-                dbc.Row([map]),
+                dbc.Row([dbc.Col(map)]),
             ]
         )
 

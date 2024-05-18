@@ -94,7 +94,7 @@ def get_location_noise(
     """
     Pull noise data for a given location and timeframe.
     """
-    params = NoiseRequestParams(start=start_time, end=end_time)
+    params = NoiseRequestParams(start=start_time, end=end_time, granularity=Granularity.hourly)
     noise_data = api.get_location_noise_data(location_id, params)
     noise_df = pydantic_to_pandas(noise_data.measurements)
 
