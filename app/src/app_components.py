@@ -17,6 +17,7 @@ class COMPONENT_ID(StrEnum):
 
     system_map = auto()
     noise_line_graph = auto()
+    mean_indicator = auto()
 
 
 class AbstractAppManager(object):
@@ -173,7 +174,7 @@ class GraphManager(AbstractAppManager):
 
     @classmethod
     def _setup_noise_line_graph(cls) -> None:
-        plotter = TimeseriesPlotter(cls.app_data_manager.hourly_data)
+        plotter = TimeseriesPlotter(cls.app_data_manager.location_noise)
         fig = plotter.plot()
 
         cls.noise_line_graph = dcc.Graph(

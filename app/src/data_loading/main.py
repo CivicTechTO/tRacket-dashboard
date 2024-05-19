@@ -62,7 +62,7 @@ def since_to_datetime(alias: str) -> datetime:
 
 def get_location_stats(api: NoiseApi, location_id: str) -> pd.DataFrame:
     """
-    Make an API request for noise data at a specific location, in a specific time frame.
+    Make an API request for life-time, aggregate noise data at a specific location.
     """
     params = NoiseRequestParams(granularity=Granularity.life_time)
 
@@ -141,6 +141,9 @@ class AppDataManager:
         self.location_noise: pd.DataFrame = None
 
     def load_and_format_locations(self):
+        """
+        Load and format the device location data for the whole system.
+        """
         locations = get_locations(self.api)
         locations = self.data_formatter._string_col_names_to_enum(locations)
         locations = self.data_formatter._set_data_types(locations)
@@ -149,7 +152,7 @@ class AppDataManager:
 
     def load_and_format_location_stats(self, location_id=str) -> None:
         """
-        Load the life-time stats for the location.
+        Load the life-time aggregate stats for the location.
         """
         stats = get_location_stats(self.api, location_id=location_id)
         stats = self.data_formatter._string_col_names_to_enum(stats)

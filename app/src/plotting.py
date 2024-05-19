@@ -268,21 +268,22 @@ class TimeseriesPlotter(BasePlotter):
                 self._get_min_line_trace(),
                 self._get_max_line_trace(),
                 self._get_mean_line_trace(),
+                self._get_final_marker()
             ]
         )
 
         figure.update_xaxes(rangeslider_visible=False)
-        figure.update_yaxes(title_text="Noise Level (dBA)")
         figure.update_layout(
             showlegend=False,
             hovermode="x unified",
-            height=300,
+            height=int(self._config["plot.sizes"]["line_chart_height"]),
             margin=dict(
-                l=100,
+                l=10,
                 r=10,
                 b=10,
                 t=20,
             ),
+            yaxis={'visible': False, 'showticklabels': False}
         )
 
         if show_title:
@@ -292,6 +293,26 @@ class TimeseriesPlotter(BasePlotter):
         self.set_formatting(figure)
 
         return figure
+
+    def _get_final_marker(self) -> go.Scatter:
+        """
+        Add a single marker for the last observation.
+        """
+        last_df = self.df.sort_values(by=COLUMN.TIMESTAMP, ascending=False).head(1)
+        trace = go.Scatter(
+            x=last_df[COLUMN.TIMESTAMP],
+            y=last_df[COLUMN.MEAN],
+            name="outlier",
+            mode="markers",
+            marker=dict(
+                size=int(self._config["plot.sizes"]["marker"]),
+                color=self.colors[COLOR_ITEM.MEAN],
+            ),
+            hoverinfo='none',                                                                               
+        )
+
+        return trace
+
 
     def _get_outlier_trace(self) -> go.Scatter:
         trace = go.Scatter(
@@ -469,6 +490,61 @@ class AbstractIndicatorPlotter(BasePlotter):
         )
 
         return fig
+
+
+class MeanIndicatorPlotter(AbstractIndicatorPlotter):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        for col in [COLUMN.MEAN, COLUMN.TIMESTAMP]:
+            assert col in df.columns
+
+    def _get_last_mean(self) -> float:
+        """
+        Get the last mean from the dataset.
+        """
+        df_sorted = self.df.sort_values(by=COLUMN.TIMESTAMP, ascending=False).head(1)
+        return df_sorted[COLUMN.MEAN].values[0]
+
+    def _get_reference_mean(self) -> float:
+        """
+        Get previous noise value, if available.
+        """
+        df_sorted = self.df.sort_values(by=COLUMN.TIMESTAMP, ascending=False).head(2)
+        
+        return df_sorted[COLUMN.MEAN].values[-1]
+
+
+    def plot(self) -> go.Figure:
+        fig = self._get_indicator(
+            value=self._get_last_mean(),
+            text="",
+            delta={
+                "reference": self._get_reference_mean(),
+                "relative": True,
+                "valueformat": ".1%",
+                "increasing.color": self._config["plot.colors"]["increase_color"],
+                "decreasing.color": self._config["plot.colors"]["decrease_color"],
+            },
+            number={"suffix": " dBA"},
+        )
+
+        fig.update_layout(
+            height=int(self._config["plot.sizes"]["indicator_height"]),
+            margin=dict(
+                l=10,
+                r=10,
+                b=10,
+                t=20,
+            ),
+        )
+
+        self.set_formatting(fig)
+
+        return fig
+        
+    
 
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
