@@ -1,13 +1,13 @@
-from typing import List, Optional
 from src.utils import COLUMN, load_config
-from src.data_loading.main import AppDataManager
 from src.plotting import TimeseriesPlotter, MeanIndicatorPlotter
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
+from dash_extensions.javascript import assign
+import dash_leaflet.express as dlx
 from dash import callback, Input, Output, dcc, html, State
 import dash_bootstrap_components as dbc
-from abc import abstractclassmethod
+from typing import List
 
 
 class COMPONENT_ID(StrEnum):
@@ -18,6 +18,8 @@ class COMPONENT_ID(StrEnum):
     system_map = auto()
     noise_line_graph = auto()
     mean_indicator = auto()
+    mean_indicator_tooltip = auto()
+    map_markers = auto()
 
 
 # class AbstractAppManager(object):
@@ -60,6 +62,7 @@ class LeafletMapComponentManager:
         """
         assert COLUMN.LAT in locations.columns
         assert COLUMN.LON in locations.columns
+        assert COLUMN.DEVICEID in locations.columns
 
     def _get_tile(self) -> dl.TileLayer:
         """
@@ -76,6 +79,7 @@ class LeafletMapComponentManager:
         """
         Build the markers for the map.
         """
+
         if device_id:
             selected_device = self.locations[
                 self.locations[COLUMN.DEVICEID] == device_id
@@ -89,22 +93,64 @@ class LeafletMapComponentManager:
                 radius=self.config["map"]["radius-meter"],
                 fillColor=self.config["map"]["marker_color_highlight"],
                 color=self.config["map"]["marker_color_highlight"],
+                id=f"marker-{device_id}",
             )
 
             markers = [selected_device_marker]
 
         else:
+            point_to_layer = assign(
+                f"""
+                function(feature, latlng, context){{
+                    return L.circleMarker(latlng, 
+                    {{
+                        radius: {self.config["map"]["radius-pixel"]}, 
+                        fillColor: "{self.config["map"]["marker_color"]}", 
+                        fillOpacity: 0.8
+                    }});  // render a simple circle marker
+                }}
+                """
+            )
+
+            cluster_to_layer = assign(
+                f"""function(feature, latlng, index, context){{
+                    // Modify icon background color.
+                    const scatterIcon = L.DivIcon.extend({{
+                        createIcon: function(oldIcon) {{
+                            let icon = L.DivIcon.prototype.createIcon.call(this, oldIcon);
+                            icon.style.backgroundColor = this.options.color;
+                            return icon;
+                        }}
+                    }})
+                    // Render a circle with the number of leaves written in the center.
+                    const icon = new scatterIcon({{
+                        html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
+                        className: "marker-cluster",
+                        iconSize: L.point(40, 40),
+                        color: "{self.config["map"]["marker_color"]}"
+                    }});
+                    return L.marker(latlng, {{icon : icon}})
+                }}""")
+
             markers = [
-                dl.CircleMarker(
-                    center=[lat, lon],
-                    radius=self.config["map"]["radius-pixel"],
-                    fillColor=self.config["map"]["marker_color"],
-                    color=self.config["map"]["marker_color"],
-                )
-                for lat, lon in zip(
-                    self.locations[COLUMN.LAT], self.locations[COLUMN.LON]
+                dict(lat=lat, lon=lon, id=id)
+                for lat, lon, id in zip(
+                    self.locations[COLUMN.LAT],
+                    self.locations[COLUMN.LON],
+                    self.locations[COLUMN.DEVICEID],
                 )
             ]
+            markers = dlx.dicts_to_geojson(markers)
+            markers = dl.GeoJSON(
+                data=markers,
+                pointToLayer=point_to_layer,
+                clusterToLayer=cluster_to_layer,
+                cluster=True,
+                zoomToBounds=True,
+                id=COMPONENT_ID.map_markers,
+            )
+
+        self.markers = markers
 
         return markers
 
@@ -126,7 +172,9 @@ class LeafletMapComponentManager:
 
         return (lat, lon)
 
-    def get_map(self, device_id: str = None, style: dict = {"height": "100vh"}) -> dl.Map:
+    def get_map(
+        self, device_id: str = None, style: dict = {"height": "100vh"}
+    ) -> dl.Map:
         """
         Create the location map.
         """
@@ -157,7 +205,7 @@ class LeafletMapComponentManager:
         return zoom
 
 
-class LocationComponentManager():
+class LocationComponentManager:
     """
     Class to collect and initialize the graph components for the app.
     """
@@ -167,7 +215,6 @@ class LocationComponentManager():
         Main call to setup all graph components for the app.
         """
         self.config = load_config()
-
 
     def get_noise_line_graph(self, location_noise: pd.DataFrame) -> dcc.Graph:
         """
@@ -184,8 +231,8 @@ class LocationComponentManager():
         )
 
         return noise_line_graph
-    
-    def get_mean_indicator(self, location_noise: pd.DataFrame) -> tuple[dcc.Graph, dbc.Tooltip]:
+
+    def get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
         """
         Create the indicator with tooltip.
         """
@@ -204,21 +251,29 @@ class LocationComponentManager():
             f"Average noise level in the past hour and relative change since the hour prior.",
             target=COMPONENT_ID.mean_indicator,
             placement="bottom",
+            id=COMPONENT_ID.mean_indicator_tooltip,
         )
 
-
-        return indicator_graph, indicator_tooltip
+        return html.Div([indicator_graph, indicator_tooltip])
 
     def get_explanation_card(self) -> dbc.Card:
         card = dbc.Card(
             [
-                dbc.CardHeader(html.H3("Moderate Noise Level", className="card-title")),
-                dbc.CardBody(
-                    [   
-                        html.P("Some text explaining the noise.")
-                    ]
+                dbc.CardHeader(
+                    html.H3("Moderate Noise Level", className="card-title")
                 ),
+                dbc.CardBody([html.P("Some text explaining the noise.")]),
             ],
             className="moderate-card",
         )
         return card
+
+
+class CallbackManager:
+    """
+    Class that organizes and  initializes the Dash app callbacks on app start.
+    """
+
+    @classmethod
+    def initialize_callbacks(cls):
+        pass
