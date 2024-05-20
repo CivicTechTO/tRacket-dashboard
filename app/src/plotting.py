@@ -268,7 +268,7 @@ class TimeseriesPlotter(BasePlotter):
                 self._get_min_line_trace(),
                 self._get_max_line_trace(),
                 self._get_mean_line_trace(),
-                self._get_final_marker()
+                self._get_final_marker(),
             ]
         )
 
@@ -283,7 +283,7 @@ class TimeseriesPlotter(BasePlotter):
                 b=10,
                 t=20,
             ),
-            yaxis={'visible': False, 'showticklabels': False}
+            yaxis={"visible": False, "showticklabels": False},
         )
 
         if show_title:
@@ -298,7 +298,9 @@ class TimeseriesPlotter(BasePlotter):
         """
         Add a single marker for the last observation.
         """
-        last_df = self.df.sort_values(by=COLUMN.TIMESTAMP, ascending=False).head(1)
+        last_df = self.df.sort_values(
+            by=COLUMN.TIMESTAMP, ascending=False
+        ).head(1)
         trace = go.Scatter(
             x=last_df[COLUMN.TIMESTAMP],
             y=last_df[COLUMN.MEAN],
@@ -308,11 +310,10 @@ class TimeseriesPlotter(BasePlotter):
                 size=int(self._config["plot.sizes"]["marker"]),
                 color=self.colors[COLOR_ITEM.MEAN],
             ),
-            hoverinfo='none',                                                                               
+            hoverinfo="none",
         )
 
         return trace
-
 
     def _get_outlier_trace(self) -> go.Scatter:
         trace = go.Scatter(
@@ -504,17 +505,20 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
         """
         Get the last mean from the dataset.
         """
-        df_sorted = self.df.sort_values(by=COLUMN.TIMESTAMP, ascending=False).head(1)
+        df_sorted = self.df.sort_values(
+            by=COLUMN.TIMESTAMP, ascending=False
+        ).head(1)
         return df_sorted[COLUMN.MEAN].values[0]
 
     def _get_reference_mean(self) -> float:
         """
         Get previous noise value, if available.
         """
-        df_sorted = self.df.sort_values(by=COLUMN.TIMESTAMP, ascending=False).head(2)
-        
-        return df_sorted[COLUMN.MEAN].values[-1]
+        df_sorted = self.df.sort_values(
+            by=COLUMN.TIMESTAMP, ascending=False
+        ).head(2)
 
+        return df_sorted[COLUMN.MEAN].values[-1]
 
     def plot(self) -> go.Figure:
         fig = self._get_indicator(
@@ -524,8 +528,12 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                 "reference": self._get_reference_mean(),
                 "relative": True,
                 "valueformat": ".1%",
-                "increasing.color": self._config["plot.colors"]["increase_color"],
-                "decreasing.color": self._config["plot.colors"]["decrease_color"],
+                "increasing.color": self._config["plot.colors"][
+                    "increase_color"
+                ],
+                "decreasing.color": self._config["plot.colors"][
+                    "decrease_color"
+                ],
             },
             number={"suffix": " dBA"},
         )
@@ -543,8 +551,6 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
         self.set_formatting(fig)
 
         return fig
-        
-    
 
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
