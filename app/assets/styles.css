@@ -1,0 +1,14 @@
+/* 
+Modifiers to the defualt Bootstrap theme.
+*/
+
+
+body {
+    background-color: #FFF9F0;
+    font-family: familjen-grotesk;
+}
+
+.moderate-card {
+    color: black;
+    background-color: #FDCB80;
+}

@@ -19,13 +19,8 @@ config = load_config()
 data_manager = AppDataManager()
 data_manager.load_and_format_locations()
 
-# map string col names to enum
-dataformatter = DataFormatter()
-locations = dataformatter._string_col_names_to_enum(data_manager.locations)
-
 
 ### Dash Page Definition ###
-
 
 dash.register_page(
     __name__,
@@ -36,13 +31,14 @@ dash.register_page(
 
 
 def layout(device_id: str = None, **kwargs):
-    leaflet_manager = LeafletMapComponentManager(locations)
+    leaflet_manager = LeafletMapComponentManager(data_manager.locations)
 
     if device_id is None:
         map = leaflet_manager.get_map(device_id=device_id)
         layout = map
 
     else:
+        # get map for specific location
         map = leaflet_manager.get_map(device_id=device_id, style={"height": "50vh"})
         
         # load data for location
@@ -58,7 +54,7 @@ def layout(device_id: str = None, **kwargs):
             config={"displayModeBar": False},
         )
 
-        # noise indicator
+        # noise indicator with toolip
         plotter = MeanIndicatorPlotter(data_manager.location_noise)
         indicator_fig = plotter.plot()
 
@@ -68,29 +64,33 @@ def layout(device_id: str = None, **kwargs):
             config={"displayModeBar": False},
         )
 
+        indicator_tooltip = dbc.Tooltip(
+            f"Average noise level in the past hour and relative change since the hour prior.",
+            target=COMPONENT_ID.mean_indicator,
+            placement="bottom",
+        )
+
+        indicator = html.Div([html.Div([indicator_graph]), html.Div([indicator_tooltip])])
+
         # explanation
-        explanation = dbc.Card(
+        level_card = dbc.Card(
             [
-                # dbc.CardHeader(),
+                dbc.CardHeader(html.H3("Moderate Noise Level", className="card-title")),
                 dbc.CardBody(
                     [   
-                        html.H4("Moderate Noise Level", className="card-title"),
-                        html.P("This is some text explaining the noise level.", className="card-text"),
+                        html.P("Some text explaining the noise.")
                     ]
                 ),
             ],
-            className="w-100 h-100",
-            color="#FDCB80",
-            style={"color": "black"},
+            className="moderate-card",
         )
 
         layout = dbc.Container(
             [
                 dbc.Row(
                     [
-                        dbc.Col(indicator_graph, width=6), dbc.Col(explanation, width=6),
+                        dbc.Col(indicator, width=6), dbc.Col(level_card, width=6, align="center"),
                     ],
-                    className="g-0",
                 ),
                 dbc.Row(
                     [
