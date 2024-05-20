@@ -3,11 +3,11 @@ The main map page of the application.
 """
 
 import dash
-from dash import html
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager
-from src.app_components import LeafletMapComponentManager, LocationComponentManager
-from dash import html
+from src.app_components import LeafletMapComponentManager, LocationComponentManager, CallbackManager
+from dash import callback, Input, Output, dcc, html, State
+
 
 ### Data loading ###
 
@@ -15,10 +15,11 @@ data_manager = AppDataManager()
 data_manager.load_and_format_locations()
 
 
-### Graph component manager ###
+### Graph component and Callback manager ###
 
 location_component_manager = LocationComponentManager()
 
+CallbackManager.initialize_callbacks()
 
 ### Dash Page Definition ###
 
@@ -31,11 +32,29 @@ dash.register_page(
 
 
 def layout(device_id: str = None, **kwargs):
-    leaflet_manager = LeafletMapComponentManager(data_manager.locations)
 
     if device_id is None:
+        leaflet_manager = LeafletMapComponentManager(data_manager.locations)
         map = leaflet_manager.get_map()
-        layout = map
+
+
+        @callback(
+            Output("clickdata", "children"), 
+            [Input(marker.id, "n_clicks") for marker in leaflet_manager.markers]
+        )
+        def marker_click(*args):
+            marker_id = dash.callback_context.triggered[0]["prop_id"].split(".")[0]
+            return "Hello from {}".format(marker_id)
+
+        layout = dbc.Container(
+            [
+                dbc.Row(dbc.Col(map)),
+                dbc.Row(dbc.Col(html.Div(html.P("Something"), id="clickdata"))),
+            ]
+        )
+        
+        # layout = map
+
 
     else:
         # get map for specific location
@@ -47,15 +66,16 @@ def layout(device_id: str = None, **kwargs):
         # explanation
         level_card = location_component_manager.get_explanation_card()
 
-
-        indicator_graph, tooltip = location_component_manager.get_mean_indicator(data_manager.location_noise)        
+        # get components
+        indicator = location_component_manager.get_mean_indicator(data_manager.location_noise)        
         noise_line_graph = location_component_manager.get_noise_line_graph(data_manager.location_noise)
 
+        # define layout
         layout = dbc.Container(
             [
                 dbc.Row(
                     [
-                        dbc.Col(indicator_graph, width=6), dbc.Col(level_card, width=6, align="center"),
+                        dbc.Col(indicator, width=6), dbc.Col(level_card, width=6, align="center"),
                     ],
                 ),
                 dbc.Row(
@@ -64,7 +84,6 @@ def layout(device_id: str = None, **kwargs):
                     ]
                 ),
                 dbc.Row([dbc.Col(map)]),
-                html.Div([tooltip])
             ]
         )
 

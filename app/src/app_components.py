@@ -1,13 +1,13 @@
-from typing import List, Optional
 from src.utils import COLUMN, load_config
-from src.data_loading.main import AppDataManager
 from src.plotting import TimeseriesPlotter, MeanIndicatorPlotter
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
+import dash_leaflet.express as dlx
 from dash import callback, Input, Output, dcc, html, State
 import dash_bootstrap_components as dbc
-from abc import abstractclassmethod
+from typing import List
+
 
 
 class COMPONENT_ID(StrEnum):
@@ -18,6 +18,7 @@ class COMPONENT_ID(StrEnum):
     system_map = auto()
     noise_line_graph = auto()
     mean_indicator = auto()
+    mean_indicator_tooltip = auto()
 
 
 # class AbstractAppManager(object):
@@ -60,6 +61,7 @@ class LeafletMapComponentManager:
         """
         assert COLUMN.LAT in locations.columns
         assert COLUMN.LON in locations.columns
+        assert COLUMN.DEVICEID in locations.columns
 
     def _get_tile(self) -> dl.TileLayer:
         """
@@ -89,6 +91,7 @@ class LeafletMapComponentManager:
                 radius=self.config["map"]["radius-meter"],
                 fillColor=self.config["map"]["marker_color_highlight"],
                 color=self.config["map"]["marker_color_highlight"],
+                id=f"marker-{device_id}"
             )
 
             markers = [selected_device_marker]
@@ -100,11 +103,14 @@ class LeafletMapComponentManager:
                     radius=self.config["map"]["radius-pixel"],
                     fillColor=self.config["map"]["marker_color"],
                     color=self.config["map"]["marker_color"],
+                    id=f"marker-{id}"
                 )
-                for lat, lon in zip(
-                    self.locations[COLUMN.LAT], self.locations[COLUMN.LON]
+                for lat, lon, id in zip(
+                    self.locations[COLUMN.LAT], self.locations[COLUMN.LON], self.locations[COLUMN.DEVICEID]
                 )
             ]
+
+        self.markers = markers
 
         return markers
 
@@ -185,7 +191,7 @@ class LocationComponentManager():
 
         return noise_line_graph
     
-    def get_mean_indicator(self, location_noise: pd.DataFrame) -> tuple[dcc.Graph, dbc.Tooltip]:
+    def get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
         """
         Create the indicator with tooltip.
         """
@@ -204,10 +210,11 @@ class LocationComponentManager():
             f"Average noise level in the past hour and relative change since the hour prior.",
             target=COMPONENT_ID.mean_indicator,
             placement="bottom",
+            id=COMPONENT_ID.mean_indicator_tooltip
         )
 
 
-        return indicator_graph, indicator_tooltip
+        return html.Div([indicator_graph, indicator_tooltip])
 
     def get_explanation_card(self) -> dbc.Card:
         card = dbc.Card(
@@ -222,3 +229,15 @@ class LocationComponentManager():
             className="moderate-card",
         )
         return card
+
+
+class CallbackManager():
+    """
+    Class that organizes and  initializes the Dash app callbacks on app start.
+    """
+    
+    @classmethod
+    def initialize_callbacks(cls):
+        pass
+
+    
