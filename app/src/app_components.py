@@ -1,7 +1,7 @@
 from typing import List, Optional
 from src.utils import COLUMN, load_config
 from src.data_loading.main import AppDataManager
-from src.plotting import TimeseriesPlotter
+from src.plotting import TimeseriesPlotter, MeanIndicatorPlotter
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
@@ -20,25 +20,25 @@ class COMPONENT_ID(StrEnum):
     mean_indicator = auto()
 
 
-class AbstractAppManager(object):
-    """
-    Base class for managing app components and making data available through the AppDataManager.
-    """
+# class AbstractAppManager(object):
+#     """
+#     Base class for managing app components and making data available through the AppDataManager.
+#     """
 
-    _config = load_config()
-    app_data_manager: AppDataManager = None
+#     _config = load_config()
+#     app_data_manager: AppDataManager = None
 
-    @classmethod
-    def _set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
-        cls.app_data_manager = app_data_manager
+#     @classmethod
+#     def _set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
+#         cls.app_data_manager = app_data_manager
 
-    @abstractclassmethod
-    def initialize(
-        cls, app_data_manager: Optional[AppDataManager] = None
-    ) -> None:
-        if app_data_manager:
-            cls._set_app_data_manager(app_data_manager)
-        pass
+#     @abstractclassmethod
+#     def initialize(
+#         cls, app_data_manager: Optional[AppDataManager] = None
+#     ) -> None:
+#         if app_data_manager:
+#             cls._set_app_data_manager(app_data_manager)
+#         pass
 
 
 ### Mapping ###
@@ -157,28 +157,68 @@ class LeafletMapComponentManager:
         return zoom
 
 
-class GraphManager(AbstractAppManager):
+class LocationComponentManager():
     """
     Class to collect and initialize the graph components for the app.
     """
 
-    noise_line_graph: dcc.Graph = None
-
-    @classmethod
-    def initialize(cls, app_data_manager: AppDataManager) -> None:
+    def initialize(self) -> None:
         """
         Main call to setup all graph components for the app.
         """
-        cls._set_app_data_manager(app_data_manager)
-        cls._setup_noise_line_graph()
+        self.config = load_config()
 
-    @classmethod
-    def _setup_noise_line_graph(cls) -> None:
-        plotter = TimeseriesPlotter(cls.app_data_manager.location_noise)
-        fig = plotter.plot()
 
-        cls.noise_line_graph = dcc.Graph(
+    def get_noise_line_graph(self, location_noise: pd.DataFrame) -> dcc.Graph:
+        """
+        Create the noise graph component.
+        """
+        # line plot
+        plotter = TimeseriesPlotter(location_noise)
+        line_fig = plotter.plot()
+
+        noise_line_graph = dcc.Graph(
+            figure=line_fig,
             id=COMPONENT_ID.noise_line_graph,
-            fig=fig,
             config={"displayModeBar": False},
         )
+
+        return noise_line_graph
+    
+    def get_mean_indicator(self, location_noise: pd.DataFrame) -> tuple[dcc.Graph, dbc.Tooltip]:
+        """
+        Create the indicator with tooltip.
+        """
+
+        # noise indicator with toolip
+        plotter = MeanIndicatorPlotter(location_noise)
+        indicator_fig = plotter.plot()
+
+        indicator_graph = dcc.Graph(
+            figure=indicator_fig,
+            id=COMPONENT_ID.mean_indicator,
+            config={"displayModeBar": False},
+        )
+
+        indicator_tooltip = dbc.Tooltip(
+            f"Average noise level in the past hour and relative change since the hour prior.",
+            target=COMPONENT_ID.mean_indicator,
+            placement="bottom",
+        )
+
+
+        return indicator_graph, indicator_tooltip
+
+    def get_explanation_card(self) -> dbc.Card:
+        card = dbc.Card(
+            [
+                dbc.CardHeader(html.H3("Moderate Noise Level", className="card-title")),
+                dbc.CardBody(
+                    [   
+                        html.P("Some text explaining the noise.")
+                    ]
+                ),
+            ],
+            className="moderate-card",
+        )
+        return card
