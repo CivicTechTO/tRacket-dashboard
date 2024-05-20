@@ -55,14 +55,7 @@ def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(data_manager.locations)
     if device_id is None:
         map = leaflet_manager.get_map()
-
-        layout = dbc.Container(
-            [
-                dbc.Row(dbc.Col(map)),
-            ]
-        )
-
-        # layout = map
+        layout = map
 
     else:
         # get map for specific location
