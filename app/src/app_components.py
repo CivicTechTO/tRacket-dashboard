@@ -65,8 +65,6 @@ class LeafletMapComponentManager:
         assert COLUMN.DEVICEID in locations.columns
         assert COLUMN.ACTIVE in locations.columns
 
-    
-
     def _get_tile(self) -> dl.TileLayer:
         """
         Create the map tile layer.
@@ -102,21 +100,33 @@ class LeafletMapComponentManager:
             markers = [selected_device_marker]
 
         else:
-            point_to_layer = assign(
-                f"""
-                function(feature, latlng, context){{
-                    return L.circleMarker(latlng, 
-                    {{
-                        radius: {self.config["map"]["radius-pixel"]}, 
-                        fillColor: "{self.config["map"]["marker_color"]}", 
-                        fillOpacity: 0.8
-                    }});  // render a simple circle marker
-                }}
-                """
+            markers = [
+                dict(lat=lat, lon=lon, id=id)
+                for lat, lon, id in zip(
+                    self.locations[COLUMN.LAT],
+                    self.locations[COLUMN.LON],
+                    self.locations[COLUMN.DEVICEID],
+                )
+            ]
+            markers = dlx.dicts_to_geojson(markers)
+            markers = dl.GeoJSON(
+                data=markers,
+                pointToLayer=assign(self._point_to_layer()),
+                clusterToLayer=assign(self._cluster_to_layer()),
+                cluster=True,
+                zoomToBounds=True,
+                id=COMPONENT_ID.map_markers,
             )
 
-            cluster_to_layer = assign(
-                f"""function(feature, latlng, index, context){{
+        self.markers = markers
+
+        return markers
+
+    def _cluster_to_layer(self) -> str:
+        """
+        How to render clusters on the map client-side?
+        """
+        return f"""function(feature, latlng, index, context){{
                     // Modify icon background color.
                     const scatterIcon = L.DivIcon.extend({{
                         createIcon: function(oldIcon) {{
@@ -133,29 +143,22 @@ class LeafletMapComponentManager:
                         color: "{self.config["map"]["marker_color"]}"
                     }});
                     return L.marker(latlng, {{icon : icon}})
-                }}""")
+                }}"""
 
-            markers = [
-                dict(lat=lat, lon=lon, id=id)
-                for lat, lon, id in zip(
-                    self.locations[COLUMN.LAT],
-                    self.locations[COLUMN.LON],
-                    self.locations[COLUMN.DEVICEID],
-                )
-            ]
-            markers = dlx.dicts_to_geojson(markers)
-            markers = dl.GeoJSON(
-                data=markers,
-                pointToLayer=point_to_layer,
-                clusterToLayer=cluster_to_layer,
-                cluster=True,
-                zoomToBounds=True,
-                id=COMPONENT_ID.map_markers,
-            )
-
-        self.markers = markers
-
-        return markers
+    def _point_to_layer(self) -> str:
+        """
+        How to render individual markers on the map client-side?
+        """
+        return f"""
+                function(feature, latlng, context){{
+                    return L.circleMarker(latlng, 
+                    {{
+                        radius: {self.config["map"]["radius-pixel"]}, 
+                        fillColor: "{self.config["map"]["marker_color"]}", 
+                        fillOpacity: 0.8
+                    }});  // render a simple circle marker
+                }}
+                """
 
     def _get_map_center(self, device_id: str = None) -> tuple[float]:
         """

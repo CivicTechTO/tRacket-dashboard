@@ -10,7 +10,7 @@ from src.app_components import (
     LeafletMapComponentManager,
     LocationComponentManager,
     CallbackManager,
-    COMPONENT_ID
+    COMPONENT_ID,
 )
 from dash import callback, Input, Output, dcc, html, State
 
@@ -50,6 +50,7 @@ dash.register_page(
 #     pass
 
 ### LAYOUT DEFINITION ###
+
 
 def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(data_manager.locations)

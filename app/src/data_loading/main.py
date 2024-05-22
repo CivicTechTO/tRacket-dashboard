@@ -148,12 +148,12 @@ class AppDataManager:
         locations = get_locations(self.api)
         locations = self.data_formatter._string_col_names_to_enum(locations)
         locations = self.data_formatter._set_data_types(locations)
-        
+
         if bool(self.config["map"]["filter_active"]):
             locations = self._filter_active(locations)
-        
+
         locations = self._deduplicate(locations)
-        
+
         self.locations = locations
 
     def _deduplicate(self, locations: pd.DataFrame) -> pd.DataFrame:

@@ -182,7 +182,7 @@ class DataFormatter(object):
             COLUMN.MAX: float,
             COLUMN.MEAN: float,
             COLUMN.COUNT: int,
-            COLUMN.ACTIVE: bool
+            COLUMN.ACTIVE: bool,
         }
 
         for col, type_ in mapper.items():
