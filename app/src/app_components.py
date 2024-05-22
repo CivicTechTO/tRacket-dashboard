@@ -63,6 +63,9 @@ class LeafletMapComponentManager:
         assert COLUMN.LAT in locations.columns
         assert COLUMN.LON in locations.columns
         assert COLUMN.DEVICEID in locations.columns
+        assert COLUMN.ACTIVE in locations.columns
+
+    
 
     def _get_tile(self) -> dl.TileLayer:
         """

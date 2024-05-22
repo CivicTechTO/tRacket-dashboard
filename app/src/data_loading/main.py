@@ -133,6 +133,7 @@ class AppDataManager:
     """
 
     def __init__(self) -> None:
+        self.config = load_config()
         self.api = create_api()
         self.data_formatter = DataFormatter()
 
@@ -147,8 +148,25 @@ class AppDataManager:
         locations = get_locations(self.api)
         locations = self.data_formatter._string_col_names_to_enum(locations)
         locations = self.data_formatter._set_data_types(locations)
-
+        
+        if bool(self.config["map"]["filter_active"]):
+            locations = self._filter_active(locations)
+        
+        locations = self._deduplicate(locations)
+        
         self.locations = locations
+
+    def _deduplicate(self, locations: pd.DataFrame) -> pd.DataFrame:
+        """
+        Keep unique device IDs only.
+        """
+        return locations.groupby(COLUMN.DEVICEID).first().reset_index()
+
+    def _filter_active(self, locations: pd.DataFrame) -> pd.DataFrame:
+        """
+        Keep active locations only.
+        """
+        return locations[locations[COLUMN.ACTIVE] == True]
 
     def load_and_format_location_stats(self, location_id=str) -> None:
         """
