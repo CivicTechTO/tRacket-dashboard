@@ -123,8 +123,13 @@ class LeafletMapComponentManager:
                     }} else {{
                     var active = "<b>Inactive Location</b>";
                 }};
+                if (feature.properties.label) {{
+                    var label = feature.properties.label;
+                }} else {{
+                    var label = "";
+                }};
                 if (!feature.properties.cluster) {{
-                    layer.bindTooltip(`${active}<br>${feature.properties.label}`)
+                    layer.bindTooltip(`${active}<br>${label}`)
                 }};
             }""")
             
