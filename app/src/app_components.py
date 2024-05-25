@@ -64,6 +64,7 @@ class LeafletMapComponentManager:
         assert COLUMN.LON in locations.columns
         assert COLUMN.DEVICEID in locations.columns
         assert COLUMN.ACTIVE in locations.columns
+        assert COLUMN.LABEL in locations.columns
 
     def _get_tile(self) -> dl.TileLayer:
         """
@@ -86,32 +87,38 @@ class LeafletMapComponentManager:
                 self.locations[COLUMN.DEVICEID] == device_id
             ]
 
-            lat = list(selected_device[COLUMN.LAT])[0]
-            lon = list(selected_device[COLUMN.LON])[0]
-
-            selected_device_marker = dl.Circle(
-                center=[lat, lon],
-                radius=self.config["map"]["radius-meter"],
-                fillColor=self.config["map"]["marker_color_highlight"],
-                color=self.config["map"]["marker_color_highlight"],
-                id=f"marker-{device_id}",
-            )
-
-            markers = [selected_device_marker]
-
-        else:
             markers = [
-                dict(lat=lat, lon=lon, id=id)
-                for lat, lon, id in zip(
-                    self.locations[COLUMN.LAT],
-                    self.locations[COLUMN.LON],
-                    self.locations[COLUMN.DEVICEID],
+                dict(lat=lat, lon=lon, id=id, tooltip=label)
+                for lat, lon, id, label in zip(
+                    selected_device[COLUMN.LAT],
+                    selected_device[COLUMN.LON],
+                    selected_device[COLUMN.DEVICEID],
+                    selected_device[COLUMN.LABEL]
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
+            
             markers = dl.GeoJSON(
                 data=markers,
-                pointToLayer=assign(self._point_to_layer()),
+                pointToLayer=assign(self._point_to_layer_location_map()),
+                id=f"marker-{device_id}",
+            )
+
+        else:
+            markers = [
+                dict(lat=lat, lon=lon, id=id, tooltip=label)
+                for lat, lon, id, label in zip(
+                    self.locations[COLUMN.LAT],
+                    self.locations[COLUMN.LON],
+                    self.locations[COLUMN.DEVICEID],
+                    self.locations[COLUMN.LABEL]
+                )
+            ]
+            markers = dlx.dicts_to_geojson(markers)
+            
+            markers = dl.GeoJSON(
+                data=markers,
+                pointToLayer=assign(self._point_to_layer_system_map()),
                 clusterToLayer=assign(self._cluster_to_layer()),
                 cluster=True,
                 zoomToBounds=True,
@@ -145,7 +152,7 @@ class LeafletMapComponentManager:
                     return L.marker(latlng, {{icon : icon}})
                 }}"""
 
-    def _point_to_layer(self) -> str:
+    def _point_to_layer_system_map(self) -> str:
         """
         How to render individual markers on the map client-side?
         """
@@ -156,6 +163,22 @@ class LeafletMapComponentManager:
                         radius: {self.config["map"]["radius-pixel"]}, 
                         fillColor: "{self.config["map"]["marker_color"]}", 
                         fillOpacity: 0.8
+                    }});  // render a simple circle marker
+                }}
+                """
+    
+    def _point_to_layer_location_map(self) -> str:
+        """
+        How to render individual markers on the map client-side?
+        """
+        return f"""
+                function(feature, latlng, context){{
+                    return L.circle(latlng, 
+                    {{
+                        radius: {200}, 
+                        fillColor: "{self.config["map"]["marker_color_highlight"]}", 
+                        color: "{self.config["map"]["marker_color_highlight"]}", 
+                        fillOpacity: 0.4
                     }});  // render a simple circle marker
                 }}
                 """
