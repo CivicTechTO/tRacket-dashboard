@@ -1,7 +1,7 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
         function0: function(feature, layer, context) {
-            if (feature.properties.active === 1) {
+            if (feature.properties.active) {
                 {
                     var active = "<b>Active Location</b>";
                 }
@@ -10,15 +10,14 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                     var active = "<b>Inactive Location</b>";
                 }
             };
-            if (feature.properties.label) {
+            if (!feature.properties.cluster) {
                 {
                     layer.bindTooltip(`${active}<br>${feature.properties.label}`)
                 }
             };
         },
         function1: function(feature, latlng, context) {
-                if (feature.properties.active === 1) {
-                    console.log("active")
+                if (feature.properties.active) {
                     var color = "#FB9500";
                     var opcaity = 0.8;
                 } else {
@@ -52,6 +51,15 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             return L.marker(latlng, {
                 icon: icon
             })
+        },
+        function3: function(feature, latlng, context) {
+            return L.circle(latlng, {
+                radius: 250,
+                color: "#FB9500",
+                fillColor: "#FB9500",
+                fillOpacity: 0.4
+            }); // render a simple circle marker
         }
+
     }
 });

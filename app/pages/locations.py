@@ -12,7 +12,7 @@ from src.app_components import (
     CallbackManager,
     COMPONENT_ID,
 )
-from dash import callback, Input, Output, dcc, html, State
+from dash import callback, Input, Output, dcc, html, State, clientside_callback
 
 logger = Logging.get_console_logger(__name__)
 
@@ -42,12 +42,22 @@ dash.register_page(
 
 # NOTE: need to be defined outside the layer() function for these to work
 
-# @callback(
-#     Output("clickdata", "children"),
-#     Input(COMPONENT_ID.system_map, "clickData"),
-# )
-# def marker_click(data):
-#     pass
+clientside_callback(
+    """
+    function(feature) {
+        var base_url = window.location.href;
+        console.log(feature)
+        if (!feature.properties.cluster) {
+            var url = new URL("locations/".concat(feature.properties.id), base_url);
+            console.log(`Redirecting to ${url}`);
+            window.open(url, '_blank');
+        }
+    }
+    """,
+    Output(COMPONENT_ID.map_markers, "hideout"),
+    Input(COMPONENT_ID.map_markers, "clickData"),
+    prevent_initial_call=True,
+)
 
 ### LAYOUT DEFINITION ###
 

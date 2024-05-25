@@ -112,18 +112,18 @@ class LeafletMapComponentManager:
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
-                    self.locations[COLUMN.ACTIVE].astype(int)
+                    self.locations[COLUMN.ACTIVE]
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
 
             on_each_feature = assign("""function(feature, layer, context){
-                if (feature.properties.active === 1) {{ 
+                if (feature.properties.active) {{ 
                     var active = "<b>Active Location</b>";
                     }} else {{
                     var active = "<b>Inactive Location</b>";
                 }};
-                if (feature.properties.label) {{
+                if (!feature.properties.cluster) {{
                     layer.bindTooltip(`${active}<br>${feature.properties.label}`)
                 }};
             }""")
@@ -171,8 +171,7 @@ class LeafletMapComponentManager:
         """
         return f"""
                 function(feature, latlng, context){{
-                    if (feature.properties.active === 1) {{
-                        console.log("active")
+                    if (feature.properties.active) {{
                         var color = "{self.config["map"]["marker_color_highlight"]}";
                         var opcaity = 0.8;
                     }} else {{
