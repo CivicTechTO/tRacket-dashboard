@@ -44,6 +44,7 @@ class COLUMN(Enum):
     COUNT = "count"
     START = "start"
     END = "end"
+    RADIUS = "radius"
 
     # aggregate columns
     COUNT_PRIOR = "count_prior"
@@ -147,6 +148,20 @@ class DataFormatter(object):
 
     def __init__(self) -> None:
         pass
+
+    @staticmethod
+    def _fill_missing_times(df: pd.DataFrame, freq: str) -> pd.DataFrame:
+        """
+        Fill in the missing times between the min and max.
+        """
+        assert COLUMN.TIMESTAMP in df.columns
+
+        start = df[COLUMN.TIMESTAMP].min()
+        end = df[COLUMN.TIMESTAMP].max()
+        date_range = pd.date_range(start, end, freq=freq)
+        df = df.set_index(COLUMN.TIMESTAMP).reindex(date_range).reset_index(names=[COLUMN.TIMESTAMP])
+
+        return df
 
     @staticmethod
     def _string_col_names_to_enum(df: pd.DataFrame) -> pd.DataFrame:

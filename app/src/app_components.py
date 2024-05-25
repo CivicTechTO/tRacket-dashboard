@@ -93,11 +93,11 @@ class LeafletMapComponentManager:
                     selected_device[COLUMN.LAT],
                     selected_device[COLUMN.LON],
                     selected_device[COLUMN.DEVICEID],
-                    selected_device[COLUMN.LABEL]
+                    selected_device[COLUMN.LABEL],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
-            
+
             markers = dl.GeoJSON(
                 data=markers,
                 pointToLayer=assign(self._point_to_layer_location_map()),
@@ -112,12 +112,13 @@ class LeafletMapComponentManager:
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
-                    self.locations[COLUMN.ACTIVE]
+                    self.locations[COLUMN.ACTIVE],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
 
-            on_each_feature = assign("""function(feature, layer, context){
+            on_each_feature = assign(
+                """function(feature, layer, context){
                 if (feature.properties.active) {{ 
                     var active = "<b>Active Location</b>";
                     }} else {{
@@ -131,8 +132,9 @@ class LeafletMapComponentManager:
                 if (!feature.properties.cluster) {{
                     layer.bindTooltip(`${active}<br>${label}`)
                 }};
-            }""")
-            
+            }"""
+            )
+
             markers = dl.GeoJSON(
                 data=markers,
                 pointToLayer=assign(self._point_to_layer_system_map()),
@@ -191,7 +193,7 @@ class LeafletMapComponentManager:
                     }});  // render a simple circle marker
                 }}
                 """
-    
+
     def _point_to_layer_location_map(self) -> str:
         """
         How to render individual markers on the map client-side?
@@ -281,7 +283,21 @@ class LocationComponentManager:
         noise_line_graph = dcc.Graph(
             figure=line_fig,
             id=COMPONENT_ID.noise_line_graph,
-            config={"displayModeBar": False},
+            config={
+                "displayModeBar": True,
+                'displaylogo': False,
+                "modeBarButtonsToRemove": [
+                    "zoom",
+                    "zoomIn",
+                    "zoomOut",
+                    "pan",
+                    "select",
+                    "resetScale",
+                    "download",
+                    "lasso2d",
+                    "toImage"
+                ],
+            },
         )
 
         return noise_line_graph

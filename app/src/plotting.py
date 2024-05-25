@@ -286,6 +286,7 @@ class TimeseriesPlotter(BasePlotter):
             ),
             yaxis={"visible": False, "showticklabels": False},
         )
+        figure.update_traces(connectgaps=False)
 
         if show_title:
             title = f"Noise Level - {self.start_date} to {self.end_date}"

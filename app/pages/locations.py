@@ -5,7 +5,7 @@ The main map page of the application.
 import dash
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager
-from src.utils import Logging
+from src.utils import Logging, COLUMN
 from src.app_components import (
     LeafletMapComponentManager,
     LocationComponentManager,
@@ -76,6 +76,11 @@ def layout(device_id: str = None, **kwargs):
 
         # load data for location
         data_manager.load_and_format_location_noise(location_id=device_id)
+        data_manager.load_and_format_location_info(location_id=device_id)
+
+        info = data_manager.location_info.to_dict("records")[0]
+        label = info[COLUMN.LABEL]
+        radius = info[COLUMN.RADIUS]
 
         # explanation
         level_card = location_component_manager.get_explanation_card()
@@ -93,14 +98,15 @@ def layout(device_id: str = None, **kwargs):
             [
                 dbc.Row(
                     [
-                        dbc.Col(indicator, width=6),
-                        dbc.Col(level_card, width=6, align="center"),
-                    ],
+                        html.H1(dcc.Markdown(f"**Location**")),
+                        html.H1(label)
+                    ]
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(noise_line_graph, width=12),
-                    ]
+                        dbc.Col(indicator, width=4),
+                        dbc.Col(noise_line_graph, width=8),
+                    ],
                 ),
                 dbc.Row([dbc.Col(map)]),
             ]

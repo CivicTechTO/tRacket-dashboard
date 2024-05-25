@@ -74,11 +74,11 @@ def get_location_stats(api: NoiseApi, location_id: str) -> pd.DataFrame:
     return stats_df
 
 
-def get_locations(api: NoiseApi) -> pd.DataFrame:
+def get_locations(api: NoiseApi, location_id: str = None) -> pd.DataFrame:
     """
     Make an API request for all device locations.
     """
-    locations = api.get_locations()
+    locations = api.get_locations(location_id=location_id)
     locations_df = pydantic_to_pandas(locations.locations)
 
     logger.info(f"Received {locations_df.shape[0]} locations.")
@@ -140,6 +140,18 @@ class AppDataManager:
         self.locations: pd.DataFrame = None
         self.location_stats: pd.DataFrame = None
         self.location_noise: pd.DataFrame = None
+        self.location_info: pd.DataFrame = None
+
+    def load_and_format_location_info(self, location_id: str):
+        """
+        Load and format the device location info for one location.
+        """
+        location_info = get_locations(self.api, location_id=location_id)
+        location_info = self.data_formatter._string_col_names_to_enum(location_info)
+        location_info = self.data_formatter._set_data_types(location_info)
+
+        self.location_info = location_info
+
 
     def load_and_format_locations(self):
         """
@@ -151,7 +163,9 @@ class AppDataManager:
 
         if self.config["map"]["filter_active"].lower() == "true":
             locations = self._filter_active(locations)
-            logger.info(f"Filtered active only to {locations.shape[0]} locations.")
+            logger.info(
+                f"Filtered active only to {locations.shape[0]} locations."
+            )
 
         if self.config["map"]["deduplicate"].lower() == "true":
             locations = self._deduplicate(locations)
@@ -194,5 +208,8 @@ class AppDataManager:
         )
         noise_data = self.data_formatter._string_col_names_to_enum(noise_data)
         noise_data = self.data_formatter._set_data_types(noise_data)
+
+        if self.config["plot"]["fill_gaps"].lower() == "true":
+            noise_data = self.data_formatter._fill_missing_times(noise_data, freq="H")
 
         self.location_noise = noise_data
