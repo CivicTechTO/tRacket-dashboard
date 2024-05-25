@@ -106,12 +106,13 @@ class LeafletMapComponentManager:
 
         else:
             markers = [
-                dict(lat=lat, lon=lon, id=id, tooltip=label)
-                for lat, lon, id, label in zip(
+                dict(lat=lat, lon=lon, id=id, active=active, tooltip=label)
+                for lat, lon, id, label, active in zip(
                     self.locations[COLUMN.LAT],
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
-                    self.locations[COLUMN.LABEL]
+                    self.locations[COLUMN.LABEL],
+                    self.locations[COLUMN.ACTIVE].astype(int)
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
@@ -147,7 +148,7 @@ class LeafletMapComponentManager:
                         html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
                         className: "marker-cluster",
                         iconSize: L.point(40, 40),
-                        color: "{self.config["map"]["marker_color"]}"
+                        color: "{self.config["map"]["marker_color_highlight"]}"
                     }});
                     return L.marker(latlng, {{icon : icon}})
                 }}"""
@@ -158,11 +159,19 @@ class LeafletMapComponentManager:
         """
         return f"""
                 function(feature, latlng, context){{
+                    if (feature.properties.active === 1) {{
+                        console.log("active")
+                        var color = "{self.config["map"]["marker_color_highlight"]}";
+                        var opcaity = 0.8;
+                    }} else {{
+                        var color = "{self.config["map"]["marker_color_inactive"]}";
+                        var opacity = 0.4;
+                    }};
                     return L.circleMarker(latlng, 
                     {{
                         radius: {self.config["map"]["radius-pixel"]}, 
-                        fillColor: "{self.config["map"]["marker_color"]}", 
-                        fillOpacity: 0.8
+                        fillColor: color, 
+                        fillOpacity: opacity,
                     }});  // render a simple circle marker
                 }}
                 """
@@ -175,9 +184,9 @@ class LeafletMapComponentManager:
                 function(feature, latlng, context){{
                     return L.circle(latlng, 
                     {{
-                        radius: {200}, 
-                        fillColor: "{self.config["map"]["marker_color_highlight"]}", 
+                        radius: {self.config["map"]["radius-meter"]}, 
                         color: "{self.config["map"]["marker_color_highlight"]}", 
+                        fillColor: "{self.config["map"]["marker_color_highlight"]}", 
                         fillOpacity: 0.4
                     }});  // render a simple circle marker
                 }}

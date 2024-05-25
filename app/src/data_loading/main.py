@@ -149,10 +149,13 @@ class AppDataManager:
         locations = self.data_formatter._string_col_names_to_enum(locations)
         locations = self.data_formatter._set_data_types(locations)
 
-        if bool(self.config["map"]["filter_active"]):
+        if self.config["map"]["filter_active"].lower() == "true":
             locations = self._filter_active(locations)
+            logger.info(f"Filtered active only to {locations.shape[0]} locations.")
 
-        locations = self._deduplicate(locations)
+        if self.config["map"]["deduplicate"].lower() == "true":
+            locations = self._deduplicate(locations)
+            logger.info(f"Deduplicated to {locations.shape[0]} locations.")
 
         self.locations = locations
 
