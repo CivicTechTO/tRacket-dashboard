@@ -106,7 +106,7 @@ class LeafletMapComponentManager:
 
         else:
             markers = [
-                dict(lat=lat, lon=lon, id=id, active=active, tooltip=label)
+                dict(lat=lat, lon=lon, id=id, active=active, label=label)
                 for lat, lon, id, label, active in zip(
                     self.locations[COLUMN.LAT],
                     self.locations[COLUMN.LON],
@@ -116,11 +116,23 @@ class LeafletMapComponentManager:
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
+
+            on_each_feature = assign("""function(feature, layer, context){
+                if (feature.properties.active === 1) {{ 
+                    var active = "<b>Active Location</b>";
+                    }} else {{
+                    var active = "<b>Inactive Location</b>";
+                }};
+                if (feature.properties.label) {{
+                    layer.bindTooltip(`${active}<br>${feature.properties.label}`)
+                }};
+            }""")
             
             markers = dl.GeoJSON(
                 data=markers,
                 pointToLayer=assign(self._point_to_layer_system_map()),
                 clusterToLayer=assign(self._cluster_to_layer()),
+                onEachFeature=on_each_feature,
                 cluster=True,
                 zoomToBounds=True,
                 id=COMPONENT_ID.map_markers,

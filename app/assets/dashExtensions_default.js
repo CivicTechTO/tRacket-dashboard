@@ -1,6 +1,22 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
-        function0: function(feature, latlng, context) {
+        function0: function(feature, layer, context) {
+            if (feature.properties.active === 1) {
+                {
+                    var active = "<b>Active Location</b>";
+                }
+            } else {
+                {
+                    var active = "<b>Inactive Location</b>";
+                }
+            };
+            if (feature.properties.label) {
+                {
+                    layer.bindTooltip(`${active}<br>${feature.properties.label}`)
+                }
+            };
+        },
+        function1: function(feature, latlng, context) {
                 if (feature.properties.active === 1) {
                     console.log("active")
                     var color = "#FB9500";
@@ -17,7 +33,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
 
             ,
-        function1: function(feature, latlng, index, context) {
+        function2: function(feature, latlng, index, context) {
             // Modify icon background color.
             const scatterIcon = L.DivIcon.extend({
                 createIcon: function(oldIcon) {
