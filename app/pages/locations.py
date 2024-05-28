@@ -97,10 +97,7 @@ def layout(device_id: str = None, **kwargs):
         layout = dbc.Container(
             [
                 dbc.Row(
-                    [
-                        html.H1(dcc.Markdown(f"**Location**")),
-                        html.H1(label)
-                    ]
+                    [html.H1(dcc.Markdown(f"**Location**")), html.H1(label)]
                 ),
                 dbc.Row(
                     [
@@ -109,7 +106,7 @@ def layout(device_id: str = None, **kwargs):
                     ],
                 ),
                 dbc.Row([dbc.Col(map)]),
-            ]
+            ], 
         )
 
     return layout

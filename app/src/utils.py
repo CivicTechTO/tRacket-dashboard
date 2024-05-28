@@ -159,7 +159,11 @@ class DataFormatter(object):
         start = df[COLUMN.TIMESTAMP].min()
         end = df[COLUMN.TIMESTAMP].max()
         date_range = pd.date_range(start, end, freq=freq)
-        df = df.set_index(COLUMN.TIMESTAMP).reindex(date_range).reset_index(names=[COLUMN.TIMESTAMP])
+        df = (
+            df.set_index(COLUMN.TIMESTAMP)
+            .reindex(date_range)
+            .reset_index(names=[COLUMN.TIMESTAMP])
+        )
 
         return df
 

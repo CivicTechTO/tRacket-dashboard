@@ -285,7 +285,7 @@ class LocationComponentManager:
             id=COMPONENT_ID.noise_line_graph,
             config={
                 "displayModeBar": True,
-                'displaylogo': False,
+                "displaylogo": False,
                 "modeBarButtonsToRemove": [
                     "zoom",
                     "zoomIn",
@@ -295,7 +295,7 @@ class LocationComponentManager:
                     "resetScale",
                     "download",
                     "lasso2d",
-                    "toImage"
+                    "toImage",
                 ],
             },
         )

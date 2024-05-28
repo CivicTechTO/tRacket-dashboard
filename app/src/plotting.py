@@ -484,9 +484,9 @@ class AbstractIndicatorPlotter(BasePlotter):
     ) -> go.Figure:
         fig = go.Figure(
             go.Indicator(
-                mode="number+delta",
+                mode="number+delta+gauge",
                 value=value,
-                title={"text": text},
+                title={"text": text, "font": {"size": 24}},
                 domain={"x": [0, 1], "y": [0, 1]},
                 **indicator_kwargs,
             )
@@ -525,7 +525,7 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
     def plot(self) -> go.Figure:
         fig = self._get_indicator(
             value=self._get_last_mean(),
-            text="",
+            text="Current Noise (dBA)",
             delta={
                 "reference": self._get_reference_mean(),
                 "relative": True,
@@ -537,7 +537,27 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                     "decrease_color"
                 ],
             },
-            number={"suffix": " dBA"},
+            gauge={
+                "axis": {
+                    "range": [None, 100],
+                    "tickwidth": 1,
+                    "tickcolor": self._config["plot.colors"]["mean"],
+                },
+                "bar": {"color": self._config["plot.colors"]["mean"]},
+                "bgcolor": self._config["plot.colors"]["background"],
+                "borderwidth": 2,
+                "bordercolor": self._config["plot.colors"]["mean"],
+                "steps": [
+                    {"range": [0, 30], "color": "cyan"},
+                    {"range": [30, 50], "color": "royalblue"},
+                ],
+                "threshold": {
+                    "line": {"color": self._config["plot.colors"]["mean"], "width": 4},
+                    "thickness": 0.75,
+                    "value": int(self._config["constants"]["noise_threshold"]),
+                },
+            }
+            # number={"suffix": " dBA"},
         )
 
         fig.update_layout(

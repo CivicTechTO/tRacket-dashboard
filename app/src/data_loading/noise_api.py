@@ -44,13 +44,13 @@ class NoiseApi:
 
     def get_locations(self, location_id: str = None) -> LocationsData:
         """
-        Get locations from the API. 
+        Get locations from the API.
         If ID is specified then info for only one location is pulled.
         """
         endpoint = "locations"
         if location_id:
             endpoint += f"/{location_id}"
-        
+
         response = self._get(endpoint)
 
         return LocationsData(**response)

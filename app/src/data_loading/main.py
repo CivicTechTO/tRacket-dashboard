@@ -147,11 +147,12 @@ class AppDataManager:
         Load and format the device location info for one location.
         """
         location_info = get_locations(self.api, location_id=location_id)
-        location_info = self.data_formatter._string_col_names_to_enum(location_info)
+        location_info = self.data_formatter._string_col_names_to_enum(
+            location_info
+        )
         location_info = self.data_formatter._set_data_types(location_info)
 
         self.location_info = location_info
-
 
     def load_and_format_locations(self):
         """
@@ -210,6 +211,8 @@ class AppDataManager:
         noise_data = self.data_formatter._set_data_types(noise_data)
 
         if self.config["plot"]["fill_gaps"].lower() == "true":
-            noise_data = self.data_formatter._fill_missing_times(noise_data, freq="H")
+            noise_data = self.data_formatter._fill_missing_times(
+                noise_data, freq="H"
+            )
 
         self.location_noise = noise_data
