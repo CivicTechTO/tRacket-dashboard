@@ -104,6 +104,14 @@ dbc_themes_name_to_url = {
 ### GENERAL UTILS ###
 
 
+def get_last_time(df: pd.DataFrame) -> np.datetime64:
+    """
+    Get last time stamp from the dataframe.
+    """
+
+    return df[COLUMN.TIMESTAMP].max()
+
+
 def load_config(config_path: str = None) -> configparser.ConfigParser:
     """
     Load a config file from the current dir or a given location.

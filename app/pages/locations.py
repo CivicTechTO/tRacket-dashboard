@@ -82,31 +82,31 @@ def layout(device_id: str = None, **kwargs):
         label = info[COLUMN.LABEL]
         radius = info[COLUMN.RADIUS]
 
-        # explanation
-        level_card = location_component_manager.get_explanation_card()
-
         # get components
-        indicator = location_component_manager.get_mean_indicator(
-            data_manager.location_noise
+        level_card = location_component_manager.get_level_card(
+            label, data_manager.location_noise
         )
+
         noise_line_graph = location_component_manager.get_noise_line_graph(
             data_manager.location_noise
         )
 
+        nav_bar = location_component_manager.get_navbar()
+
         # define layout
         layout = dbc.Container(
             [
-                dbc.Row(
-                    [html.H1(dcc.Markdown(f"**Location**")), html.H1(label)]
-                ),
+                nav_bar,
+                html.Br(),
                 dbc.Row(
                     [
-                        dbc.Col(indicator, width=4),
-                        dbc.Col(noise_line_graph, width=8),
+                        dbc.Col(level_card, width=5),
+                        dbc.Col(noise_line_graph, width=7),
                     ],
                 ),
+                html.Br(),
                 dbc.Row([dbc.Col(map)]),
-            ], 
+            ],
         )
 
     return layout
