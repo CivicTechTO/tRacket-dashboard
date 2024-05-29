@@ -1,11 +1,11 @@
-from src.utils import COLUMN, load_config
+from src.utils import COLUMN, load_config, get_last_time
 from src.plotting import TimeseriesPlotter, MeanIndicatorPlotter
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
 from dash_extensions.javascript import assign
 import dash_leaflet.express as dlx
-from dash import callback, Input, Output, dcc, html, State
+from dash import callback, Input, Output, dcc, html, State, get_asset_url
 import dash_bootstrap_components as dbc
 from typing import List
 
@@ -93,11 +93,11 @@ class LeafletMapComponentManager:
                     selected_device[COLUMN.LAT],
                     selected_device[COLUMN.LON],
                     selected_device[COLUMN.DEVICEID],
-                    selected_device[COLUMN.LABEL]
+                    selected_device[COLUMN.LABEL],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
-            
+
             markers = dl.GeoJSON(
                 data=markers,
                 pointToLayer=assign(self._point_to_layer_location_map()),
@@ -112,12 +112,13 @@ class LeafletMapComponentManager:
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
-                    self.locations[COLUMN.ACTIVE]
+                    self.locations[COLUMN.ACTIVE],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
 
-            on_each_feature = assign("""function(feature, layer, context){
+            on_each_feature = assign(
+                """function(feature, layer, context){
                 if (feature.properties.active) {{ 
                     var active = "<b>Active Location</b>";
                     }} else {{
@@ -131,8 +132,9 @@ class LeafletMapComponentManager:
                 if (!feature.properties.cluster) {{
                     layer.bindTooltip(`${active}<br>${label}`)
                 }};
-            }""")
-            
+            }"""
+            )
+
             markers = dl.GeoJSON(
                 data=markers,
                 pointToLayer=assign(self._point_to_layer_system_map()),
@@ -191,7 +193,7 @@ class LeafletMapComponentManager:
                     }});  // render a simple circle marker
                 }}
                 """
-    
+
     def _point_to_layer_location_map(self) -> str:
         """
         How to render individual markers on the map client-side?
@@ -281,12 +283,26 @@ class LocationComponentManager:
         noise_line_graph = dcc.Graph(
             figure=line_fig,
             id=COMPONENT_ID.noise_line_graph,
-            config={"displayModeBar": False},
+            config={
+                "displayModeBar": True,
+                "displaylogo": False,
+                "modeBarButtonsToRemove": [
+                    "zoom",
+                    "zoomIn",
+                    "zoomOut",
+                    "pan",
+                    "select",
+                    "resetScale",
+                    "download",
+                    "lasso2d",
+                    "toImage",
+                ],
+            },
         )
 
         return noise_line_graph
 
-    def get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
+    def _get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
         """
         Create the indicator with tooltip.
         """
@@ -310,17 +326,59 @@ class LocationComponentManager:
 
         return html.Div([indicator_graph, indicator_tooltip])
 
-    def get_explanation_card(self) -> dbc.Card:
+    def get_level_card(
+        self, label: str, location_noise: pd.DataFrame
+    ) -> dbc.Card:
+
+        last_time = get_last_time(location_noise)
+
         card = dbc.Card(
             [
-                dbc.CardHeader(
-                    html.H3("Moderate Noise Level", className="card-title")
+                dbc.CardHeader(html.H2(label, className="card-title")),
+                dbc.CardBody(
+                    [
+                        html.P(
+                            "The last hourly average received from the device and percentage change since the hour before."
+                        ),
+                        html.P(f"Time: {last_time}"),
+                        self._get_mean_indicator(location_noise),
+                    ]
                 ),
-                dbc.CardBody([html.P("Some text explaining the noise.")]),
             ],
             className="moderate-card",
         )
         return card
+
+    def get_navbar(self) -> dbc.NavbarSimple:
+        """
+        Get the navigation bar.
+        """
+        navbar = dbc.NavbarSimple(
+            children=[],
+            brand=dbc.Container(
+                [
+                    html.A(
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    html.Img(
+                                        src=get_asset_url("tracket_logo.svg"),
+                                        height="30px",
+                                    )
+                                )
+                            ],
+                            align="center",
+                            className="g-0",
+                        ),
+                        href="https://tracket.info/",
+                        style={"textDecoration": "none"},
+                    ),
+                ]
+            ),
+            color="#2D2D32",
+            dark=True,
+        )
+        return navbar
 
 
 class CallbackManager:

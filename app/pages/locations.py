@@ -5,7 +5,7 @@ The main map page of the application.
 import dash
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager
-from src.utils import Logging
+from src.utils import Logging, COLUMN
 from src.app_components import (
     LeafletMapComponentManager,
     LocationComponentManager,
@@ -76,34 +76,38 @@ def layout(device_id: str = None, **kwargs):
 
         # load data for location
         data_manager.load_and_format_location_noise(location_id=device_id)
+        data_manager.load_and_format_location_info(location_id=device_id)
 
-        # explanation
-        level_card = location_component_manager.get_explanation_card()
+        info = data_manager.location_info.to_dict("records")[0]
+        label = info[COLUMN.LABEL]
+        radius = info[COLUMN.RADIUS]
 
         # get components
-        indicator = location_component_manager.get_mean_indicator(
-            data_manager.location_noise
+        level_card = location_component_manager.get_level_card(
+            label, data_manager.location_noise
         )
+
         noise_line_graph = location_component_manager.get_noise_line_graph(
             data_manager.location_noise
         )
 
+        nav_bar = location_component_manager.get_navbar()
+
         # define layout
         layout = dbc.Container(
             [
+                nav_bar,
+                html.Br(),
                 dbc.Row(
                     [
-                        dbc.Col(indicator, width=6),
-                        dbc.Col(level_card, width=6, align="center"),
+                        dbc.Col(level_card, width=5),
+                        dbc.Col(noise_line_graph, width=7),
                     ],
                 ),
-                dbc.Row(
-                    [
-                        dbc.Col(noise_line_graph, width=12),
-                    ]
-                ),
+                html.Br(),
                 dbc.Row([dbc.Col(map)]),
-            ]
+            ],
+            fluid=True
         )
 
     return layout

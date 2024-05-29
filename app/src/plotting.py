@@ -12,13 +12,14 @@ from src.utils import (
 import os
 import json
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.graph_objects import scattermapbox
 from typing import Optional, List, Dict
 from abc import abstractmethod
 import pandas.api.types as ptype
 from enum import StrEnum, auto
+from datetime import datetime
 
 logger = Logging.get_console_logger()
 
@@ -286,6 +287,7 @@ class TimeseriesPlotter(BasePlotter):
             ),
             yaxis={"visible": False, "showticklabels": False},
         )
+        figure.update_traces(connectgaps=False)
 
         if show_title:
             title = f"Noise Level - {self.start_date} to {self.end_date}"
@@ -479,13 +481,16 @@ class AbstractIndicatorPlotter(BasePlotter):
 
     @staticmethod
     def _get_indicator(
-        value: float, text: str, **indicator_kwargs
+        value: float,
+        text: str,
+        mode: str = "number+delta",
+        **indicator_kwargs,
     ) -> go.Figure:
         fig = go.Figure(
             go.Indicator(
-                mode="number+delta",
+                mode=mode,
                 value=value,
-                title={"text": text},
+                title={"text": text, "font": {"size": 24}},
                 domain={"x": [0, 1], "y": [0, 1]},
                 **indicator_kwargs,
             )
@@ -509,6 +514,7 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
         df_sorted = self.df.sort_values(
             by=COLUMN.TIMESTAMP, ascending=False
         ).head(1)
+
         return df_sorted[COLUMN.MEAN].values[0]
 
     def _get_reference_mean(self) -> float:
@@ -521,10 +527,17 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
 
         return df_sorted[COLUMN.MEAN].values[-1]
 
+    def _get_title(self) -> str:
+        """
+        Get title text for the indicator.
+        """
+        return None
+
     def plot(self) -> go.Figure:
         fig = self._get_indicator(
             value=self._get_last_mean(),
-            text="",
+            mode="number+delta",
+            text=self._get_title(),
             delta={
                 "reference": self._get_reference_mean(),
                 "relative": True,
@@ -536,7 +549,30 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                     "decrease_color"
                 ],
             },
-            number={"suffix": " dBA"},
+            gauge={
+                "axis": {
+                    "range": [None, 100],
+                    "tickwidth": 1,
+                    "tickcolor": self._config["plot.colors"]["mean"],
+                },
+                "bar": {"color": self._config["plot.colors"]["mean"]},
+                "bgcolor": self._config["plot.colors"]["background"],
+                "borderwidth": 2,
+                "bordercolor": self._config["plot.colors"]["mean"],
+                "steps": [
+                    {"range": [0, 30], "color": "cyan"},
+                    {"range": [30, 50], "color": "royalblue"},
+                ],
+                "threshold": {
+                    "line": {
+                        "color": self._config["plot.colors"]["mean"],
+                        "width": 4,
+                    },
+                    "thickness": 0.75,
+                    "value": int(self._config["constants"]["noise_threshold"]),
+                },
+            }
+            # number={"suffix": " dBA"},
         )
 
         fig.update_layout(
@@ -545,7 +581,7 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                 l=10,
                 r=10,
                 b=10,
-                t=20,
+                t=10,
             ),
         )
 

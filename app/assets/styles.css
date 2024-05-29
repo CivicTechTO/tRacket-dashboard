@@ -8,7 +8,11 @@ body {
     font-family: familjen-grotesk;
 }
 
-.moderate-card {
+.card {
     color: black;
-    background-color: #FDCB80;
+    background-color: #FFF9F0;
+}
+
+.indicator_subtitle {
+    font-size: 10
 }
