@@ -285,7 +285,7 @@ class TimeseriesPlotter(BasePlotter):
                 b=10,
                 t=20,
             ),
-            yaxis={"visible": False, "showticklabels": False},
+            yaxis={"visible": True, "showticklabels": True},
         )
         figure.update_traces(connectgaps=False)
 

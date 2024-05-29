@@ -3,6 +3,7 @@ Main data loading functionalities.
 """
 import re
 from datetime import datetime, timedelta
+from typing import Dict
 import pandas as pd
 from src.utils import (
     Logging,
@@ -91,6 +92,7 @@ def get_location_noise(
     location_id: str,
     start_time: datetime,
     end_time: datetime,
+    granularity: Granularity = Granularity.hourly,
 ) -> pd.DataFrame:
     """
     Pull noise data for a given location and timeframe.
@@ -139,7 +141,7 @@ class AppDataManager:
 
         self.locations: pd.DataFrame = None
         self.location_stats: pd.DataFrame = None
-        self.location_noise: pd.DataFrame = None
+        self.location_noise: Dict[Granularity, pd.DataFrame] = dict()
         self.location_info: pd.DataFrame = None
 
     def load_and_format_location_info(self, location_id: str):
@@ -196,16 +198,22 @@ class AppDataManager:
 
         self.location_stats = stats
 
-    def load_and_format_location_noise(self, location_id=str):
+    def load_and_format_location_noise(
+        self, location_id: str, granularity: Granularity = Granularity.hourly
+    ):
         """
-        Load the last seven days of the location data.
+        Load the last seven days of the noise data at a specific location.
         """
         self.load_and_format_location_stats(location_id=location_id)
         end = self.location_stats.loc[0, COLUMN.END]
         start = end - timedelta(days=7)
 
         noise_data = get_location_noise(
-            self.api, location_id=location_id, start_time=start, end_time=end
+            self.api,
+            location_id=location_id,
+            start_time=start,
+            end_time=end,
+            granularity=granularity,
         )
         noise_data = self.data_formatter._string_col_names_to_enum(noise_data)
         noise_data = self.data_formatter._set_data_types(noise_data)
@@ -215,4 +223,4 @@ class AppDataManager:
                 noise_data, freq="H"
             )
 
-        self.location_noise = noise_data
+        self.location_noise[granularity] = noise_data

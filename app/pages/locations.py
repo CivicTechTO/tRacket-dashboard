@@ -4,7 +4,7 @@ The main map page of the application.
 
 import dash
 import dash_bootstrap_components as dbc
-from src.data_loading.main import AppDataManager
+from src.data_loading.main import AppDataManager, Granularity
 from src.utils import Logging, COLUMN
 from src.app_components import (
     LeafletMapComponentManager,
@@ -75,7 +75,12 @@ def layout(device_id: str = None, **kwargs):
         )
 
         # load data for location
-        data_manager.load_and_format_location_noise(location_id=device_id)
+        data_manager.load_and_format_location_noise(
+            location_id=device_id, granularity=Granularity.hourly
+        )
+        data_manager.load_and_format_location_noise(
+            location_id=device_id, granularity=Granularity.raw
+        )
         data_manager.load_and_format_location_info(location_id=device_id)
 
         info = data_manager.location_info.to_dict("records")[0]
@@ -84,11 +89,11 @@ def layout(device_id: str = None, **kwargs):
 
         # get components
         level_card = location_component_manager.get_level_card(
-            label, data_manager.location_noise
+            label, data_manager.location_noise[Granularity.hourly]
         )
 
         noise_line_graph = location_component_manager.get_noise_line_graph(
-            data_manager.location_noise
+            data_manager.location_noise[Granularity.hourly]
         )
 
         nav_bar = location_component_manager.get_navbar()
@@ -100,14 +105,14 @@ def layout(device_id: str = None, **kwargs):
                 html.Br(),
                 dbc.Row(
                     [
-                        dbc.Col(level_card, width=5),
-                        dbc.Col(noise_line_graph, width=7),
+                        dbc.Col(level_card, width=4),
+                        dbc.Col(noise_line_graph, width=8),
                     ],
                 ),
                 html.Br(),
                 dbc.Row([dbc.Col(map)]),
             ],
-            fluid=True
+            fluid=True,
         )
 
     return layout
