@@ -44,7 +44,7 @@ dash.register_page(
 
 clientside_callback(
     """
-    function(feature) {
+    function(feature, n_clicks) {
         var base_url = window.location.href;
         console.log(feature)
         if (!feature.properties.cluster) {
@@ -56,6 +56,7 @@ clientside_callback(
     """,
     Output(COMPONENT_ID.map_markers, "hideout"),
     Input(COMPONENT_ID.map_markers, "clickData"),
+    Input(COMPONENT_ID.map_markers, "n_clicks"),
     prevent_initial_call=True,
 )
 
