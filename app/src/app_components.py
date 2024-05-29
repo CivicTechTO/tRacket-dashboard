@@ -302,7 +302,7 @@ class LocationComponentManager:
 
         return noise_line_graph
 
-    def get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
+    def _get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
         """
         Create the indicator with tooltip.
         """
@@ -341,7 +341,7 @@ class LocationComponentManager:
                             "The last hourly average received from the device and percentage change since the hour before."
                         ),
                         html.P(f"Time: {last_time}"),
-                        self.get_mean_indicator(location_noise),
+                        self._get_mean_indicator(location_noise),
                     ]
                 ),
             ],
