@@ -106,14 +106,14 @@ def layout(device_id: str = None, **kwargs):
                 html.Br(),
                 dbc.Row(
                     [
-                        dbc.Col(level_card, width=4),
-                        dbc.Col(noise_line_graph, width=8),
+                        dbc.Col(level_card, lg=4, md=12),
+                        dbc.Col(noise_line_graph, lg=8, md=12),
                     ],
                 ),
                 html.Br(),
                 dbc.Row([dbc.Col(map)]),
             ],
-            fluid=True,
+            # fluid=True,
         )
 
     return layout
