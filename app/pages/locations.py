@@ -113,7 +113,7 @@ def layout(device_id: str = None, **kwargs):
                 html.Br(),
                 dbc.Row([dbc.Col(map)]),
             ],
-            # fluid=True,
+            fluid=True,
         )
 
     return layout

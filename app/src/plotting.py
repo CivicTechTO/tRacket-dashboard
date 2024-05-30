@@ -273,8 +273,8 @@ class TimeseriesPlotter(BasePlotter):
             ]
         )
 
-        figure.update_xaxes(rangeslider_visible=False)
-        figure.update_yaxes(fixedrange=True)
+        figure.update_xaxes(rangeslider_visible=False, gridcolor="LightGray")
+        figure.update_yaxes(fixedrange=True, gridcolor="LightGray")
         figure.update_layout(
             showlegend=False,
             hovermode="x unified",
