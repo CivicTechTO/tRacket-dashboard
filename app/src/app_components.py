@@ -144,6 +144,7 @@ class LeafletMapComponentManager:
                 onEachFeature=on_each_feature,
                 cluster=True,
                 zoomToBounds=True,
+                zoomToBoundsOnClick=True,
                 id=COMPONENT_ID.map_markers,
             )
 

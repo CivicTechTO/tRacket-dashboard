@@ -66,16 +66,12 @@ clientside_callback(
 
 def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(data_manager.locations)
+    
     if device_id is None:
         map = leaflet_manager.get_map()
         layout = map
 
     else:
-        # get map for specific location
-        map = leaflet_manager.get_map(
-            device_id=device_id, style={"height": "50vh"}
-        )
-
         # load data for location
         data_manager.load_and_format_location_stats(location_id=device_id)
         data_manager.load_and_format_location_info(location_id=device_id)
@@ -97,7 +93,14 @@ def layout(device_id: str = None, **kwargs):
             label = info[COLUMN.LABEL]
             radius = info[COLUMN.RADIUS]
 
-            # get components
+            
+            ### Get Components ###
+
+            # get map for specific location
+            map = leaflet_manager.get_map(
+                device_id=device_id, style={"height": "50vh"}
+            )
+
             level_card = location_component_manager.get_level_card(
                 label,
                 data_manager.location_noise[Granularity.hourly],
