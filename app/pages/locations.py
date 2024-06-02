@@ -89,16 +89,16 @@ def layout(device_id: str = None, **kwargs):
                 location_id=device_id, granularity=Granularity.raw
             )
 
-            info = data_manager.location_info.to_dict("records")[0]
-            label = info[COLUMN.LABEL]
-            radius = info[COLUMN.RADIUS]
+            label = data_manager.get_label(location_id=device_id)
+            radius = data_manager.get_radius(location_id=device_id)
+            active = data_manager.get_active_status(location_id=device_id)
 
             
             ### Get Components ###
 
             # get map for specific location
             map = leaflet_manager.get_map(
-                device_id=device_id, style={"height": "50vh"}
+                device_id=device_id, style={"height": "50vh"}, radius=radius, active=active
             )
 
             level_card = location_component_manager.get_level_card(

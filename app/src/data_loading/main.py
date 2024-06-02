@@ -165,6 +165,41 @@ class AppDataManager:
 
         return self.location_stats[COLUMN.COUNT].values[0] == 0
 
+    def get_radius(self, location_id: str) -> int:
+        """
+        Return the radius for the device.
+        """
+        if self.location_info is None:
+            self.load_and_format_location_info(location_id=location_id)
+
+        info = self.location_info.to_dict("records")[0]
+        radius = info[COLUMN.RADIUS]
+        
+        return radius
+
+    def get_label(self, location_id: str) -> int:
+        """
+        Return the label for the device.
+        """
+        if self.location_info is None:
+            self.load_and_format_location_info(location_id=location_id)
+
+        info = self.location_info.to_dict("records")[0]
+        label = info[COLUMN.LABEL]
+        
+        return label
+    
+    def get_active_status(self, location_id: str) -> int:
+        """
+        Return the activity status for the device.
+        """
+        if self.location_info is None:
+            self.load_and_format_location_info(location_id=location_id)
+
+        info = self.location_info.to_dict("records")[0]
+        active = info[COLUMN.ACTIVE]
+        
+        return active
 
     def load_and_format_locations(self):
         """

@@ -79,7 +79,7 @@ class LeafletMapComponentManager:
 
         return tile_layer
 
-    def _get_markers(self, device_id: str = None) -> List[dl.CircleMarker]:
+    def _get_markers(self, device_id: str = None, radius: int = None, active: bool = True) -> List[dl.CircleMarker]:
         """
         Build the markers for the map.
         """
@@ -90,19 +90,21 @@ class LeafletMapComponentManager:
             ]
 
             markers = [
-                dict(lat=lat, lon=lon, id=id, tooltip=label)
-                for lat, lon, id, label in zip(
+                dict(lat=lat, lon=lon, id=id, label=label, active=active)
+                for lat, lon, id, label, active in zip(
                     selected_device[COLUMN.LAT],
                     selected_device[COLUMN.LON],
                     selected_device[COLUMN.DEVICEID],
                     selected_device[COLUMN.LABEL],
+                    selected_device[COLUMN.ACTIVE],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
 
             markers = dl.GeoJSON(
                 data=markers,
-                pointToLayer=assign(self._point_to_layer_location_map()),
+                pointToLayer=assign(self._point_to_layer_location_map(radius, active)),
+                onEachFeature=self._on_each_feature(),
                 id=f"marker-{device_id}",
             )
 
@@ -119,7 +121,26 @@ class LeafletMapComponentManager:
             ]
             markers = dlx.dicts_to_geojson(markers)
 
-            on_each_feature = assign(
+            markers = dl.GeoJSON(
+                data=markers,
+                pointToLayer=assign(self._point_to_layer_system_map()),
+                clusterToLayer=assign(self._cluster_to_layer()),
+                onEachFeature=self._on_each_feature(),
+                cluster=True,
+                zoomToBounds=True,
+                zoomToBoundsOnClick=True,
+                id=COMPONENT_ID.map_markers,
+            )
+
+        self.markers = markers
+
+        return markers
+
+    def _on_each_feature(self):
+        """
+        Client-side hover template.
+        """
+        on_each_feature = assign(
                 """function(feature, layer, context){
                 if (feature.properties.active) {{ 
                     var active = "<b>Active Location</b>";
@@ -136,21 +157,8 @@ class LeafletMapComponentManager:
                 }};
             }"""
             )
-
-            markers = dl.GeoJSON(
-                data=markers,
-                pointToLayer=assign(self._point_to_layer_system_map()),
-                clusterToLayer=assign(self._cluster_to_layer()),
-                onEachFeature=on_each_feature,
-                cluster=True,
-                zoomToBounds=True,
-                zoomToBoundsOnClick=True,
-                id=COMPONENT_ID.map_markers,
-            )
-
-        self.markers = markers
-
-        return markers
+        
+        return on_each_feature
 
     def _cluster_to_layer(self) -> str:
         """
@@ -197,17 +205,27 @@ class LeafletMapComponentManager:
                 }}
                 """
 
-    def _point_to_layer_location_map(self) -> str:
+    def _point_to_layer_location_map(self, radius: int = None, active: bool = True) -> str:
         """
         How to render individual markers on the map client-side?
+        radius: int - provided in meters, if None, fall back to the config default 
+        (which is also the minimum for any value provided).
+        active: bool - if the device is active at the location.
         """
+        radius = max(int(radius), int(self.config["map"]["radius-meter"]))
+        
+        if active:
+            color = self.config["map"]["marker_color_highlight"]
+        else:
+            color = self.config["map"]["marker_color_inactive"]
+
         return f"""
                 function(feature, latlng, context){{
                     return L.circle(latlng, 
                     {{
                         radius: {self.config["map"]["radius-meter"]}, 
-                        color: "{self.config["map"]["marker_color_highlight"]}", 
-                        fillColor: "{self.config["map"]["marker_color_highlight"]}", 
+                        color: "{color}", 
+                        fillColor: "{color}", 
                         fillOpacity: 0.4
                     }});  // render a simple circle marker
                 }}
@@ -232,7 +250,7 @@ class LeafletMapComponentManager:
         return (lat, lon)
 
     def get_map(
-        self, device_id: str = None, style: dict = {"height": "100vh"}
+        self, device_id: str = None, style: dict = {"height": "100vh"}, radius: int = None, active: bool = True
     ) -> dl.Map:
         """
         Create the location map.
@@ -243,7 +261,7 @@ class LeafletMapComponentManager:
         map = dl.Map(
             [
                 self._get_tile(),
-                dl.LayerGroup(self._get_markers(device_id=device_id)),
+                dl.LayerGroup(self._get_markers(device_id=device_id, radius=radius, active=active)),
                 dl.GestureHandling(),
             ],
             center=self._get_map_center(device_id=device_id),
@@ -259,7 +277,7 @@ class LeafletMapComponentManager:
         Find level of zoom, default is system level (higher), non defailt is device focus.
         """
         default_zoom = int(self.config["map"]["zoom"])
-        zoom = default_zoom if default else default_zoom + 4
+        zoom = default_zoom if default else default_zoom + 6
 
         return zoom
 
