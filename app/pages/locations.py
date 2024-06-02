@@ -66,7 +66,7 @@ clientside_callback(
 
 def layout(device_id: str = None, **kwargs):
     leaflet_manager = LeafletMapComponentManager(data_manager.locations)
-    
+
     if device_id is None:
         map = leaflet_manager.get_map()
         layout = map
@@ -78,7 +78,9 @@ def layout(device_id: str = None, **kwargs):
 
         if data_manager.is_noise_available(location_id=device_id):
             logger.info(f"No noise data available yet at the location.")
-            redirect = dcc.Location(pathname="/not_found_404.py", id=COMPONENT_ID.redirect)
+            redirect = dcc.Location(
+                pathname="/not_found_404.py", id=COMPONENT_ID.redirect
+            )
             layout = dbc.Container([redirect])
 
         else:
@@ -93,12 +95,14 @@ def layout(device_id: str = None, **kwargs):
             radius = data_manager.get_radius(location_id=device_id)
             active = data_manager.get_active_status(location_id=device_id)
 
-            
             ### Get Components ###
 
             # get map for specific location
             map = leaflet_manager.get_map(
-                device_id=device_id, style={"height": "50vh"}, radius=radius, active=active
+                device_id=device_id,
+                style={"height": "50vh"},
+                radius=radius,
+                active=active,
             )
 
             level_card = location_component_manager.get_level_card(
@@ -107,15 +111,20 @@ def layout(device_id: str = None, **kwargs):
                 style={"height": "50vh"},
             )
 
-            hourly_noise_line_graph = location_component_manager.get_noise_line_graph(
-                data_manager.location_noise[Granularity.hourly],
-                component_id=COMPONENT_ID.hourly_noise_line_graph,
-                bold_line=True
+            hourly_noise_line_graph = (
+                location_component_manager.get_noise_line_graph(
+                    data_manager.location_noise[Granularity.hourly],
+                    component_id=COMPONENT_ID.hourly_noise_line_graph,
+                    bold_line=True,
+                    title="Hourly and 5-minute Noise Levels"
+                )
             )
 
-            raw_noise_line_graph = location_component_manager.get_noise_line_graph(
-                data_manager.location_noise[Granularity.raw],
-                component_id=COMPONENT_ID.raw_noise_line_graphs
+            raw_noise_line_graph = (
+                location_component_manager.get_noise_line_graph(
+                    data_manager.location_noise[Granularity.raw],
+                    component_id=COMPONENT_ID.raw_noise_line_graphs,
+                )
             )
 
             # define layout
@@ -131,7 +140,7 @@ def layout(device_id: str = None, **kwargs):
                     ),
                     html.Br(),
                     dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
-                    dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)])
+                    dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)]),
                 ],
                 fluid=True,
             )

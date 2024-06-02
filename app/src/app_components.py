@@ -79,7 +79,9 @@ class LeafletMapComponentManager:
 
         return tile_layer
 
-    def _get_markers(self, device_id: str = None, radius: int = None, active: bool = True) -> List[dl.CircleMarker]:
+    def _get_markers(
+        self, device_id: str = None, radius: int = None, active: bool = True
+    ) -> List[dl.CircleMarker]:
         """
         Build the markers for the map.
         """
@@ -103,7 +105,9 @@ class LeafletMapComponentManager:
 
             markers = dl.GeoJSON(
                 data=markers,
-                pointToLayer=assign(self._point_to_layer_location_map(radius, active)),
+                pointToLayer=assign(
+                    self._point_to_layer_location_map(radius, active)
+                ),
                 onEachFeature=self._on_each_feature(),
                 id=f"marker-{device_id}",
             )
@@ -141,7 +145,7 @@ class LeafletMapComponentManager:
         Client-side hover template.
         """
         on_each_feature = assign(
-                """function(feature, layer, context){
+            """function(feature, layer, context){
                 if (feature.properties.active) {{ 
                     var active = "<b>Active Location</b>";
                     }} else {{
@@ -156,8 +160,8 @@ class LeafletMapComponentManager:
                     layer.bindTooltip(`${active}<br>${label}`)
                 }};
             }"""
-            )
-        
+        )
+
         return on_each_feature
 
     def _cluster_to_layer(self) -> str:
@@ -205,15 +209,17 @@ class LeafletMapComponentManager:
                 }}
                 """
 
-    def _point_to_layer_location_map(self, radius: int = None, active: bool = True) -> str:
+    def _point_to_layer_location_map(
+        self, radius: int = None, active: bool = True
+    ) -> str:
         """
         How to render individual markers on the map client-side?
-        radius: int - provided in meters, if None, fall back to the config default 
+        radius: int - provided in meters, if None, fall back to the config default
         (which is also the minimum for any value provided).
         active: bool - if the device is active at the location.
         """
         radius = max(int(radius), int(self.config["map"]["radius-meter"]))
-        
+
         if active:
             color = self.config["map"]["marker_color_highlight"]
         else:
@@ -250,7 +256,11 @@ class LeafletMapComponentManager:
         return (lat, lon)
 
     def get_map(
-        self, device_id: str = None, style: dict = {"height": "100vh"}, radius: int = None, active: bool = True
+        self,
+        device_id: str = None,
+        style: dict = {"height": "100vh"},
+        radius: int = None,
+        active: bool = True,
     ) -> dl.Map:
         """
         Create the location map.
@@ -261,7 +271,11 @@ class LeafletMapComponentManager:
         map = dl.Map(
             [
                 self._get_tile(),
-                dl.LayerGroup(self._get_markers(device_id=device_id, radius=radius, active=active)),
+                dl.LayerGroup(
+                    self._get_markers(
+                        device_id=device_id, radius=radius, active=active
+                    )
+                ),
                 dl.GestureHandling(),
             ],
             center=self._get_map_center(device_id=device_id),
@@ -293,13 +307,19 @@ class LocationComponentManager:
         """
         self.config = load_config()
 
-    def get_noise_line_graph(self, location_noise: pd.DataFrame, component_id: COMPONENT_ID, bold_line: bool = False) -> dcc.Graph:
+    def get_noise_line_graph(
+        self,
+        location_noise: pd.DataFrame,
+        component_id: COMPONENT_ID,
+        bold_line: bool = False,
+        title: str = None
+    ) -> dcc.Graph:
         """
         Create the noise graph component.
         """
         # line plot
         plotter = TimeseriesPlotter(location_noise)
-        line_fig = plotter.plot(bold_line=bold_line)
+        line_fig = plotter.plot(bold_line=bold_line, title=title)
 
         noise_line_graph = dcc.Graph(
             figure=line_fig,

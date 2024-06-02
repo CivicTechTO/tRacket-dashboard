@@ -174,7 +174,7 @@ class AppDataManager:
 
         info = self.location_info.to_dict("records")[0]
         radius = info[COLUMN.RADIUS]
-        
+
         return radius
 
     def get_label(self, location_id: str) -> int:
@@ -186,9 +186,9 @@ class AppDataManager:
 
         info = self.location_info.to_dict("records")[0]
         label = info[COLUMN.LABEL]
-        
+
         return label
-    
+
     def get_active_status(self, location_id: str) -> int:
         """
         Return the activity status for the device.
@@ -198,7 +198,7 @@ class AppDataManager:
 
         info = self.location_info.to_dict("records")[0]
         active = info[COLUMN.ACTIVE]
-        
+
         return active
 
     def load_and_format_locations(self):
@@ -251,7 +251,7 @@ class AppDataManager:
         """
         if self.location_stats is None:
             self.load_and_format_location_stats(location_id=location_id)
-        
+
         end = self.location_stats.loc[0, COLUMN.END]
         start = end - timedelta(days=7)
 

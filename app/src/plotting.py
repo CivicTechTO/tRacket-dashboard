@@ -258,12 +258,12 @@ class TimeseriesPlotter(BasePlotter):
             df[COLUMN.TIMESTAMP]
         ), f"Timestamp should be datatime data type, not {df[COLUMN.TIMESTAMP].dtype}."
 
-    def plot(self, show_title: bool = False, bold_line: bool = False) -> go.Figure:
+    def plot(self, title: str = None, bold_line: bool = False) -> go.Figure:
         """
         Create line chart showing the noise level over time.
         Params:
-        show_title: bool - if the title is added
-        bold_line: bool - if extra emphasis is put on the mean line 
+        title: str - if the title is added
+        bold_line: bool - if extra emphasis is put on the mean line
         """
         figure = go.Figure()
 
@@ -285,15 +285,14 @@ class TimeseriesPlotter(BasePlotter):
             margin=dict(
                 l=10,
                 r=10,
-                b=10,
-                t=20,
+                b=40,
+                t=40,
             ),
             yaxis={"visible": True, "showticklabels": True},
         )
         figure.update_traces(connectgaps=False)
 
-        if show_title:
-            title = f"Noise Level - {self.start_date} to {self.end_date}"
+        if title:
             figure.update_layout(title=dict(text=title))
 
         self.set_formatting(figure)
@@ -359,17 +358,17 @@ class TimeseriesPlotter(BasePlotter):
         return trace
 
     def _get_mean_line_trace(self, bold_line: bool) -> go.Scatter:
-        line_width=int(self._config["plot.sizes"]["mean_line_width"])
+        line_width = int(self._config["plot.sizes"]["mean_line_width"])
         if bold_line:
             line_width += 3
-        
+
         trace = go.Scatter(
             x=self.df[COLUMN.TIMESTAMP],
             y=self.df[COLUMN.MEAN].round(1),
             name="Mean",
             mode="lines",
             line_color=self.colors[COLOR_ITEM.MEAN],
-            line_width=line_width
+            line_width=line_width,
         )
         return trace
 
