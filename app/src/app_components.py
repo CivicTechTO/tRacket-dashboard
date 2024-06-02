@@ -327,7 +327,10 @@ class LocationComponentManager:
         return html.Div([indicator_graph, indicator_tooltip])
 
     def get_level_card(
-        self, label: str, location_noise: pd.DataFrame
+        self,
+        label: str,
+        location_noise: pd.DataFrame,
+        style: dict = {"height": "100vh"},
     ) -> dbc.Card:
 
         last_time = get_last_time(location_noise)
@@ -346,6 +349,7 @@ class LocationComponentManager:
                 ),
             ],
             className="moderate-card",
+            style=style,
         )
         return card
 

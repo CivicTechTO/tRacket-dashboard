@@ -90,7 +90,9 @@ def layout(device_id: str = None, **kwargs):
 
         # get components
         level_card = location_component_manager.get_level_card(
-            label, data_manager.location_noise[Granularity.hourly]
+            label,
+            data_manager.location_noise[Granularity.hourly],
+            style={"height": "50vh"},
         )
 
         noise_line_graph = location_component_manager.get_noise_line_graph(
@@ -106,12 +108,12 @@ def layout(device_id: str = None, **kwargs):
                 html.Br(),
                 dbc.Row(
                     [
-                        dbc.Col(level_card, lg=4, md=12),
-                        dbc.Col(noise_line_graph, lg=8, md=12),
+                        dbc.Col(level_card, lg=6, md=12),
+                        dbc.Col(map, lg=6, md=12),
                     ],
                 ),
                 html.Br(),
-                dbc.Row([dbc.Col(map)]),
+                dbc.Row([dbc.Col(noise_line_graph, lg=12, md=12)]),
             ],
             fluid=True,
         )

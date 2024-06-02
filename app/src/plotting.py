@@ -571,8 +571,8 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                     "thickness": 0.75,
                     "value": int(self._config["constants"]["noise_threshold"]),
                 },
-            }
-            # number={"suffix": " dBA"},
+            },
+            number={"suffix": " dBA"},
         )
 
         fig.update_layout(
