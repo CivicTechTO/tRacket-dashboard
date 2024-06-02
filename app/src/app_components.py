@@ -21,6 +21,7 @@ class COMPONENT_ID(StrEnum):
     mean_indicator_tooltip = auto()
     map_markers = auto()
     raw_noise_line_graphs = auto()
+    redirect = auto()
 
 
 # class AbstractAppManager(object):

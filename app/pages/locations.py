@@ -3,6 +3,7 @@ The main map page of the application.
 """
 
 import dash
+import pandas as pd
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager, Granularity
 from src.utils import Logging, COLUMN
@@ -76,52 +77,60 @@ def layout(device_id: str = None, **kwargs):
         )
 
         # load data for location
-        data_manager.load_and_format_location_noise(
-            location_id=device_id, granularity=Granularity.hourly
-        )
-        data_manager.load_and_format_location_noise(
-            location_id=device_id, granularity=Granularity.raw
-        )
+        data_manager.load_and_format_location_stats(location_id=device_id)
         data_manager.load_and_format_location_info(location_id=device_id)
 
-        info = data_manager.location_info.to_dict("records")[0]
-        label = info[COLUMN.LABEL]
-        radius = info[COLUMN.RADIUS]
+        if data_manager.is_noise_available(location_id=device_id):
+            logger.info(f"No noise data available yet at the location.")
+            redirect = dcc.Location(pathname="/not_found_404.py", id=COMPONENT_ID.redirect)
+            layout = dbc.Container([redirect])
 
-        # get components
-        level_card = location_component_manager.get_level_card(
-            label,
-            data_manager.location_noise[Granularity.hourly],
-            style={"height": "50vh"},
-        )
+        else:
+            data_manager.load_and_format_location_noise(
+                location_id=device_id, granularity=Granularity.hourly
+            )
+            data_manager.load_and_format_location_noise(
+                location_id=device_id, granularity=Granularity.raw
+            )
 
-        hourly_noise_line_graph = location_component_manager.get_noise_line_graph(
-            data_manager.location_noise[Granularity.hourly],
-            component_id=COMPONENT_ID.hourly_noise_line_graph,
-            bold_line=True
-        )
+            info = data_manager.location_info.to_dict("records")[0]
+            label = info[COLUMN.LABEL]
+            radius = info[COLUMN.RADIUS]
 
-        raw_noise_line_graph = location_component_manager.get_noise_line_graph(
-            data_manager.location_noise[Granularity.raw],
-            component_id=COMPONENT_ID.raw_noise_line_graphs
-        )
+            # get components
+            level_card = location_component_manager.get_level_card(
+                label,
+                data_manager.location_noise[Granularity.hourly],
+                style={"height": "50vh"},
+            )
 
-        # define layout
-        layout = dbc.Container(
-            [
-                location_component_manager.get_navbar(),
-                html.Br(),
-                dbc.Row(
-                    [
-                        dbc.Col(level_card, lg=6, md=12),
-                        dbc.Col(map, lg=6, md=12),
-                    ],
-                ),
-                html.Br(),
-                dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
-                dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)])
-            ],
-            fluid=True,
-        )
+            hourly_noise_line_graph = location_component_manager.get_noise_line_graph(
+                data_manager.location_noise[Granularity.hourly],
+                component_id=COMPONENT_ID.hourly_noise_line_graph,
+                bold_line=True
+            )
+
+            raw_noise_line_graph = location_component_manager.get_noise_line_graph(
+                data_manager.location_noise[Granularity.raw],
+                component_id=COMPONENT_ID.raw_noise_line_graphs
+            )
+
+            # define layout
+            layout = dbc.Container(
+                [
+                    location_component_manager.get_navbar(),
+                    html.Br(),
+                    dbc.Row(
+                        [
+                            dbc.Col(level_card, lg=6, md=12),
+                            dbc.Col(map, lg=6, md=12),
+                        ],
+                    ),
+                    html.Br(),
+                    dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
+                    dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)])
+                ],
+                fluid=True,
+            )
 
     return layout

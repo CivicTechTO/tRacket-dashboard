@@ -156,6 +156,16 @@ class AppDataManager:
 
         self.location_info = location_info
 
+    def is_noise_available(self, location_id: str) -> bool:
+        """
+        Check if there is noise data available.
+        """
+        if self.location_stats is None:
+            self.load_and_format_location_stats(location_id=location_id)
+
+        return self.location_stats[COLUMN.COUNT].values[0] == 0
+
+
     def load_and_format_locations(self):
         """
         Load and format the device location data for the whole system.
@@ -204,7 +214,9 @@ class AppDataManager:
         """
         Load the last seven days of the noise data at a specific location.
         """
-        self.load_and_format_location_stats(location_id=location_id)
+        if self.location_stats is None:
+            self.load_and_format_location_stats(location_id=location_id)
+        
         end = self.location_stats.loc[0, COLUMN.END]
         start = end - timedelta(days=7)
 

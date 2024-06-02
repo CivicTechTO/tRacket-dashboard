@@ -90,8 +90,8 @@ class NoiseAggregate(Noise):
     Aggregate noise measurement corresponding to a time interval.
     """
 
-    start: datetime
-    end: datetime
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None
     count: int
 
 
