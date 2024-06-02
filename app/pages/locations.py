@@ -95,16 +95,21 @@ def layout(device_id: str = None, **kwargs):
             style={"height": "50vh"},
         )
 
-        noise_line_graph = location_component_manager.get_noise_line_graph(
-            data_manager.location_noise[Granularity.hourly]
+        hourly_noise_line_graph = location_component_manager.get_noise_line_graph(
+            data_manager.location_noise[Granularity.hourly],
+            component_id=COMPONENT_ID.hourly_noise_line_graph,
+            bold_line=True
         )
 
-        nav_bar = location_component_manager.get_navbar()
+        raw_noise_line_graph = location_component_manager.get_noise_line_graph(
+            data_manager.location_noise[Granularity.raw],
+            component_id=COMPONENT_ID.raw_noise_line_graphs
+        )
 
         # define layout
         layout = dbc.Container(
             [
-                nav_bar,
+                location_component_manager.get_navbar(),
                 html.Br(),
                 dbc.Row(
                     [
@@ -113,7 +118,8 @@ def layout(device_id: str = None, **kwargs):
                     ],
                 ),
                 html.Br(),
-                dbc.Row([dbc.Col(noise_line_graph, lg=12, md=12)]),
+                dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
+                dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)])
             ],
             fluid=True,
         )

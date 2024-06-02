@@ -16,10 +16,11 @@ class COMPONENT_ID(StrEnum):
     """
 
     system_map = auto()
-    noise_line_graph = auto()
+    hourly_noise_line_graph = auto()
     mean_indicator = auto()
     mean_indicator_tooltip = auto()
     map_markers = auto()
+    raw_noise_line_graphs = auto()
 
 
 # class AbstractAppManager(object):
@@ -272,17 +273,17 @@ class LocationComponentManager:
         """
         self.config = load_config()
 
-    def get_noise_line_graph(self, location_noise: pd.DataFrame) -> dcc.Graph:
+    def get_noise_line_graph(self, location_noise: pd.DataFrame, component_id: COMPONENT_ID, bold_line: bool = False) -> dcc.Graph:
         """
         Create the noise graph component.
         """
         # line plot
         plotter = TimeseriesPlotter(location_noise)
-        line_fig = plotter.plot()
+        line_fig = plotter.plot(bold_line=bold_line)
 
         noise_line_graph = dcc.Graph(
             figure=line_fig,
-            id=COMPONENT_ID.noise_line_graph,
+            id=component_id,
             config={
                 "displayModeBar": True,
                 "displaylogo": False,
