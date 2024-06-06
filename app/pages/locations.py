@@ -3,17 +3,16 @@ The main map page of the application.
 """
 
 import dash
-import pandas as pd
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager, Granularity
-from src.utils import Logging, COLUMN
+from src.utils import Logging
 from src.app_components import (
     LeafletMapComponentManager,
     LocationComponentManager,
     CallbackManager,
     COMPONENT_ID,
 )
-from dash import callback, Input, Output, dcc, html, State, clientside_callback
+from dash import callback, Input, Output, dcc, html, clientside_callback, Patch
 
 logger = Logging.get_console_logger(__name__)
 
@@ -42,6 +41,41 @@ dash.register_page(
 ### CALLBACKS ###
 
 # NOTE: need to be defined outside the layer() function for these to work
+def update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
+    """
+    Copy x-axis layout attributes into the figure.
+    """
+    if "xaxis.range[0]" in relayout_data:
+        xmin = relayout_data["xaxis.range[0]"]
+        xmax = relayout_data["xaxis.range[1]"]
+        figure["layout"]["xaxis"]["range"] = [xmin, xmax]
+        figure["layout"]["xaxis"]["autorange"] = False
+    elif 'xaxis.autorange' in relayout_data and relayout_data["xaxis.autorange"] == True:
+        figure["layout"]["xaxis"]["autorange"] = True
+    else:
+        pass
+
+
+@callback(
+    Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),
+    Output(COMPONENT_ID.raw_noise_line_graph, "figure"),
+    Input(COMPONENT_ID.hourly_noise_line_graph, "relayoutData"),
+    Input(COMPONENT_ID.raw_noise_line_graph, "relayoutData"),
+)
+def update_zoom(hourly_relout, raw_relout):
+    """
+    Copy layout settings from one fig to other.
+    """
+    patched_raw = Patch()
+    patched_hourly = Patch()
+
+    if dash.ctx.triggered_id == COMPONENT_ID.raw_noise_line_graph and isinstance(raw_relout, dict):
+        update_fig_with_layout(raw_relout, patched_hourly)
+
+    if dash.ctx.triggered_id == COMPONENT_ID.hourly_noise_line_graph and isinstance(hourly_relout, dict):
+        update_fig_with_layout(hourly_relout, patched_raw)
+
+    return (patched_hourly, patched_raw)
 
 clientside_callback(
     """
@@ -123,7 +157,7 @@ def layout(device_id: str = None, **kwargs):
             raw_noise_line_graph = (
                 location_component_manager.get_noise_line_graph(
                     data_manager.location_noise[Granularity.raw],
-                    component_id=COMPONENT_ID.raw_noise_line_graphs,
+                    component_id=COMPONENT_ID.raw_noise_line_graph,
                 )
             )
 

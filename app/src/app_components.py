@@ -20,7 +20,7 @@ class COMPONENT_ID(StrEnum):
     mean_indicator = auto()
     mean_indicator_tooltip = auto()
     map_markers = auto()
-    raw_noise_line_graphs = auto()
+    raw_noise_line_graph = auto()
     redirect = auto()
 
 
