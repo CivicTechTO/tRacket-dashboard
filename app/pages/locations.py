@@ -12,7 +12,7 @@ from src.app_components import (
     CallbackManager,
     COMPONENT_ID,
 )
-from dash import callback, Input, Output, dcc, html, clientside_callback, Patch
+from dash import Input, Output, dcc, html, clientside_callback
 
 logger = Logging.get_console_logger(__name__)
 
@@ -41,59 +41,7 @@ dash.register_page(
 ### CALLBACKS ###
 
 # NOTE: need to be defined outside the layer() function for these to work
-def update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
-    """
-    Copy x-axis layout attributes into the figure.
-    """
-    if "xaxis.range[0]" in relayout_data:
-        xmin = relayout_data["xaxis.range[0]"]
-        xmax = relayout_data["xaxis.range[1]"]
-        figure["layout"]["xaxis"]["range"] = [xmin, xmax]
-        figure["layout"]["xaxis"]["autorange"] = False
-    elif 'xaxis.autorange' in relayout_data and relayout_data["xaxis.autorange"] == True:
-        figure["layout"]["xaxis"]["autorange"] = True
-    else:
-        pass
 
-
-@callback(
-    Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),
-    Output(COMPONENT_ID.raw_noise_line_graph, "figure"),
-    Input(COMPONENT_ID.hourly_noise_line_graph, "relayoutData"),
-    Input(COMPONENT_ID.raw_noise_line_graph, "relayoutData"),
-)
-def update_zoom(hourly_relout, raw_relout):
-    """
-    Copy layout settings from one fig to other.
-    """
-    patched_raw = Patch()
-    patched_hourly = Patch()
-
-    if dash.ctx.triggered_id == COMPONENT_ID.raw_noise_line_graph and isinstance(raw_relout, dict):
-        update_fig_with_layout(raw_relout, patched_hourly)
-
-    if dash.ctx.triggered_id == COMPONENT_ID.hourly_noise_line_graph and isinstance(hourly_relout, dict):
-        update_fig_with_layout(hourly_relout, patched_raw)
-
-    return (patched_hourly, patched_raw)
-
-clientside_callback(
-    """
-    function(feature, n_clicks) {
-        var base_url = window.location.href;
-        console.log(feature)
-        if (!feature.properties.cluster) {
-            var url = new URL("locations/".concat(feature.properties.id), base_url);
-            console.log(`Redirecting to ${url}`);
-            window.open(url, '_blank');
-        }
-    }
-    """,
-    Output(COMPONENT_ID.map_markers, "hideout"),
-    Input(COMPONENT_ID.map_markers, "clickData"),
-    Input(COMPONENT_ID.map_markers, "n_clicks"),
-    prevent_initial_call=True,
-)
 
 ### LAYOUT DEFINITION ###
 
@@ -150,7 +98,7 @@ def layout(device_id: str = None, **kwargs):
                     data_manager.location_noise[Granularity.hourly],
                     component_id=COMPONENT_ID.hourly_noise_line_graph,
                     bold_line=True,
-                    title="Hourly and 5-minute Noise Levels"
+                    title="Hourly and 5-minute Noise Levels",
                 )
             )
 

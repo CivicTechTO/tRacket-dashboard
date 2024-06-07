@@ -5,9 +5,11 @@ import pandas as pd
 import dash_leaflet as dl
 from dash_extensions.javascript import assign
 import dash_leaflet.express as dlx
-from dash import callback, Input, Output, dcc, html, State, get_asset_url
+from dash import dcc, html, get_asset_url
 import dash_bootstrap_components as dbc
 from typing import List
+from dash import callback, Input, Output, dcc, html, clientside_callback, Patch
+import dash
 
 
 class COMPONENT_ID(StrEnum):
@@ -24,27 +26,6 @@ class COMPONENT_ID(StrEnum):
     redirect = auto()
 
 
-# class AbstractAppManager(object):
-#     """
-#     Base class for managing app components and making data available through the AppDataManager.
-#     """
-
-#     _config = load_config()
-#     app_data_manager: AppDataManager = None
-
-#     @classmethod
-#     def _set_app_data_manager(cls, app_data_manager: AppDataManager) -> None:
-#         cls.app_data_manager = app_data_manager
-
-#     @abstractclassmethod
-#     def initialize(
-#         cls, app_data_manager: Optional[AppDataManager] = None
-#     ) -> None:
-#         if app_data_manager:
-#             cls._set_app_data_manager(app_data_manager)
-#         pass
-
-
 ### Mapping ###
 
 
@@ -57,6 +38,17 @@ class LeafletMapComponentManager:
 
         self._validate_data(locations)
         self.locations = locations
+        
+        self._assign_clientside_js_functions()
+
+    def _assign_clientside_js_functions(self) -> None:
+        """
+        Assign JS functions that are used for rendering leaflet markers.
+        """
+        self._assign_on_each_feature()
+        self._assign_point_to_layer_system_map()
+        self._assign_cluster_to_layer()
+        self._assign_point_to_layer_location_map()
 
     def _validate_data(self, locations: pd.DataFrame) -> None:
         """
@@ -103,13 +95,19 @@ class LeafletMapComponentManager:
             ]
             markers = dlx.dicts_to_geojson(markers)
 
+            if active:
+                color = self.config["map"]["marker_color_highlight"]
+            else:
+                color = self.config["map"]["marker_color_inactive"]
+
+            radius = max(int(radius), int(self.config["map"]["radius-meter"]))
+
             markers = dl.GeoJSON(
                 data=markers,
-                pointToLayer=assign(
-                    self._point_to_layer_location_map(radius, active)
-                ),
-                onEachFeature=self._on_each_feature(),
+                pointToLayer=self._point_to_layer_location_map,
+                onEachFeature=self._on_each_feature,
                 id=f"marker-{device_id}",
+                hideout={"radius": radius, "color": color},
             )
 
         else:
@@ -127,9 +125,9 @@ class LeafletMapComponentManager:
 
             markers = dl.GeoJSON(
                 data=markers,
-                pointToLayer=assign(self._point_to_layer_system_map()),
-                clusterToLayer=assign(self._cluster_to_layer()),
-                onEachFeature=self._on_each_feature(),
+                pointToLayer=self._point_to_layer_system_map,
+                clusterToLayer=self._cluster_to_layer,
+                onEachFeature=self._on_each_feature,
                 cluster=True,
                 zoomToBounds=True,
                 zoomToBoundsOnClick=True,
@@ -140,11 +138,11 @@ class LeafletMapComponentManager:
 
         return markers
 
-    def _on_each_feature(self):
+    def _assign_on_each_feature(self) -> None:
         """
         Client-side hover template.
         """
-        on_each_feature = assign(
+        self._on_each_feature = assign(
             """function(feature, layer, context){
                 if (feature.properties.active) {{ 
                     var active = "<b>Active Location</b>";
@@ -162,13 +160,12 @@ class LeafletMapComponentManager:
             }"""
         )
 
-        return on_each_feature
-
-    def _cluster_to_layer(self) -> str:
+    def _assign_cluster_to_layer(self) -> None:
         """
         How to render clusters on the map client-side?
         """
-        return f"""function(feature, latlng, index, context){{
+        self._cluster_to_layer = assign(
+            f"""function(feature, latlng, index, context){{
                     // Modify icon background color.
                     const scatterIcon = L.DivIcon.extend({{
                         createIcon: function(oldIcon) {{
@@ -186,12 +183,14 @@ class LeafletMapComponentManager:
                     }});
                     return L.marker(latlng, {{icon : icon}})
                 }}"""
+        )
 
-    def _point_to_layer_system_map(self) -> str:
+    def _assign_point_to_layer_system_map(self) -> None:
         """
         How to render individual markers on the map client-side?
         """
-        return f"""
+        self._point_to_layer_system_map = assign(
+            f"""
                 function(feature, latlng, context){{
                     if (feature.properties.active) {{
                         var color = "{self.config["map"]["marker_color_highlight"]}";
@@ -208,34 +207,26 @@ class LeafletMapComponentManager:
                     }});  // render a simple circle marker
                 }}
                 """
+        )
 
-    def _point_to_layer_location_map(
-        self, radius: int = None, active: bool = True
-    ) -> str:
+    def _assign_point_to_layer_location_map(self) -> str:
         """
         How to render individual markers on the map client-side?
-        radius: int - provided in meters, if None, fall back to the config default
-        (which is also the minimum for any value provided).
-        active: bool - if the device is active at the location.
         """
-        radius = max(int(radius), int(self.config["map"]["radius-meter"]))
 
-        if active:
-            color = self.config["map"]["marker_color_highlight"]
-        else:
-            color = self.config["map"]["marker_color_inactive"]
-
-        return f"""
+        self._point_to_layer_location_map = assign(
+            f"""
                 function(feature, latlng, context){{
                     return L.circle(latlng, 
                     {{
-                        radius: {self.config["map"]["radius-meter"]}, 
-                        color: "{color}", 
-                        fillColor: "{color}", 
+                        radius: context.hideout["radius"], 
+                        color: context.hideout["color"], 
+                        fillColor: context.hideout["color"], 
                         fillOpacity: 0.4
                     }});  // render a simple circle marker
                 }}
                 """
+        )
 
     def _get_map_center(self, device_id: str = None) -> tuple[float]:
         """
@@ -312,7 +303,7 @@ class LocationComponentManager:
         location_noise: pd.DataFrame,
         component_id: COMPONENT_ID,
         bold_line: bool = False,
-        title: str = None
+        title: str = None,
     ) -> dcc.Graph:
         """
         Create the noise graph component.
@@ -433,4 +424,65 @@ class CallbackManager:
 
     @classmethod
     def initialize_callbacks(cls):
-        pass
+        def update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
+            """
+            Copy x-axis layout attributes into the figure.
+            """
+            if "xaxis.range[0]" in relayout_data:
+                xmin = relayout_data["xaxis.range[0]"]
+                xmax = relayout_data["xaxis.range[1]"]
+                figure["layout"]["xaxis"]["range"] = [xmin, xmax]
+                figure["layout"]["xaxis"]["autorange"] = False
+            elif (
+                "xaxis.autorange" in relayout_data
+                and relayout_data["xaxis.autorange"] == True
+            ):
+                figure["layout"]["xaxis"]["autorange"] = True
+            else:
+                pass
+
+        @callback(
+            Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),
+            Output(COMPONENT_ID.raw_noise_line_graph, "figure"),
+            Input(COMPONENT_ID.hourly_noise_line_graph, "relayoutData"),
+            Input(COMPONENT_ID.raw_noise_line_graph, "relayoutData"),
+            prevent_initial_call=True,
+        )
+        def update_zoom(hourly_relout, raw_relout):
+            """
+            Copy layout settings from one fig to other.
+            """
+            patched_raw = Patch()
+            patched_hourly = Patch()
+
+            if (
+                dash.ctx.triggered_id == COMPONENT_ID.raw_noise_line_graph
+                and isinstance(raw_relout, dict)
+            ):
+                update_fig_with_layout(raw_relout, patched_hourly)
+
+            if (
+                dash.ctx.triggered_id == COMPONENT_ID.hourly_noise_line_graph
+                and isinstance(hourly_relout, dict)
+            ):
+                update_fig_with_layout(hourly_relout, patched_raw)
+
+            return (patched_hourly, patched_raw)
+
+        clientside_callback(
+            """
+            function(feature, n_clicks) {
+                var base_url = window.location.href;
+                console.log(feature)
+                if (!feature.properties.cluster) {
+                    var url = new URL("locations/".concat(feature.properties.id), base_url);
+                    console.log(`Redirecting to ${url}`);
+                    window.open(url, '_blank');
+                }
+            }
+            """,
+            Output(COMPONENT_ID.map_markers, "hideout"),
+            Input(COMPONENT_ID.map_markers, "clickData"),
+            Input(COMPONENT_ID.map_markers, "n_clicks"),
+            prevent_initial_call=True,
+        )
