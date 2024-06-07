@@ -90,7 +90,7 @@ def layout(device_id: str = None, **kwargs):
             level_card = location_component_manager.get_level_card(
                 label,
                 data_manager.location_noise[Granularity.hourly],
-                style={"height": "50vh"},
+                style={"height": "50vh", "margin-bottom": "20px"},
             )
 
             hourly_noise_line_graph = (
@@ -98,7 +98,6 @@ def layout(device_id: str = None, **kwargs):
                     data_manager.location_noise[Granularity.hourly],
                     component_id=COMPONENT_ID.hourly_noise_line_graph,
                     bold_line=True,
-                    title="Hourly and 5-minute Noise Levels",
                 )
             )
 
