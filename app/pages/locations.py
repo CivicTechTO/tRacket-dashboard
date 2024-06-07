@@ -82,7 +82,7 @@ def layout(device_id: str = None, **kwargs):
             # get map for specific location
             map = leaflet_manager.get_map(
                 device_id=device_id,
-                style={"height": "50vh"},
+                style={"height": "350px"},
                 radius=radius,
                 active=active,
             )
@@ -90,7 +90,7 @@ def layout(device_id: str = None, **kwargs):
             level_card = location_component_manager.get_level_card(
                 label,
                 data_manager.location_noise[Granularity.hourly],
-                style={"height": "50vh", "margin-bottom": "20px"},
+                style={"height": "350px", "margin-bottom": "20px"},
             )
 
             hourly_noise_line_graph = (
