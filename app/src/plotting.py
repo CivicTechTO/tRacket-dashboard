@@ -497,7 +497,9 @@ class AbstractIndicatorPlotter(BasePlotter):
             go.Indicator(
                 mode=mode,
                 value=value,
-                title={"text": title,},
+                title={
+                    "text": title,
+                },
                 domain={"x": [0, 1], "y": [0, 1]},
                 **indicator_kwargs,
             )
@@ -510,17 +512,13 @@ class NumberIndicator(AbstractIndicatorPlotter):
     """
     Show the size of passed dataframe.
     """
+
     def __init__(self, bootstrap_template: str = None) -> None:
         super().__init__(None, bootstrap_template)
-    
+
     def plot(self, value: int | float, title: str = None) -> go.Figure:
-        """
-        """
-        fig = self._get_indicator(
-            value=value,
-            mode="number",
-            title=title
-        )
+        """ """
+        fig = self._get_indicator(value=value, mode="number", title=title)
         fig.update_layout(
             margin=dict(
                 l=10,
@@ -529,7 +527,7 @@ class NumberIndicator(AbstractIndicatorPlotter):
                 t=10,
             ),
         )
-        
+
         self.set_formatting(fig)
 
         return fig

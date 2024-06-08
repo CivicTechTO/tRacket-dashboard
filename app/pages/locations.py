@@ -43,6 +43,7 @@ dash.register_page(
 
 leaflet_manager = LeafletMapComponentManager(data_manager.locations)
 
+
 def layout(device_id: str = None, **kwargs):
     if device_id is None:
         map = leaflet_manager.get_map()

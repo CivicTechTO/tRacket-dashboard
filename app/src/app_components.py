@@ -1,5 +1,9 @@
-from src.utils import COLUMN, load_config, get_last_time
-from src.plotting import TimeseriesPlotter, MeanIndicatorPlotter
+from src.utils import COLUMN, load_config, get_last_time, DataFormatter
+from src.plotting import (
+    TimeseriesPlotter,
+    MeanIndicatorPlotter,
+    NumberIndicator,
+)
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
@@ -7,8 +11,18 @@ from dash_extensions.javascript import assign
 import dash_leaflet.express as dlx
 from dash import dcc, html, get_asset_url
 import dash_bootstrap_components as dbc
-from typing import List
-from dash import callback, Input, Output, dcc, html, clientside_callback, Patch
+from typing import List, Tuple, Dict
+from datetime import datetime
+from dash import (
+    callback,
+    Input,
+    Output,
+    dcc,
+    html,
+    clientside_callback,
+    Patch,
+    dash_table,
+)
 import dash
 
 
@@ -38,7 +52,7 @@ class LeafletMapComponentManager:
 
         self._validate_data(locations)
         self.locations = locations
-        
+
         self._assign_clientside_js_functions()
 
     def _assign_clientside_js_functions(self) -> None:
@@ -291,6 +305,7 @@ class AbstractComponentManager:
     """
     Base class for managing components.
     """
+
     def __init__(self) -> None:
         self.config = load_config()
 
@@ -330,20 +345,72 @@ class AdminComponentManager(AbstractComponentManager):
     """
     Manage components for the admin page.
     """
+
     def __init__(self) -> None:
         super().__init__()
+        self.data_formatter = DataFormatter()
 
-    
+    def get_data_table(
+        self, admin_df: pd.DataFrame
+    ) -> Tuple[datetime, dash_table.DataTable]:
+        """
+        Create a data table component with devices sending data actively highlighted.
+        """
+        assert (
+            COLUMN.END in admin_df.columns
+        ), "Dataframe should have an END column."
 
+        admin_df_plain = self.data_formatter._enum_col_names_to_string(
+            admin_df
+        )
+        limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
+        limit += pd.Timedelta(-1, unit="H")
+
+        table = dash_table.DataTable(
+            data=admin_df_plain.to_dict("records"),
+            sort_action="native",
+            style_data_conditional=[
+                {
+                    "if": {
+                        "filter_query": f"{{end}} > {limit.isoformat()}",
+                    },
+                    "backgroundColor": "#2C7BB2",
+                    "color": "white",
+                },
+            ],
+        )
+
+        return limit, table
+
+    def get_indicators(self, indicators: Dict[str, float | int]) -> dbc.Row:
+        """
+        Create a row of indicator graphs.
+        """
+        plotter = NumberIndicator()
+
+        row = []
+        for title, value in indicators.items():
+            fig = plotter.plot(value=value, title=title)
+            col = dbc.Col(
+                dcc.Graph(
+                    figure=fig,
+                    config={"displayModeBar": False},
+                    style={"height": "20vh"},
+                )
+            )
+            row.append(col)
+
+        return dbc.Row(children=row)
 
 
 class LocationComponentManager(AbstractComponentManager):
     """
     Class to collect and initialize the components for the location page.
     """
+
     def __init__(self) -> None:
         super().__init__()
-    
+
     def get_noise_line_graph(
         self,
         location_noise: pd.DataFrame,
@@ -430,8 +497,6 @@ class LocationComponentManager(AbstractComponentManager):
             style=style,
         )
         return card
-
-  
 
 
 class CallbackManager:
