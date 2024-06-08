@@ -287,17 +287,63 @@ class LeafletMapComponentManager:
         return zoom
 
 
-class LocationComponentManager:
+class AbstractComponentManager:
     """
-    Class to collect and initialize the graph components for the app.
+    Base class for managing components.
     """
-
-    def initialize(self) -> None:
-        """
-        Main call to setup all graph components for the app.
-        """
+    def __init__(self) -> None:
         self.config = load_config()
 
+    def get_navbar(self) -> dbc.NavbarSimple:
+        """
+        Get the navigation bar.
+        """
+        navbar = dbc.NavbarSimple(
+            children=[],
+            brand=dbc.Container(
+                [
+                    html.A(
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    html.Img(
+                                        src=get_asset_url("tracket_logo.svg"),
+                                        height="30px",
+                                    )
+                                )
+                            ],
+                            align="center",
+                            className="g-0",
+                        ),
+                        href="https://tracket.info/",
+                        style={"textDecoration": "none"},
+                    ),
+                ]
+            ),
+            color="#2D2D32",
+            dark=True,
+        )
+        return navbar
+
+
+class AdminComponentManager(AbstractComponentManager):
+    """
+    Manage components for the admin page.
+    """
+    def __init__(self) -> None:
+        super().__init__()
+
+    
+
+
+
+class LocationComponentManager(AbstractComponentManager):
+    """
+    Class to collect and initialize the components for the location page.
+    """
+    def __init__(self) -> None:
+        super().__init__()
+    
     def get_noise_line_graph(
         self,
         location_noise: pd.DataFrame,
@@ -385,36 +431,7 @@ class LocationComponentManager:
         )
         return card
 
-    def get_navbar(self) -> dbc.NavbarSimple:
-        """
-        Get the navigation bar.
-        """
-        navbar = dbc.NavbarSimple(
-            children=[],
-            brand=dbc.Container(
-                [
-                    html.A(
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    html.Img(
-                                        src=get_asset_url("tracket_logo.svg"),
-                                        height="30px",
-                                    )
-                                )
-                            ],
-                            align="center",
-                            className="g-0",
-                        ),
-                        href="https://tracket.info/",
-                        style={"textDecoration": "none"},
-                    ),
-                ]
-            ),
-            color="#2D2D32",
-            dark=True,
-        )
-        return navbar
+  
 
 
 class CallbackManager:

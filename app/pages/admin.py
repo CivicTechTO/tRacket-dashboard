@@ -5,15 +5,14 @@ import pandas as pd
 import datetime
 import dash
 import dash_bootstrap_components as dbc
-from src.data_loading.main import AppDataManager, Granularity
+from src.data_loading.main import AppDataManager
 from src.utils import Logging, COLUMN
 from src.app_components import (
     LeafletMapComponentManager,
-    LocationComponentManager,
-    CallbackManager,
-    COMPONENT_ID,
+    AdminComponentManager
 )
-from dash import Input, Output, dcc, html, clientside_callback, dash_table
+from dash import dcc, dash_table
+from src.plotting import CountIndicator
 
 dash.register_page(
     __name__,
@@ -29,38 +28,34 @@ data_manager = AppDataManager()
 data_manager.load_and_format_locations()
 
 ### Layout ###
+leaflet_manager = LeafletMapComponentManager(data_manager.locations)
+admin_component_manager = AdminComponentManager()
 
 def layout(**kwargs):
-    leaflet_manager = LeafletMapComponentManager(data_manager.locations)
     map = leaflet_manager.get_map(style={"height": "50vh", "margin-bottom": "10px"})
     
     stats = []
-    info = []
     for device_id in data_manager.locations[COLUMN.DEVICEID]:
         device_stat = data_manager.load_and_format_location_stats(location_id=device_id)
-        device_info = data_manager.load_and_format_location_info(location_id=device_id)
-        stats.append(device_stat)
-        info.append(device_info)
-    
-    stats = pd.concat(stats, axis=0)
-    stats[COLUMN.DEVICEID] = data_manager.locations[COLUMN.DEVICEID].values
+        device_stat[COLUMN.DEVICEID] = device_id
+        stats.append(device_stat)    
+    stats = pd.concat(stats, axis=0, ignore_index=True)
 
-    info = pd.concat(info, axis=0)
-    
-    admin_df = pd.concat([stats, info], axis=1)
+    admin_df = pd.concat([stats, data_manager.locations], axis=1)
     admin_df = admin_df[[COLUMN.DEVICEID, COLUMN.LABEL, COLUMN.END, COLUMN.ACTIVE, COLUMN.COUNT, COLUMN.RADIUS]]
     admin_df = admin_df.sort_values(COLUMN.END, ascending=False)
-    admin_df = data_manager.data_formatter._enum_col_names_to_string(admin_df)
+    admin_df_plain = data_manager.data_formatter._enum_col_names_to_string(admin_df)
     
-    limit = (datetime.datetime.now() - datetime.timedelta(days=1)).isoformat()
+    limit = pd.Timestamp('now') + pd.Timedelta(-4, unit="H")
+    limit += pd.Timedelta(-1, unit="H")
 
     table = dash_table.DataTable(
-        data=admin_df.to_dict('records'),
+        data=admin_df_plain.to_dict('records'),
         sort_action='native',
         style_data_conditional=[
             {
                 'if': {
-                    'filter_query': f'{{end}} > {limit}',
+                    'filter_query': f'{{end}} > {limit.isoformat()}',
                 },
                 'backgroundColor': '#2C7BB2',
                 'color': 'white'
@@ -68,9 +63,26 @@ def layout(**kwargs):
         ]
         )
 
+    plotter = CountIndicator(admin_df)
+    location_count_fig = plotter.plot(title="Location Count")
+
+    plotter = CountIndicator(admin_df[admin_df[COLUMN.ACTIVE] == True])
+    active_count_fig = plotter.plot(title="Active Count")
+    
+    plotter = CountIndicator(admin_df[admin_df[COLUMN.END] > limit])
+    sending_count_fig = plotter.plot(title="Sending Data")
+
     layout = dbc.Container(
         [
+            admin_component_manager.get_navbar(),
             dbc.Row([dbc.Col([map])]),
+            dbc.Row(
+                [
+                    dbc.Col(dcc.Graph(figure=location_count_fig, config={"displayModeBar": False}, style={"height": "20vh"})),
+                    dbc.Col(dcc.Graph(figure=active_count_fig, config={"displayModeBar": False}, style={"height": "20vh"})),
+                    dbc.Col(dcc.Graph(figure=sending_count_fig, config={"displayModeBar": False}, style={"height": "20vh"})),
+                ]
+                ),
             dbc.Row([dbc.Col([table])])
         ]
     )

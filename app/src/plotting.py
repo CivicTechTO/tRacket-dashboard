@@ -488,7 +488,7 @@ class AbstractIndicatorPlotter(BasePlotter):
     @staticmethod
     def _get_indicator(
         value: float,
-        text: str,
+        title: str,
         mode: str = "number+delta",
         **indicator_kwargs,
     ) -> go.Figure:
@@ -496,11 +496,44 @@ class AbstractIndicatorPlotter(BasePlotter):
             go.Indicator(
                 mode=mode,
                 value=value,
-                title={"text": text, "font": {"size": 24}},
+                title={"text": title,},
                 domain={"x": [0, 1], "y": [0, 1]},
                 **indicator_kwargs,
             )
         )
+
+        return fig
+
+
+class CountIndicator(AbstractIndicatorPlotter):
+    """
+    Show the size of passed dataframe.
+    """
+    def __init__(self, df: pd.DataFrame, bootstrap_template: str = None) -> None:
+        super().__init__(df, bootstrap_template)
+
+    def _validate_data(self, df: pd.DataFrame) -> None:
+        pass
+    
+    def plot(self, title: str = None) -> go.Figure:
+        """
+        """
+        fig = self._get_indicator(
+            value=self.df.shape[0],
+            mode="number",
+            title=title
+        )
+        fig.update_layout(
+            # height=int(self._config["plot.sizes"]["indicator_height"]),
+            margin=dict(
+                l=10,
+                r=10,
+                b=10,
+                t=10,
+            ),
+        )
+        
+        self.set_formatting(fig)
 
         return fig
 
@@ -543,7 +576,7 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
         fig = self._get_indicator(
             value=self._get_last_mean(),
             mode="number+delta",
-            text=self._get_title(),
+            title=self._get_title(),
             delta={
                 "reference": self._get_reference_mean(),
                 "relative": True,
@@ -616,7 +649,7 @@ class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
     def plot(self) -> go.Figure:
         fig = self._get_indicator(
             value=self._get_device_count(),
-            text="Number of Active Devices",
+            title="Number of Active Devices",
             delta={
                 "reference": self._get_reference_count(),
                 "relative": False,
@@ -672,7 +705,7 @@ class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
     def plot(self) -> go.Figure:
         fig = self._get_indicator(
             value=self._get_system_min_avg(),
-            text="Average Ambient Noise",
+            title="Average Ambient Noise",
             delta={
                 "reference": self._get_reference_avg(),
                 "relative": True,
@@ -705,7 +738,7 @@ class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
     def plot(self) -> go.Figure:
         fig = self._get_indicator(
             value=self._get_total_count(),
-            text="Number of Outliers",
+            title="Number of Outliers",
             delta={
                 "reference": self._get_reference_count(),
                 "relative": False,
@@ -803,7 +836,7 @@ class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
 
         fig = self._get_indicator(
             value=self._get_time_of_day_average(current_df, time_of_day),
-            text=indicator_text,
+            title=indicator_text,
             number={"suffix": " dBA"},
             delta={
                 "reference": self._get_time_of_day_average(

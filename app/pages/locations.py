@@ -41,10 +41,9 @@ dash.register_page(
 
 ### LAYOUT DEFINITION ###
 
+leaflet_manager = LeafletMapComponentManager(data_manager.locations)
 
 def layout(device_id: str = None, **kwargs):
-    leaflet_manager = LeafletMapComponentManager(data_manager.locations)
-
     if device_id is None:
         map = leaflet_manager.get_map()
         layout = map
