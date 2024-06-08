@@ -12,7 +12,7 @@ from src.app_components import (
     AdminComponentManager
 )
 from dash import dcc, dash_table
-from src.plotting import CountIndicator
+from src.plotting import NumberIndicator
 
 dash.register_page(
     __name__,
@@ -63,14 +63,21 @@ def layout(**kwargs):
         ]
         )
 
-    plotter = CountIndicator(admin_df)
-    location_count_fig = plotter.plot(title="Location Count")
+    plotter = NumberIndicator()
+    location_count_fig = plotter.plot(
+        value=admin_df.shape[0],
+        title="Location Count"
+    )
 
-    plotter = CountIndicator(admin_df[admin_df[COLUMN.ACTIVE] == True])
-    active_count_fig = plotter.plot(title="Active Count")
+    active_count_fig = plotter.plot(
+        value=admin_df[admin_df[COLUMN.ACTIVE] == True].shape[0],
+        title="Active Count"
+        )
     
-    plotter = CountIndicator(admin_df[admin_df[COLUMN.END] > limit])
-    sending_count_fig = plotter.plot(title="Sending Data")
+    sending_count_fig = plotter.plot(
+        value=admin_df[admin_df[COLUMN.END] > limit].shape[0],
+        title="Sending Data"
+        )
 
     layout = dbc.Container(
         [

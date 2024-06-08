@@ -37,11 +37,12 @@ class BasePlotter:
     """
 
     def __init__(
-        self, df: pd.DataFrame, bootstrap_template: str = None
+        self, df: pd.DataFrame | None, bootstrap_template: str = None
     ) -> None:
         self._config = load_config()
 
-        self._validate_data(df)
+        if df is not None:
+            self._validate_data(df)
         self.df = df
 
         self.template = None
@@ -505,26 +506,22 @@ class AbstractIndicatorPlotter(BasePlotter):
         return fig
 
 
-class CountIndicator(AbstractIndicatorPlotter):
+class NumberIndicator(AbstractIndicatorPlotter):
     """
     Show the size of passed dataframe.
     """
-    def __init__(self, df: pd.DataFrame, bootstrap_template: str = None) -> None:
-        super().__init__(df, bootstrap_template)
-
-    def _validate_data(self, df: pd.DataFrame) -> None:
-        pass
+    def __init__(self, bootstrap_template: str = None) -> None:
+        super().__init__(None, bootstrap_template)
     
-    def plot(self, title: str = None) -> go.Figure:
+    def plot(self, value: int | float, title: str = None) -> go.Figure:
         """
         """
         fig = self._get_indicator(
-            value=self.df.shape[0],
+            value=value,
             mode="number",
             title=title
         )
         fig.update_layout(
-            # height=int(self._config["plot.sizes"]["indicator_height"]),
             margin=dict(
                 l=10,
                 r=10,
