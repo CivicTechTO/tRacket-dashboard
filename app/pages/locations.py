@@ -38,10 +38,6 @@ dash.register_page(
     path_template="/locations/<device_id>",
 )
 
-### CALLBACKS ###
-
-# NOTE: need to be defined outside the layer() function for these to work
-
 
 ### LAYOUT DEFINITION ###
 

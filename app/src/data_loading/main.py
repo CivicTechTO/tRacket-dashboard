@@ -156,6 +156,8 @@ class AppDataManager:
 
         self.location_info = location_info
 
+        return location_info
+
     def is_noise_available(self, location_id: str) -> bool:
         """
         Check if there is noise data available.
@@ -233,7 +235,7 @@ class AppDataManager:
         """
         return locations[locations[COLUMN.ACTIVE] == True]
 
-    def load_and_format_location_stats(self, location_id=str) -> None:
+    def load_and_format_location_stats(self, location_id=str) -> pd.DataFrame:
         """
         Load the life-time aggregate stats for the location.
         """
@@ -242,6 +244,8 @@ class AppDataManager:
         stats = self.data_formatter._set_data_types(stats)
 
         self.location_stats = stats
+
+        return stats
 
     def load_and_format_location_noise(
         self, location_id: str, granularity: Granularity
