@@ -7,11 +7,9 @@ import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager
 from src.utils import Logging, COLUMN
 from src.app_components import (
-    LeafletMapComponentManager,
+    LeafletMapManager,
     AdminComponentManager,
 )
-from dash import dcc, dash_table
-from src.plotting import NumberIndicator
 
 dash.register_page(
     __name__,
@@ -24,14 +22,18 @@ logger = Logging.get_console_logger(__name__)
 ### Data loading ###
 
 data_manager = AppDataManager()
-data_manager.load_and_format_locations()
 
 ### Layout ###
-leaflet_manager = LeafletMapComponentManager(data_manager.locations)
+leaflet_manager = LeafletMapManager()
 admin_component_manager = AdminComponentManager()
 
 
 def layout(**kwargs):
+    # load data
+    data_manager.load_and_format_locations()
+    leaflet_manager.set_locations(data_manager.locations)
+    
+    # set map
     map = leaflet_manager.get_map(
         style={"height": "50vh", "margin-bottom": "10px"}
     )

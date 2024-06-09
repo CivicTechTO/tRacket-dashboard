@@ -43,17 +43,20 @@ class COMPONENT_ID(StrEnum):
 ### Mapping ###
 
 
-class LeafletMapComponentManager:
-    def __init__(self, locations: pd.DataFrame) -> None:
+class LeafletMapManager:
+    def __init__(self) -> None:
         """
         Initialize with the location data.
         """
         self.config = load_config()
 
-        self._validate_data(locations)
-        self.locations = locations
+        self.locations = None
 
         self._assign_clientside_js_functions()
+
+    def set_locations(self, locations: pd.DataFrame) -> None:
+        self._validate_data(locations)
+        self.locations = locations
 
     def _assign_clientside_js_functions(self) -> None:
         """

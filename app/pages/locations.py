@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager, Granularity
 from src.utils import Logging
 from src.app_components import (
-    LeafletMapComponentManager,
+    LeafletMapManager,
     LocationComponentManager,
     CallbackManager,
     COMPONENT_ID,
@@ -20,8 +20,6 @@ logger = Logging.get_console_logger(__name__)
 ### Data loading ###
 
 data_manager = AppDataManager()
-data_manager.load_and_format_locations()
-
 
 ### Graph component and Callback manager ###
 
@@ -41,10 +39,12 @@ dash.register_page(
 
 ### LAYOUT DEFINITION ###
 
-leaflet_manager = LeafletMapComponentManager(data_manager.locations)
-
+leaflet_manager = LeafletMapManager()
 
 def layout(device_id: str = None, **kwargs):
+    data_manager.load_and_format_locations()
+    leaflet_manager.set_locations(data_manager.locations)
+
     if device_id is None:
         map = leaflet_manager.get_map()
         layout = map
