@@ -26,17 +26,10 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             };
         },
         function1: function(feature, latlng, context) {
-                if (feature.properties.active) {
-                    var color = "#FB9500";
-                    var opcaity = 0.8;
-                } else {
-                    var color = "#545454";
-                    var opacity = 0.4;
-                };
                 return L.circleMarker(latlng, {
                     radius: 10,
-                    fillColor: color,
-                    fillOpacity: opacity,
+                    fillColor: feature.properties.marker_color,
+                    fillOpacity: 0.8,
                 }); // render a simple circle marker
             }
 
@@ -55,7 +48,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
                 className: "marker-cluster",
                 iconSize: L.point(40, 40),
-                color: "#FB9500"
+                color: "#B6D4E7"
             });
             return L.marker(latlng, {
                 icon: icon

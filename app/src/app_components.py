@@ -129,13 +129,14 @@ class LeafletMapManager:
 
         else:
             markers = [
-                dict(lat=lat, lon=lon, id=id, active=active, label=label)
-                for lat, lon, id, label, active in zip(
+                dict(lat=lat, lon=lon, id=id, active=active, label=label, marker_color=color)
+                for lat, lon, id, label, active, color in zip(
                     self.locations[COLUMN.LAT],
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
                     self.locations[COLUMN.ACTIVE],
+                    self.locations[COLUMN.MARKER_COLOR]
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
@@ -196,7 +197,7 @@ class LeafletMapManager:
                         html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
                         className: "marker-cluster",
                         iconSize: L.point(40, 40),
-                        color: "{self.config["map"]["marker_color_highlight"]}"
+                        color: "{self.config["map"]["cluster_color"]}"
                     }});
                     return L.marker(latlng, {{icon : icon}})
                 }}"""
@@ -209,18 +210,11 @@ class LeafletMapManager:
         self._point_to_layer_system_map = assign(
             f"""
                 function(feature, latlng, context){{
-                    if (feature.properties.active) {{
-                        var color = "{self.config["map"]["marker_color_highlight"]}";
-                        var opcaity = 0.8;
-                    }} else {{
-                        var color = "{self.config["map"]["marker_color_inactive"]}";
-                        var opacity = 0.4;
-                    }};
                     return L.circleMarker(latlng, 
                     {{
                         radius: {self.config["map"]["radius-pixel"]}, 
-                        fillColor: color, 
-                        fillOpacity: opacity,
+                        fillColor: feature.properties.marker_color, 
+                        fillOpacity: 0.8,
                     }});  // render a simple circle marker
                 }}
                 """
@@ -354,20 +348,19 @@ class AdminComponentManager(AbstractComponentManager):
         self.data_formatter = DataFormatter()
 
     def get_data_table(
-        self, admin_df: pd.DataFrame
-    ) -> Tuple[datetime, dash_table.DataTable]:
+        self, admin_df: pd.DataFrame, limit: datetime
+    ) -> dash_table.DataTable:
         """
         Create a data table component with devices sending data actively highlighted.
         """
         assert (
             COLUMN.END in admin_df.columns
         ), "Dataframe should have an END column."
-
+        
+        admin_df = admin_df.sort_values(COLUMN.END, ascending=False)
         admin_df_plain = self.data_formatter._enum_col_names_to_string(
             admin_df
         )
-        limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
-        limit += pd.Timedelta(-1, unit="H")
 
         table = dash_table.DataTable(
             data=admin_df_plain.to_dict("records"),
@@ -383,7 +376,7 @@ class AdminComponentManager(AbstractComponentManager):
             ],
         )
 
-        return limit, table
+        return table
 
     def get_indicators(self, indicators: Dict[str, float | int]) -> dbc.Row:
         """

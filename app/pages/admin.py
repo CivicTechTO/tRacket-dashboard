@@ -2,6 +2,7 @@
 Admin page for system maintenance and monitoring.
 """
 import pandas as pd
+import numpy as np
 import dash
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager
@@ -31,25 +32,18 @@ admin_component_manager = AdminComponentManager()
 def layout(**kwargs):
     # load data
     data_manager.load_and_format_locations()
-    leaflet_manager.set_locations(data_manager.locations)
     
-    # set map
-    map = leaflet_manager.get_map(
-        style={"height": "50vh", "margin-bottom": "10px"}
-    )
-
     stats = []
     for device_id in data_manager.locations[COLUMN.DEVICEID]:
         device_stat = data_manager.load_and_format_location_stats(
             location_id=device_id
         )
-        device_stat[COLUMN.DEVICEID] = device_id
         stats.append(device_stat)
     stats = pd.concat(stats, axis=0, ignore_index=True)
 
     admin_df = pd.concat([stats, data_manager.locations], axis=1)
-    admin_df = admin_df[
-        [
+    
+    table_columns = [
             COLUMN.DEVICEID,
             COLUMN.LABEL,
             COLUMN.END,
@@ -57,10 +51,17 @@ def layout(**kwargs):
             COLUMN.COUNT,
             COLUMN.RADIUS,
         ]
-    ]
-    admin_df = admin_df.sort_values(COLUMN.END, ascending=False)
+    limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
+    limit += pd.Timedelta(-1, unit="H")
+    table = admin_component_manager.get_data_table(admin_df[table_columns], limit)
 
-    limit, table = admin_component_manager.get_data_table(admin_df)
+    admin_df[COLUMN.MARKER_COLOR] = np.where(admin_df[COLUMN.END] > limit, "#2C7BB2", "#545454")
+
+    # set map
+    leaflet_manager.set_locations(admin_df[[COLUMN.DEVICEID, COLUMN.LABEL, COLUMN.ACTIVE, COLUMN.LAT, COLUMN.LON, COLUMN.MARKER_COLOR]])
+    map = leaflet_manager.get_map(
+        style={"height": "50vh", "margin-bottom": "10px"}
+    )
 
     indicators = {
         "Locations": admin_df.shape[0],

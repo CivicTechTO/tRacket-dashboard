@@ -5,17 +5,17 @@ The main map page of the application.
 import dash
 import dash_bootstrap_components as dbc
 from src.data_loading.main import AppDataManager, Granularity
-from src.utils import Logging
+from src.utils import Logging, COLUMN
 from src.app_components import (
     LeafletMapManager,
     LocationComponentManager,
     CallbackManager,
     COMPONENT_ID,
 )
-from dash import Input, Output, dcc, html, clientside_callback
+from dash import dcc, html
+import numpy as np
 
 logger = Logging.get_console_logger(__name__)
-
 
 ### Data loading ###
 
@@ -46,6 +46,11 @@ def layout(device_id: str = None, **kwargs):
     leaflet_manager.set_locations(data_manager.locations)
 
     if device_id is None:
+        data_manager.locations[COLUMN.MARKER_COLOR] = np.where(
+            data_manager.locations[COLUMN.ACTIVE], 
+            data_manager.config["map"]["marker_color_highlight"],
+            data_manager.config["map"]["marker_color_inactive"],
+            )
         map = leaflet_manager.get_map()
         layout = map
 
