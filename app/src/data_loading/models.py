@@ -51,7 +51,7 @@ class Location(BaseModel):
     label: str
     latitude: float
     longitude: float
-    radius: int
+    radius: int | float
     active: bool
 
     @field_validator("id", mode="before")
