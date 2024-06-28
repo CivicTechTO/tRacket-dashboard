@@ -32,7 +32,7 @@ CallbackManager.initialize_callbacks()
 dash.register_page(
     __name__,
     path="/locations",
-    title="tRacket",
+    title="tRacket Dashboard",
     path_template="/locations/<device_id>",
 )
 
