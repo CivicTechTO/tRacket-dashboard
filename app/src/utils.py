@@ -45,7 +45,7 @@ class COLUMN(Enum):
     START = "start"
     END = "end"
     RADIUS = "radius"
-    MARKER_COLOR = "marker_color" 
+    MARKER_COLOR = "marker_color"
 
     # aggregate columns
     COUNT_PRIOR = "count_prior"

@@ -32,7 +32,7 @@ admin_component_manager = AdminComponentManager()
 def layout(**kwargs):
     # load data
     data_manager.load_and_format_locations()
-    
+
     stats = []
     for device_id in data_manager.locations[COLUMN.DEVICEID]:
         device_stat = data_manager.load_and_format_location_stats(
@@ -42,23 +42,38 @@ def layout(**kwargs):
     stats = pd.concat(stats, axis=0, ignore_index=True)
 
     admin_df = pd.concat([stats, data_manager.locations], axis=1)
-    
+
     table_columns = [
-            COLUMN.DEVICEID,
-            COLUMN.LABEL,
-            COLUMN.END,
-            COLUMN.ACTIVE,
-            COLUMN.COUNT,
-            COLUMN.RADIUS,
-        ]
+        COLUMN.DEVICEID,
+        COLUMN.LABEL,
+        COLUMN.END,
+        COLUMN.ACTIVE,
+        COLUMN.COUNT,
+        COLUMN.RADIUS,
+    ]
     limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
     limit += pd.Timedelta(-1, unit="H")
-    table = admin_component_manager.get_data_table(admin_df[table_columns], limit)
+    table = admin_component_manager.get_data_table(
+        admin_df[table_columns], limit
+    )
 
-    admin_df[COLUMN.MARKER_COLOR] = np.where(admin_df[COLUMN.END] > limit, "#2C7BB2", "#545454")
+    admin_df[COLUMN.MARKER_COLOR] = np.where(
+        admin_df[COLUMN.END] > limit, "#2C7BB2", "#545454"
+    )
 
     # set map
-    leaflet_manager.set_locations(admin_df[[COLUMN.DEVICEID, COLUMN.LABEL, COLUMN.ACTIVE, COLUMN.LAT, COLUMN.LON, COLUMN.MARKER_COLOR]])
+    leaflet_manager.set_locations(
+        admin_df[
+            [
+                COLUMN.DEVICEID,
+                COLUMN.LABEL,
+                COLUMN.ACTIVE,
+                COLUMN.LAT,
+                COLUMN.LON,
+                COLUMN.MARKER_COLOR,
+            ]
+        ]
+    )
     map = leaflet_manager.get_map(
         style={"height": "50vh", "margin-bottom": "10px"}
     )

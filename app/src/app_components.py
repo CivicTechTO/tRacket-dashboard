@@ -129,14 +129,21 @@ class LeafletMapManager:
 
         else:
             markers = [
-                dict(lat=lat, lon=lon, id=id, active=active, label=label, marker_color=color)
+                dict(
+                    lat=lat,
+                    lon=lon,
+                    id=id,
+                    active=active,
+                    label=label,
+                    marker_color=color,
+                )
                 for lat, lon, id, label, active, color in zip(
                     self.locations[COLUMN.LAT],
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
                     self.locations[COLUMN.ACTIVE],
-                    self.locations[COLUMN.MARKER_COLOR]
+                    self.locations[COLUMN.MARKER_COLOR],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
@@ -356,7 +363,7 @@ class AdminComponentManager(AbstractComponentManager):
         assert (
             COLUMN.END in admin_df.columns
         ), "Dataframe should have an END column."
-        
+
         admin_df = admin_df.sort_values(COLUMN.END, ascending=False)
         admin_df_plain = self.data_formatter._enum_col_names_to_string(
             admin_df

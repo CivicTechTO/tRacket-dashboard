@@ -1,5 +1,5 @@
 """
-Base data loader definitions for issuing requests.
+Base data loader definitions for issuing requests to the Webcommand Noise API.
 """
 from urllib.parse import urljoin
 import httpx
