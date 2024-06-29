@@ -98,7 +98,9 @@ class AppDataManager:
         """
         Load and format the device location info for one location.
         """
-        location_info = self._request_locations(self.api, location_id=location_id)
+        location_info = self._request_locations(
+            self.api, location_id=location_id
+        )
         location_info = self.data_formatter._string_col_names_to_enum(
             location_info
         )
