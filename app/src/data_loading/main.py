@@ -45,7 +45,7 @@ class AppDataManager:
 
         return NoiseApi(url)
 
-    def _get_location_stats(
+    def _request_location_stats(
         self, api: NoiseApi, location_id: str
     ) -> pd.DataFrame:
         """
@@ -60,7 +60,7 @@ class AppDataManager:
 
         return stats_df
 
-    def _get_locations(
+    def _request_locations(
         self, api: NoiseApi, location_id: str = None
     ) -> pd.DataFrame:
         """
@@ -73,7 +73,7 @@ class AppDataManager:
 
         return locations_df
 
-    def _get_location_noise(
+    def _request_location_noise(
         self,
         api: NoiseApi,
         location_id: str,
@@ -98,7 +98,7 @@ class AppDataManager:
         """
         Load and format the device location info for one location.
         """
-        location_info = self._get_locations(self.api, location_id=location_id)
+        location_info = self._request_locations(self.api, location_id=location_id)
         location_info = self.data_formatter._string_col_names_to_enum(
             location_info
         )
@@ -157,7 +157,7 @@ class AppDataManager:
         """
         Load and format the device location data for the whole system.
         """
-        locations = self._get_locations(self.api)
+        locations = self._request_locations(self.api)
         locations = self.data_formatter._string_col_names_to_enum(locations)
         locations = self.data_formatter._set_data_types(locations)
 
@@ -189,7 +189,7 @@ class AppDataManager:
         """
         Load the life-time aggregate stats for the location.
         """
-        stats = self._get_location_stats(self.api, location_id=location_id)
+        stats = self._request_location_stats(self.api, location_id=location_id)
         stats = self.data_formatter._string_col_names_to_enum(stats)
         stats = self.data_formatter._set_data_types(stats)
 
@@ -209,7 +209,7 @@ class AppDataManager:
         end = self.location_stats.loc[0, COLUMN.END]
         start = end - timedelta(days=7)
 
-        noise_data = self._get_location_noise(
+        noise_data = self._request_location_noise(
             self.api,
             location_id=location_id,
             start_time=start,

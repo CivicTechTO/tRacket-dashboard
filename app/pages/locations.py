@@ -43,10 +43,10 @@ leaflet_manager = LeafletMapManager()
 
 
 def layout(device_id: str = None, **kwargs):
-    data_manager.load_and_format_locations()
-    leaflet_manager.set_locations(data_manager.locations)
-
     if device_id is None:
+        data_manager.load_and_format_locations()
+        leaflet_manager.set_locations(data_manager.locations)
+        
         data_manager.locations[COLUMN.MARKER_COLOR] = np.where(
             data_manager.locations[COLUMN.ACTIVE],
             data_manager.config["map"]["marker_color_highlight"],
@@ -82,6 +82,7 @@ def layout(device_id: str = None, **kwargs):
             ### Get Components ###
 
             # get map for specific location
+            leaflet_manager.set_locations(data_manager.location_info)
             map = leaflet_manager.get_map(
                 device_id=device_id,
                 style={"height": "350px"},
