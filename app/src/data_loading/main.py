@@ -22,6 +22,11 @@ config = load_config()
 class AppDataManager:
     """
     Class for collecting all the required data for the dashboard.
+
+    Naming convetions:
+    - `_request_...` methods make an API call for data
+    - `_load_...` methods use the request methods and then format the data, saving them instance variables.
+    - `_get_...` methods extract specific information from the already loaded data.
     """
 
     def __init__(self) -> None:
