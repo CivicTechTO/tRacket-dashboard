@@ -35,11 +35,11 @@ class NoiseRequestParams(BaseModel):
 
     @field_serializer("start")
     def serialize_dt(self, start: datetime, _info):
-        return start.strftime("%Y-%m-%dT%H:%i:%s")
+        return start.strftime("%Y-%m-%dT%H:%M:%S")
 
     @field_serializer("end")
     def serialize_dt(self, end: datetime, _info):
-        return end.strftime("%Y-%m-%dT%H:%i:%s")
+        return end.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 class Location(BaseModel):
