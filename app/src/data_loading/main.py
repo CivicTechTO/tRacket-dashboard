@@ -41,6 +41,8 @@ class AppDataManager:
         self.location_noise: Dict[Granularity, pd.DataFrame] = dict()
         self.location_info: pd.DataFrame = None
 
+        self.device_id: str = None
+
     def _create_api(self, url: str = None) -> NoiseApi:
         """
         Create noise api for data loading.

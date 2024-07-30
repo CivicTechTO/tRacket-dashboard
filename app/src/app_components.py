@@ -4,7 +4,7 @@ from src.plotting import (
     MeanIndicatorPlotter,
     NumberIndicator,
 )
-from src.data_loading.main import AppDataManager
+from src.data_loading.main import AppDataManager, Granularity
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
@@ -39,8 +39,7 @@ class COMPONENT_ID(StrEnum):
     map_markers = auto()
     raw_noise_line_graph = auto()
     redirect = auto()
-    start_date_input = auto()
-    end_date_input = auto()
+    date_picker = auto()
     load_button = auto()
 
 
@@ -522,28 +521,17 @@ class LocationComponentManager(AbstractComponentManager):
         """
         Add component for controlling the date for the line graphs.
         """
-        
-        start_picker = dcc.DatePickerSingle(
-            id=COMPONENT_ID.start_date_input,
-            min_date_allowed=min_date_allowed,
-            max_date_allowed=max_date_allowed,
-            initial_visible_month=max_date_allowed,
-            placeholder="Start Date",
-            date=start_default
-        )
 
-        end_picker = dcc.DatePickerSingle(
-            id=COMPONENT_ID.end_date_input,
-            min_date_allowed=min_date_allowed,
-            max_date_allowed=max_date_allowed,
-            initial_visible_month=max_date_allowed,
-            placeholder="End Date",
-            date=end_default
-        )
+        range_picker = dcc.DatePickerRange(
+                id=COMPONENT_ID.date_picker,
+                month_format='YYYY MM DD',
+                start_date=start_default,
+                end_date=end_default,
+                min_date_allowed=min_date_allowed,
+                max_date_allowed=max_date_allowed
+            )
 
-        load_button = dbc.Button("Load Data", id=COMPONENT_ID.load_button, color="primary")
-
-        return html.Div([start_picker, end_picker, load_button])
+        return html.Div(range_picker)
 
 
 class CallbackManager:
@@ -551,8 +539,10 @@ class CallbackManager:
     Class that organizes and  initializes the Dash app callbacks on app start.
     """
 
-    @classmethod
-    def initialize_callbacks(cls):
+    def __init__(self, data_manager: AppDataManager) -> None:
+        self.data_manager = data_manager
+
+    def initialize_callbacks(self):
         def update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
             """
             Copy x-axis layout attributes into the figure.
@@ -570,7 +560,36 @@ class CallbackManager:
             else:
                 pass
 
-        
+        @callback(
+            Output(COMPONENT_ID.hourly_noise_line_graph, "figure", allow_duplicate=True),
+            Output(COMPONENT_ID.raw_noise_line_graph, "figure", allow_duplicate=True),
+            Input(COMPONENT_ID.date_picker, "start_date"),
+            Input(COMPONENT_ID.date_picker, "end_date"),
+            prevent_initial_call='initial_duplicate'
+        )
+        def update_line_charts(start_date, end_date):
+            device_id = self.data_manager.device_id
+
+            self.data_manager.load_and_format_location_noise(
+                location_id=device_id,
+                granularity=Granularity.hourly,
+                start=date.fromisoformat(start_date),
+                end=date.fromisoformat(end_date)
+            )
+            self.data_manager.load_and_format_location_noise(
+                location_id=device_id, 
+                granularity=Granularity.raw,
+                start=date.fromisoformat(start_date),
+                end=date.fromisoformat(end_date)
+            )
+
+            plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.raw])
+            raw_line_fig = plotter.plot()
+            
+            plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.hourly])
+            hourly_line_fig = plotter.plot()
+
+            return hourly_line_fig, raw_line_fig
 
         @callback(
             Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),

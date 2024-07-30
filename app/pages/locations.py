@@ -26,7 +26,8 @@ data_manager = AppDataManager()
 
 location_component_manager = LocationComponentManager(data_manager=data_manager)
 
-CallbackManager.initialize_callbacks()
+callback_manager = CallbackManager(data_manager)
+callback_manager.initialize_callbacks()
 
 ### Dash Page Setup ###
 
@@ -57,6 +58,8 @@ def layout(device_id: str = None, **kwargs):
         layout = map_card
 
     else:
+        data_manager.device_id = device_id
+        
         # load data for location
         data_manager.load_and_format_location_stats(location_id=device_id)
         data_manager.load_and_format_location_info(location_id=device_id)
@@ -153,7 +156,7 @@ def layout(device_id: str = None, **kwargs):
                          className="card-title")),
                     dbc.CardBody(
                         [
-                            dbc.Row([dbc.Col([html.H5("Pick a date range: "), date_controls], lg=12, md=12)]),
+                            dbc.Row([dbc.Col([date_controls], lg=12, md=12)]),
                             dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
                             dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)]),
                         ]
