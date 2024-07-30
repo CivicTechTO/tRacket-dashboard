@@ -12,6 +12,7 @@ from src.app_components import (
     CallbackManager,
     COMPONENT_ID,
 )
+from datetime import date, timedelta
 from dash import dcc, html
 import numpy as np
 
@@ -23,7 +24,7 @@ data_manager = AppDataManager()
 
 ### Graph component and Callback manager ###
 
-location_component_manager = LocationComponentManager()
+location_component_manager = LocationComponentManager(data_manager=data_manager)
 
 CallbackManager.initialize_callbacks()
 
@@ -52,8 +53,8 @@ def layout(device_id: str = None, **kwargs):
             data_manager.config["map"]["marker_color_highlight"],
             data_manager.config["map"]["marker_color_inactive"],
         )
-        map = leaflet_manager.get_map()
-        layout = map
+        map_card = leaflet_manager.get_map()
+        layout = map_card
 
     else:
         # load data for location
@@ -85,15 +86,34 @@ def layout(device_id: str = None, **kwargs):
             leaflet_manager.set_locations(data_manager.location_info)
             map = leaflet_manager.get_map(
                 device_id=device_id,
-                style={"height": "350px"},
+                style={"height": "300px"},
                 radius=radius,
                 active=active,
             )
 
+            map_card = dbc.Card(
+                [
+                    dbc.CardHeader(html.H2(
+                        [
+                            html.I(className="fa-solid fa-map-location-dot"), 
+                            " ",
+                            f"{label} "
+                        ], className="card-title")),
+                    dbc.CardBody([map])
+                ]
+            )
+
             level_card = location_component_manager.get_level_card(
-                label,
+                "Current Noise Trend",
                 data_manager.location_noise[Granularity.hourly],
-                style={"height": "350px", "margin-bottom": "20px"},
+                style={"height": "395px", "margin-bottom": "20px"},
+            )
+
+            raw_noise_line_graph = (
+                location_component_manager.get_noise_line_graph(
+                    data_manager.location_noise[Granularity.raw],
+                    component_id=COMPONENT_ID.raw_noise_line_graph,
+                )
             )
 
             hourly_noise_line_graph = (
@@ -103,12 +123,42 @@ def layout(device_id: str = None, **kwargs):
                     bold_line=True,
                 )
             )
+            
 
-            raw_noise_line_graph = (
-                location_component_manager.get_noise_line_graph(
-                    data_manager.location_noise[Granularity.raw],
-                    component_id=COMPONENT_ID.raw_noise_line_graph,
-                )
+            ### Date Picker ###
+
+            # setup date
+            end = data_manager.location_stats.loc[0, COLUMN.END]
+            end = date(end.year, end.month, end.day)
+            start = data_manager.location_stats.loc[0, COLUMN.START]
+            start = date(start.year, start.month, start.day)
+            start_default = end - timedelta(days=7)
+
+            # setup date picker
+            date_controls = location_component_manager.get_date_controls(
+                min_date_allowed=start,
+                max_date_allowed=end,
+                start_default=start_default,
+                end_default=end
+            )
+
+            line_graphs_card = dbc.Card(
+                [
+                    dbc.CardHeader(html.H2(
+                        [
+                            html.I(className="fa-solid fa-magnifying-glass-chart"), 
+                            " ",
+                            "Noise Analyzer"
+                            ],
+                         className="card-title")),
+                    dbc.CardBody(
+                        [
+                            dbc.Row([dbc.Col([html.H5("Pick a date range: "), date_controls], lg=12, md=12)]),
+                            dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
+                            dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)]),
+                        ]
+                    )
+                ]
             )
 
             # define layout
@@ -119,12 +169,11 @@ def layout(device_id: str = None, **kwargs):
                     dbc.Row(
                         [
                             dbc.Col(level_card, lg=6, md=12),
-                            dbc.Col(map, lg=6, md=12),
+                            dbc.Col(map_card, lg=6, md=12),
                         ],
                     ),
                     html.Br(),
-                    dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
-                    dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)]),
+                    line_graphs_card
                 ],
                 fluid=True,
             )

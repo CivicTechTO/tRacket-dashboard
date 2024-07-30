@@ -3,7 +3,7 @@ Main data loading functionalities.
 """
 import re
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Optional
 import pandas as pd
 from src.utils import (
     Logging,
@@ -205,7 +205,11 @@ class AppDataManager:
         return stats
 
     def load_and_format_location_noise(
-        self, location_id: str, granularity: Granularity
+        self, 
+        location_id: str,
+        granularity: Granularity,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
     ):
         """
         Load the last seven days of the noise data at a specific location.
@@ -213,8 +217,10 @@ class AppDataManager:
         if self.location_stats is None:
             self.load_and_format_location_stats(location_id=location_id)
 
-        end = self.location_stats.loc[0, COLUMN.END]
-        start = end - timedelta(days=7)
+        if end is None:
+            end = self.location_stats.loc[0, COLUMN.END]
+        if start is None:
+            start = end - timedelta(days=7)
 
         noise_data = self._request_location_noise(
             self.api,

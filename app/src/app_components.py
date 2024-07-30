@@ -4,6 +4,7 @@ from src.plotting import (
     MeanIndicatorPlotter,
     NumberIndicator,
 )
+from src.data_loading.main import AppDataManager
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
@@ -12,7 +13,7 @@ import dash_leaflet.express as dlx
 from dash import dcc, html, get_asset_url
 import dash_bootstrap_components as dbc
 from typing import List, Tuple, Dict
-from datetime import datetime
+from datetime import datetime,date
 from dash import (
     callback,
     Input,
@@ -38,6 +39,9 @@ class COMPONENT_ID(StrEnum):
     map_markers = auto()
     raw_noise_line_graph = auto()
     redirect = auto()
+    start_date_input = auto()
+    end_date_input = auto()
+    load_button = auto()
 
 
 ### Mapping ###
@@ -411,8 +415,9 @@ class LocationComponentManager(AbstractComponentManager):
     Class to collect and initialize the components for the location page.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, data_manager: AppDataManager) -> None:
         super().__init__()
+        self.data_manager = data_manager
 
     def get_noise_line_graph(
         self,
@@ -485,13 +490,19 @@ class LocationComponentManager(AbstractComponentManager):
 
         card = dbc.Card(
             [
-                dbc.CardHeader(html.H2(label, className="card-title")),
+                dbc.CardHeader(html.H2(
+                    [
+                        html.I(className="fa-solid fa-arrow-trend-up"),
+                        " ",
+                        label
+                    ], className="card-title")),
                 dbc.CardBody(
                     [
-                        html.P(
-                            "The last hourly average received from the device and percentage change since the hour before."
-                        ),
-                        html.P(f"Time: {last_time}"),
+                        # html.P(
+                        #     "The last hourly average received from the device and percentage change since the hour before."
+                        # ),
+                        html.H5([f"Last updated on {last_time}"]),
+                        html.Br(),
                         self._get_mean_indicator(location_noise),
                     ]
                 ),
@@ -500,6 +511,39 @@ class LocationComponentManager(AbstractComponentManager):
             style=style,
         )
         return card
+
+    def get_date_controls(
+        self,
+        min_date_allowed: date,
+        max_date_allowed: date,
+        end_default: date,
+        start_default: date
+        ) -> html.Div:
+        """
+        Add component for controlling the date for the line graphs.
+        """
+        
+        start_picker = dcc.DatePickerSingle(
+            id=COMPONENT_ID.start_date_input,
+            min_date_allowed=min_date_allowed,
+            max_date_allowed=max_date_allowed,
+            initial_visible_month=max_date_allowed,
+            placeholder="Start Date",
+            date=start_default
+        )
+
+        end_picker = dcc.DatePickerSingle(
+            id=COMPONENT_ID.end_date_input,
+            min_date_allowed=min_date_allowed,
+            max_date_allowed=max_date_allowed,
+            initial_visible_month=max_date_allowed,
+            placeholder="End Date",
+            date=end_default
+        )
+
+        load_button = dbc.Button("Load Data", id=COMPONENT_ID.load_button, color="primary")
+
+        return html.Div([start_picker, end_picker, load_button])
 
 
 class CallbackManager:
@@ -525,6 +569,8 @@ class CallbackManager:
                 figure["layout"]["xaxis"]["autorange"] = True
             else:
                 pass
+
+        
 
         @callback(
             Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),
