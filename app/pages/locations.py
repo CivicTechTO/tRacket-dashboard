@@ -99,7 +99,7 @@ def layout(device_id: str = None, **kwargs):
                     dbc.CardHeader(html.H2(
                         [
                             html.I(className="fa-solid fa-map-location-dot"), 
-                            " ",
+                            html.Span(style={"display": "inline-block", "width": 25}),
                             f"{label} "
                         ], className="card-title")),
                     dbc.CardBody([map])
@@ -145,18 +145,21 @@ def layout(device_id: str = None, **kwargs):
                 end_default=end
             )
 
+            # download button
+            download_button = location_component_manager.get_download_button()
+
             line_graphs_card = dbc.Card(
                 [
                     dbc.CardHeader(html.H2(
                         [
                             html.I(className="fa-solid fa-magnifying-glass-chart"), 
-                            " ",
+                            html.Span(style={"display": "inline-block", "width": 25}),
                             "Noise Analyzer"
                             ],
                          className="card-title")),
                     dbc.CardBody(
                         [
-                            dbc.Row([dbc.Col([date_controls], lg=12, md=12)]),
+                            dbc.Row([dbc.Col(date_controls, lg=3, md=3), dbc.Col(download_button, lg=2, md=2)]),
                             dbc.Row([dbc.Col(dbc.Spinner(hourly_noise_line_graph), lg=12, md=12)]),
                             dbc.Row([dbc.Col(dbc.Spinner(raw_noise_line_graph), lg=12, md=12)]),
                         ]

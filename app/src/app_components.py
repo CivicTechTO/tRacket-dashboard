@@ -1,4 +1,4 @@
-from src.utils import COLUMN, load_config, get_last_time, DataFormatter
+from src.utils import COLUMN, load_config, get_last_time, DataFormatter,date_to_string
 from src.plotting import (
     TimeseriesPlotter,
     MeanIndicatorPlotter,
@@ -40,7 +40,8 @@ class COMPONENT_ID(StrEnum):
     raw_noise_line_graph = auto()
     redirect = auto()
     date_picker = auto()
-    load_button = auto()
+    download_button = auto()
+    download_csv = auto()
 
 
 ### Mapping ###
@@ -492,7 +493,7 @@ class LocationComponentManager(AbstractComponentManager):
                 dbc.CardHeader(html.H2(
                     [
                         html.I(className="fa-solid fa-arrow-trend-up"),
-                        " ",
+                        html.Span(style={"display": "inline-block", "width": 25}),
                         label
                     ], className="card-title")),
                 dbc.CardBody(
@@ -533,6 +534,19 @@ class LocationComponentManager(AbstractComponentManager):
 
         return html.Div(range_picker)
 
+    def get_download_button(self) -> html.Div:
+        """
+        Get CSV download button.
+        """
+        button_component = html.Div(
+                [
+                    html.Button("Download CSV", id=COMPONENT_ID.download_button),
+                    dcc.Download(id=COMPONENT_ID.download_csv),
+                ]
+            )
+        return button_component
+
+        
 
 class CallbackManager:
     """
@@ -543,7 +557,7 @@ class CallbackManager:
         self.data_manager = data_manager
 
     def initialize_callbacks(self):
-        def update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
+        def _update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
             """
             Copy x-axis layout attributes into the figure.
             """
@@ -559,6 +573,26 @@ class CallbackManager:
                 figure["layout"]["xaxis"]["autorange"] = True
             else:
                 pass
+        
+        @callback(
+        Output(COMPONENT_ID.download_csv, "data"),
+        Input(COMPONENT_ID.download_button, "n_clicks"),
+        prevent_initial_call=True,
+        )
+        def download_button_callback(n_clicks):
+            # extract data
+            noise_df = self.data_manager.location_noise[Granularity.raw]
+            noise_df = self.data_manager.data_formatter._enum_col_names_to_string(noise_df)
+            
+            # date as index
+            noise_df = noise_df.set_index(COLUMN.TIMESTAMP.value)
+
+            id = self.data_manager.device_id
+            start = date_to_string(min(noise_df.index))
+            end = date_to_string(max(noise_df.index))
+            file_name = f"noise_data_ID{id}_{start}_to_{end}.csv"
+
+            return dcc.send_data_frame(noise_df.to_csv, file_name)
 
         @callback(
             Output(COMPONENT_ID.hourly_noise_line_graph, "figure", allow_duplicate=True),
@@ -588,7 +622,7 @@ class CallbackManager:
             )
 
             plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.raw])
-            raw_line_fig = plotter.plot(bold_line=True)
+            raw_line_fig = plotter.plot(bold_line=False)
             
             plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.hourly])
             hourly_line_fig = plotter.plot(bold_line=True)
@@ -613,13 +647,13 @@ class CallbackManager:
                 dash.ctx.triggered_id == COMPONENT_ID.raw_noise_line_graph
                 and isinstance(raw_relout, dict)
             ):
-                update_fig_with_layout(raw_relout, patched_hourly)
+                _update_fig_with_layout(raw_relout, patched_hourly)
 
             if (
                 dash.ctx.triggered_id == COMPONENT_ID.hourly_noise_line_graph
                 and isinstance(hourly_relout, dict)
             ):
-                update_fig_with_layout(hourly_relout, patched_raw)
+                _update_fig_with_layout(hourly_relout, patched_raw)
 
             return (patched_hourly, patched_raw)
 
