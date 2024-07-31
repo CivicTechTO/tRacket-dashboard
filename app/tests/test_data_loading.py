@@ -5,7 +5,7 @@ from src.data_loading.models import (
     NoiseRequestParams,
     AggregateLocationNoiseData,
 )
-from src.data_loading.main import create_api
+from src.data_loading.main import AppDataManager
 from src.data_loading.models import Granularity
 from src.utils import get_current_dir, pydantic_to_pandas, load_config
 import pytest
@@ -32,8 +32,9 @@ def noise_api() -> NoiseApi:
     """
     Noise API for data loading.
     """
-
-    return create_api()
+    data_manager = AppDataManager()
+    
+    return data_manager._create_api()
 
 
 def test_noise_api_locations(noise_api: NoiseApi):

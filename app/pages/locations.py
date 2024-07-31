@@ -59,7 +59,7 @@ def layout(device_id: str = None, **kwargs):
 
     else:
         data_manager.device_id = device_id
-        
+
         # load data for location
         data_manager.load_and_format_location_stats(location_id=device_id)
         data_manager.load_and_format_location_info(location_id=device_id)
