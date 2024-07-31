@@ -13,7 +13,7 @@ import dash_leaflet.express as dlx
 from dash import dcc, html, get_asset_url
 import dash_bootstrap_components as dbc
 from typing import List, Tuple, Dict
-from datetime import datetime,date
+from datetime import datetime, date, timedelta
 from dash import (
     callback,
     Input,
@@ -524,7 +524,7 @@ class LocationComponentManager(AbstractComponentManager):
 
         range_picker = dcc.DatePickerRange(
                 id=COMPONENT_ID.date_picker,
-                month_format='YYYY MM DD',
+                month_format='YYYY MMM',
                 start_date=start_default,
                 end_date=end_default,
                 min_date_allowed=min_date_allowed,
@@ -569,25 +569,29 @@ class CallbackManager:
         )
         def update_line_charts(start_date, end_date):
             device_id = self.data_manager.device_id
+            
+            start_date = date.fromisoformat(start_date)
+            end_date = date.fromisoformat(end_date)
+            end_date += timedelta(days=1)
 
             self.data_manager.load_and_format_location_noise(
                 location_id=device_id,
                 granularity=Granularity.hourly,
-                start=date.fromisoformat(start_date),
-                end=date.fromisoformat(end_date)
+                start=start_date,
+                end=end_date
             )
             self.data_manager.load_and_format_location_noise(
                 location_id=device_id, 
                 granularity=Granularity.raw,
-                start=date.fromisoformat(start_date),
-                end=date.fromisoformat(end_date)
+                start=start_date,
+                end=end_date
             )
 
             plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.raw])
-            raw_line_fig = plotter.plot()
+            raw_line_fig = plotter.plot(bold_line=True)
             
             plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.hourly])
-            hourly_line_fig = plotter.plot()
+            hourly_line_fig = plotter.plot(bold_line=True)
 
             return hourly_line_fig, raw_line_fig
 

@@ -12,7 +12,7 @@ import configparser
 import dash_bootstrap_components as dbc
 from pydantic import BaseModel
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, date
 
 ### ENUMS ###
 
@@ -103,6 +103,13 @@ dbc_themes_name_to_url = {
 
 
 ### GENERAL UTILS ###
+
+
+def date_to_string(date_object: date|datetime) -> str:
+    """
+    Turn a date or datetime object into a string following the API format.
+    """
+    return date_object.strftime("%Y-%m-%dT%H:%M:%S-04:00")
 
 
 def get_last_time(df: pd.DataFrame) -> np.datetime64:

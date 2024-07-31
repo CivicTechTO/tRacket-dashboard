@@ -26,7 +26,7 @@ data_manager = AppDataManager()
 
 location_component_manager = LocationComponentManager(data_manager=data_manager)
 
-callback_manager = CallbackManager(data_manager)
+callback_manager = CallbackManager(data_manager=data_manager)
 callback_manager.initialize_callbacks()
 
 ### Dash Page Setup ###
@@ -157,8 +157,8 @@ def layout(device_id: str = None, **kwargs):
                     dbc.CardBody(
                         [
                             dbc.Row([dbc.Col([date_controls], lg=12, md=12)]),
-                            dbc.Row([dbc.Col(hourly_noise_line_graph, lg=12, md=12)]),
-                            dbc.Row([dbc.Col(raw_noise_line_graph, lg=12, md=12)]),
+                            dbc.Row([dbc.Col(dbc.Spinner(hourly_noise_line_graph), lg=12, md=12)]),
+                            dbc.Row([dbc.Col(dbc.Spinner(raw_noise_line_graph), lg=12, md=12)]),
                         ]
                     )
                 ]
