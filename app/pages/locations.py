@@ -15,6 +15,8 @@ from src.app_components import (
 from datetime import date, timedelta
 from dash import dcc, html
 import numpy as np
+import plotly.graph_objects as go
+
 
 logger = Logging.get_console_logger(__name__)
 
@@ -72,13 +74,6 @@ def layout(device_id: str = None, **kwargs):
             layout = dbc.Container([redirect])
 
         else:
-            data_manager.load_and_format_location_noise(
-                location_id=device_id, granularity=Granularity.hourly
-            )
-            data_manager.load_and_format_location_noise(
-                location_id=device_id, granularity=Granularity.raw
-            )
-
             label = data_manager.get_label(location_id=device_id)
             radius = data_manager.get_radius(location_id=device_id)
             active = data_manager.get_active_status(location_id=device_id)
@@ -108,23 +103,17 @@ def layout(device_id: str = None, **kwargs):
 
             level_card = location_component_manager.get_level_card(
                 "Current Noise Trend",
-                data_manager.location_noise[Granularity.hourly],
                 style={"height": "395px", "margin-bottom": "20px"},
             )
 
-            raw_noise_line_graph = (
-                location_component_manager.get_noise_line_graph(
-                    data_manager.location_noise[Granularity.raw],
-                    component_id=COMPONENT_ID.raw_noise_line_graph,
-                )
+            raw_noise_line_graph = dcc.Graph(
+                figure=go.Figure(),
+                id=COMPONENT_ID.raw_noise_line_graph,
             )
 
-            hourly_noise_line_graph = (
-                location_component_manager.get_noise_line_graph(
-                    data_manager.location_noise[Granularity.hourly],
-                    component_id=COMPONENT_ID.hourly_noise_line_graph,
-                    bold_line=True,
-                )
+            hourly_noise_line_graph = dcc.Graph(
+                figure=go.Figure(),
+                id=COMPONENT_ID.hourly_noise_line_graph,
             )
             
 
@@ -154,7 +143,7 @@ def layout(device_id: str = None, **kwargs):
                         [
                             html.I(className="fa-solid fa-magnifying-glass-chart"), 
                             html.Span(style={"display": "inline-block", "width": 25}),
-                            "Noise Analyzer"
+                            html.Span("Noise Analyzer")
                             ],
                          className="card-title")),
                     dbc.CardBody(
@@ -170,6 +159,7 @@ def layout(device_id: str = None, **kwargs):
             # define layout
             layout = dbc.Container(
                 [
+                    dcc.Store(id=COMPONENT_ID.aggregate_store),
                     location_component_manager.get_navbar(),
                     html.Br(),
                     dbc.Row(
@@ -179,7 +169,7 @@ def layout(device_id: str = None, **kwargs):
                         ],
                     ),
                     html.Br(),
-                    line_graphs_card
+                    dbc.Row([line_graphs_card])
                 ],
                 fluid=True,
             )

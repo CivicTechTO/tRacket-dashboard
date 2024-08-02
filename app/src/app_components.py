@@ -1,4 +1,4 @@
-from src.utils import COLUMN, load_config, get_last_time, DataFormatter,date_to_string
+from src.utils import COLUMN, load_config, get_last_time, DataFormatter, date_to_string
 from src.plotting import (
     TimeseriesPlotter,
     MeanIndicatorPlotter,
@@ -12,7 +12,7 @@ from dash_extensions.javascript import assign
 import dash_leaflet.express as dlx
 from dash import dcc, html, get_asset_url
 import dash_bootstrap_components as dbc
-from typing import List, Tuple, Dict
+from typing import List, Dict
 from datetime import datetime, date, timedelta
 from dash import (
     callback,
@@ -42,6 +42,8 @@ class COMPONENT_ID(StrEnum):
     date_picker = auto()
     download_button = auto()
     download_csv = auto()
+    aggregate_store = auto()
+    last_update_text = auto()
 
 
 ### Mapping ###
@@ -455,20 +457,19 @@ class LocationComponentManager(AbstractComponentManager):
 
         return noise_line_graph
 
-    def _get_mean_indicator(self, location_noise: pd.DataFrame) -> html.Div:
+    def _get_mean_indicator(self) -> html.Div:
         """
         Create the indicator with tooltip.
         """
 
         # noise indicator with toolip
-        plotter = MeanIndicatorPlotter(location_noise)
-        indicator_fig = plotter.plot()
-
         indicator_graph = dcc.Graph(
-            figure=indicator_fig,
             id=COMPONENT_ID.mean_indicator,
             config={"displayModeBar": False},
+            style={'visibility': 'hidden'}
         )
+
+        indicator_graph = dbc.Spinner(indicator_graph)
 
         indicator_tooltip = dbc.Tooltip(
             f"Average noise level in the past hour and relative change since the hour prior.",
@@ -482,11 +483,9 @@ class LocationComponentManager(AbstractComponentManager):
     def get_level_card(
         self,
         label: str,
-        location_noise: pd.DataFrame,
         style: dict = {"height": "100vh"},
     ) -> dbc.Card:
 
-        last_time = get_last_time(location_noise)
 
         card = dbc.Card(
             [
@@ -498,12 +497,9 @@ class LocationComponentManager(AbstractComponentManager):
                     ], className="card-title")),
                 dbc.CardBody(
                     [
-                        # html.P(
-                        #     "The last hourly average received from the device and percentage change since the hour before."
-                        # ),
-                        html.H5([f"Last updated on {last_time}"]),
+                        html.Span(id=COMPONENT_ID.last_update_text),
                         html.Br(),
-                        self._get_mean_indicator(location_noise),
+                        self._get_mean_indicator(),
                     ]
                 ),
             ],
@@ -540,7 +536,7 @@ class LocationComponentManager(AbstractComponentManager):
         """
         button_component = html.Div(
                 [
-                    html.Button("Download CSV", id=COMPONENT_ID.download_button),
+                    html.Button("Download CSV", id=COMPONENT_ID.download_button, className="button"),
                     dcc.Download(id=COMPONENT_ID.download_csv),
                 ]
             )
@@ -555,6 +551,7 @@ class CallbackManager:
 
     def __init__(self, data_manager: AppDataManager) -> None:
         self.data_manager = data_manager
+        self.data_formatter = DataFormatter()
 
     def initialize_callbacks(self):
         def _update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
@@ -597,11 +594,16 @@ class CallbackManager:
         @callback(
             Output(COMPONENT_ID.hourly_noise_line_graph, "figure", allow_duplicate=True),
             Output(COMPONENT_ID.raw_noise_line_graph, "figure", allow_duplicate=True),
+            Output(COMPONENT_ID.aggregate_store, "data"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
             prevent_initial_call='initial_duplicate'
         )
         def update_line_charts(start_date, end_date):
+            """
+            Main callback responsible for loading data based on the date selector,
+            updating the line charts and storing aggregate noise data.
+            """
             device_id = self.data_manager.device_id
             
             start_date = date.fromisoformat(start_date)
@@ -627,7 +629,29 @@ class CallbackManager:
             plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.hourly])
             hourly_line_fig = plotter.plot(bold_line=True)
 
-            return hourly_line_fig, raw_line_fig
+            hourly_data = self.data_manager.location_noise[Granularity.hourly]
+            hourly_data = self.data_formatter._enum_col_names_to_string(hourly_data)
+            hourly_data = hourly_data.to_dict("records")
+
+            return hourly_line_fig, raw_line_fig, hourly_data
+        
+        @callback(
+            Output(COMPONENT_ID.last_update_text, "children"),
+            Output(COMPONENT_ID.mean_indicator, "figure"),
+            Output(COMPONENT_ID.mean_indicator, "style"),
+            Input(COMPONENT_ID.aggregate_store, "data")
+        )
+        def update_indicator(data):
+            data = pd.DataFrame(data)
+            data = self.data_formatter._string_col_names_to_enum(data)
+            
+            plotter = MeanIndicatorPlotter(data)
+            indicator_fig = plotter.plot()
+
+            last_time = get_last_time(data)
+            update_text = html.H5([f"Time: {last_time}"]),
+            
+            return update_text, indicator_fig, {}
 
         @callback(
             Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),

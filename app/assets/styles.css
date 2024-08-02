@@ -13,6 +13,33 @@ body {
     background-color: #FFF9F0;
 }
 
+.card-title {
+    color: black;
+}
+
 .indicator_subtitle {
     font-size: 10
 }
+
+.icon {
+    color: #2C7BB2
+}
+
+.button {
+    background-color: #2C9384;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bold;
+    transition-duration: 0.4s;
+}
+
+.button:hover {
+    background-color: #2c9383c2;
+    color: white;
+  }
