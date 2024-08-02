@@ -207,7 +207,7 @@ class AppDataManager:
         return stats
 
     def load_and_format_location_noise(
-        self, 
+        self,
         location_id: str,
         granularity: Granularity,
         start: Optional[datetime] = None,

@@ -12,7 +12,6 @@ from src.app_components import (
     CallbackManager,
     COMPONENT_ID,
 )
-from datetime import date, timedelta
 from dash import dcc, html
 import numpy as np
 import plotly.graph_objects as go
@@ -26,7 +25,9 @@ data_manager = AppDataManager()
 
 ### Graph component and Callback manager ###
 
-location_component_manager = LocationComponentManager(data_manager=data_manager)
+location_component_manager = LocationComponentManager(
+    data_manager=data_manager
+)
 
 callback_manager = CallbackManager(data_manager=data_manager)
 callback_manager.initialize_callbacks()
@@ -80,8 +81,9 @@ def layout(device_id: str = None, **kwargs):
 
             ### Get Components ###
 
-            # get map for specific location
+            # MAP CARD for specific location
             leaflet_manager.set_locations(data_manager.location_info)
+            
             map = leaflet_manager.get_map(
                 device_id=device_id,
                 style={"height": "300px"},
@@ -89,72 +91,18 @@ def layout(device_id: str = None, **kwargs):
                 active=active,
             )
 
-            map_card = dbc.Card(
-                [
-                    dbc.CardHeader(html.H2(
-                        [
-                            html.I(className="fa-solid fa-map-location-dot"), 
-                            html.Span(style={"display": "inline-block", "width": 25}),
-                            f"{label} "
-                        ], className="card-title")),
-                    dbc.CardBody([map])
-                ]
+            map_card = location_component_manager.get_card(
+                title=label,
+                body=map,
+                logo="fa-map-location-dot"
             )
 
-            level_card = location_component_manager.get_level_card(
-                "Current Noise Trend",
-                style={"height": "395px", "margin-bottom": "20px"},
-            )
+            # NOISE LEVEL card
+            level_card = location_component_manager.get_level_card()
 
-            raw_noise_line_graph = dcc.Graph(
-                figure=go.Figure(),
-                id=COMPONENT_ID.raw_noise_line_graph,
-            )
-
-            hourly_noise_line_graph = dcc.Graph(
-                figure=go.Figure(),
-                id=COMPONENT_ID.hourly_noise_line_graph,
-            )
-            
-
-            ### Date Picker ###
-
-            # setup date
-            end = data_manager.location_stats.loc[0, COLUMN.END]
-            end = date(end.year, end.month, end.day)
-            start = data_manager.location_stats.loc[0, COLUMN.START]
-            start = date(start.year, start.month, start.day)
-            start_default = end - timedelta(days=7)
-
-            # setup date picker
-            date_controls = location_component_manager.get_date_controls(
-                min_date_allowed=start,
-                max_date_allowed=end,
-                start_default=start_default,
-                end_default=end
-            )
-
-            # download button
-            download_button = location_component_manager.get_download_button()
-
-            line_graphs_card = dbc.Card(
-                [
-                    dbc.CardHeader(html.H2(
-                        [
-                            html.I(className="fa-solid fa-magnifying-glass-chart"), 
-                            html.Span(style={"display": "inline-block", "width": 25}),
-                            html.Span("Noise Analyzer")
-                            ],
-                         className="card-title")),
-                    dbc.CardBody(
-                        [
-                            dbc.Row([dbc.Col(date_controls, lg=3, md=3), dbc.Col(download_button, lg=2, md=2)]),
-                            dbc.Row([dbc.Col(dbc.Spinner(hourly_noise_line_graph), lg=12, md=12)]),
-                            dbc.Row([dbc.Col(dbc.Spinner(raw_noise_line_graph), lg=12, md=12)]),
-                        ]
-                    )
-                ]
-            )
+            # LINE GRAPH card with date picker and download button
+            line_graphs_card = location_component_manager.get_noise_line_graph_card()
+    
 
             # define layout
             layout = dbc.Container(
@@ -169,7 +117,7 @@ def layout(device_id: str = None, **kwargs):
                         ],
                     ),
                     html.Br(),
-                    dbc.Row([line_graphs_card])
+                    dbc.Row([line_graphs_card]),
                 ],
                 fluid=True,
             )

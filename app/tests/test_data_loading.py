@@ -33,7 +33,7 @@ def noise_api() -> NoiseApi:
     Noise API for data loading.
     """
     data_manager = AppDataManager()
-    
+
     return data_manager._create_api()
 
 

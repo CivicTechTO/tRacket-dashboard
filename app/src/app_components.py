@@ -1,10 +1,17 @@
-from src.utils import COLUMN, load_config, get_last_time, DataFormatter, date_to_string
+from src.utils import (
+    COLUMN,
+    load_config,
+    get_last_time,
+    DataFormatter,
+    date_to_string,
+)
 from src.plotting import (
     TimeseriesPlotter,
     MeanIndicatorPlotter,
     NumberIndicator,
 )
 from src.data_loading.main import AppDataManager, Granularity
+import plotly.graph_objects as go
 from enum import StrEnum, auto
 import pandas as pd
 import dash_leaflet as dl
@@ -421,41 +428,94 @@ class LocationComponentManager(AbstractComponentManager):
         super().__init__()
         self.data_manager = data_manager
 
-    def get_noise_line_graph(
+    def get_card(self, title: str, body: object, logo: str, style: dict = dict()):
+        """
+        Create a dbc.Card() component with the given title, body and fontawesome logo.
+        """
+        card_header = dbc.CardHeader(
+            html.H2(
+                [
+                    html.I(className=f"fa-solid {logo}"),
+                    html.Span(
+                        style={
+                            "display": "inline-block",
+                            "width": 25,
+                        }
+                    ),
+                    html.Span(title),
+                ],
+                className="card-title",
+            ),
+        )
+        card = dbc.Card([card_header, dbc.CardBody([body])], style=style)
+        
+        return card
+
+    def _get_noise_line_graph(
         self,
-        location_noise: pd.DataFrame,
         component_id: COMPONENT_ID,
-        bold_line: bool = False,
-        title: str = None,
     ) -> dcc.Graph:
         """
-        Create the noise graph component.
+        Create an empty noise graph component which can be updated using callbacks.
         """
-        # line plot
-        plotter = TimeseriesPlotter(location_noise)
-        line_fig = plotter.plot(bold_line=bold_line, title=title)
-
         noise_line_graph = dcc.Graph(
-            figure=line_fig,
-            id=component_id,
-            config={
-                "displayModeBar": True,
-                "displaylogo": False,
-                "modeBarButtonsToRemove": [
-                    "zoom",
-                    "zoomIn",
-                    "zoomOut",
-                    "pan",
-                    "select",
-                    "resetScale",
-                    "download",
-                    "lasso2d",
-                    "toImage",
-                ],
-            },
-        )
+                figure=go.Figure(),
+                id=component_id,
+            )
 
         return noise_line_graph
+
+    def get_noise_line_graph_card(self) -> dbc.Card:
+        """
+        Create the card component holding the noise line graphs.
+        """
+        raw_noise_line_graph = self._get_noise_line_graph(COMPONENT_ID.raw_noise_line_graph)
+        hourly_noise_line_graph = self._get_noise_line_graph(COMPONENT_ID.hourly_noise_line_graph)
+
+        ### Date Picker ###
+
+        # setup date picker
+        date_controls = self._get_date_controls()
+
+        # download button
+        download_button = self._get_download_button()
+
+        noise_line_card_body = dbc.CardBody(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(date_controls, lg=3, md=3),
+                                dbc.Col(download_button, lg=2, md=2),
+                            ]
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Spinner(hourly_noise_line_graph),
+                                    lg=12,
+                                    md=12,
+                                )
+                            ]
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Spinner(raw_noise_line_graph),
+                                    lg=12,
+                                    md=12,
+                                )
+                            ]
+                        ),
+                    ]
+                )
+
+        line_graphs_card = self.get_card(
+            title="Noise Analyzer",
+            body=noise_line_card_body,
+            logo="fa-magnifying-glass-chart",
+        )
+
+        return line_graphs_card
 
     def _get_mean_indicator(self) -> html.Div:
         """
@@ -466,7 +526,7 @@ class LocationComponentManager(AbstractComponentManager):
         indicator_graph = dcc.Graph(
             id=COMPONENT_ID.mean_indicator,
             config={"displayModeBar": False},
-            style={'visibility': 'hidden'}
+            style={"visibility": "hidden"},
         )
 
         indicator_graph = dbc.Spinner(indicator_graph)
@@ -482,67 +542,89 @@ class LocationComponentManager(AbstractComponentManager):
 
     def get_level_card(
         self,
-        label: str,
-        style: dict = {"height": "100vh"},
+        # style: dict = {"height": "395px", "margin-bottom": "20px"},
     ) -> dbc.Card:
 
-
-        card = dbc.Card(
-            [
-                dbc.CardHeader(html.H2(
-                    [
-                        html.I(className="fa-solid fa-arrow-trend-up"),
-                        html.Span(style={"display": "inline-block", "width": 25}),
-                        label
-                    ], className="card-title")),
-                dbc.CardBody(
+        card = self.get_card(
+            title="Noise Level & Trend",
+            body=dbc.CardBody(
                     [
                         html.Span(id=COMPONENT_ID.last_update_text),
                         html.Br(),
                         self._get_mean_indicator(),
                     ]
                 ),
-            ],
-            className="moderate-card",
-            style=style,
+            logo="fa-arrow-trend-up",
+            style={"height": "395px", "margin-bottom": "20px"}
         )
+
         return card
 
-    def get_date_controls(
+    def _get_location_start_date(self) -> date:
+        """
+        Find the first record date from location stats.
+        """
+        assert (
+            self.data_manager.location_stats is not None
+        ), "No location stats loaded, cannot get start date."
+        start = self.data_manager.location_stats.loc[0, COLUMN.START]
+        start = date(start.year, start.month, start.day)
+
+        return start
+
+    def _get_location_end_date(self) -> date:
+        """
+        Find last record date from location stats.
+        """
+        assert (
+            self.data_manager.location_stats is not None
+        ), "No location stats loaded, cannot get end date."
+        end = self.data_manager.location_stats.loc[0, COLUMN.END]
+        end = date(end.year, end.month, end.day)
+
+        return end
+
+    def _get_date_controls(
         self,
-        min_date_allowed: date,
-        max_date_allowed: date,
-        end_default: date,
-        start_default: date
-        ) -> html.Div:
+    ) -> html.Div:
         """
         Add component for controlling the date for the line graphs.
         """
+        # set range for date picker
+        min_date_allowed = self._get_location_start_date()
+        max_date_allowed = self._get_location_end_date()
+
+        # set default selection
+        start_default = max_date_allowed - timedelta(days=7)
+        end_default = max_date_allowed
 
         range_picker = dcc.DatePickerRange(
-                id=COMPONENT_ID.date_picker,
-                month_format='YYYY MMM',
-                start_date=start_default,
-                end_date=end_default,
-                min_date_allowed=min_date_allowed,
-                max_date_allowed=max_date_allowed
-            )
+            id=COMPONENT_ID.date_picker,
+            month_format="YYYY MMM",
+            start_date=start_default,
+            end_date=end_default,
+            min_date_allowed=min_date_allowed,
+            max_date_allowed=max_date_allowed,
+        )
 
         return html.Div(range_picker)
 
-    def get_download_button(self) -> html.Div:
+    def _get_download_button(self) -> html.Div:
         """
         Get CSV download button.
         """
         button_component = html.Div(
-                [
-                    html.Button("Download CSV", id=COMPONENT_ID.download_button, className="button"),
-                    dcc.Download(id=COMPONENT_ID.download_csv),
-                ]
-            )
+            [
+                html.Button(
+                    "Download CSV",
+                    id=COMPONENT_ID.download_button,
+                    className="button",
+                ),
+                dcc.Download(id=COMPONENT_ID.download_csv),
+            ]
+        )
         return button_component
 
-        
 
 class CallbackManager:
     """
@@ -570,17 +652,21 @@ class CallbackManager:
                 figure["layout"]["xaxis"]["autorange"] = True
             else:
                 pass
-        
+
         @callback(
-        Output(COMPONENT_ID.download_csv, "data"),
-        Input(COMPONENT_ID.download_button, "n_clicks"),
-        prevent_initial_call=True,
+            Output(COMPONENT_ID.download_csv, "data"),
+            Input(COMPONENT_ID.download_button, "n_clicks"),
+            prevent_initial_call=True,
         )
         def download_button_callback(n_clicks):
             # extract data
             noise_df = self.data_manager.location_noise[Granularity.raw]
-            noise_df = self.data_manager.data_formatter._enum_col_names_to_string(noise_df)
-            
+            noise_df = (
+                self.data_manager.data_formatter._enum_col_names_to_string(
+                    noise_df
+                )
+            )
+
             # date as index
             noise_df = noise_df.set_index(COLUMN.TIMESTAMP.value)
 
@@ -592,12 +678,20 @@ class CallbackManager:
             return dcc.send_data_frame(noise_df.to_csv, file_name)
 
         @callback(
-            Output(COMPONENT_ID.hourly_noise_line_graph, "figure", allow_duplicate=True),
-            Output(COMPONENT_ID.raw_noise_line_graph, "figure", allow_duplicate=True),
+            Output(
+                COMPONENT_ID.hourly_noise_line_graph,
+                "figure",
+                allow_duplicate=True,
+            ),
+            Output(
+                COMPONENT_ID.raw_noise_line_graph,
+                "figure",
+                allow_duplicate=True,
+            ),
             Output(COMPONENT_ID.aggregate_store, "data"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
-            prevent_initial_call='initial_duplicate'
+            prevent_initial_call="initial_duplicate",
         )
         def update_line_charts(start_date, end_date):
             """
@@ -605,7 +699,7 @@ class CallbackManager:
             updating the line charts and storing aggregate noise data.
             """
             device_id = self.data_manager.device_id
-            
+
             start_date = date.fromisoformat(start_date)
             end_date = date.fromisoformat(end_date)
             end_date += timedelta(days=1)
@@ -614,43 +708,49 @@ class CallbackManager:
                 location_id=device_id,
                 granularity=Granularity.hourly,
                 start=start_date,
-                end=end_date
+                end=end_date,
             )
             self.data_manager.load_and_format_location_noise(
-                location_id=device_id, 
+                location_id=device_id,
                 granularity=Granularity.raw,
                 start=start_date,
-                end=end_date
+                end=end_date,
             )
 
-            plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.raw])
+            plotter = TimeseriesPlotter(
+                self.data_manager.location_noise[Granularity.raw]
+            )
             raw_line_fig = plotter.plot(bold_line=False)
-            
-            plotter = TimeseriesPlotter(self.data_manager.location_noise[Granularity.hourly])
+
+            plotter = TimeseriesPlotter(
+                self.data_manager.location_noise[Granularity.hourly]
+            )
             hourly_line_fig = plotter.plot(bold_line=True)
 
             hourly_data = self.data_manager.location_noise[Granularity.hourly]
-            hourly_data = self.data_formatter._enum_col_names_to_string(hourly_data)
+            hourly_data = self.data_formatter._enum_col_names_to_string(
+                hourly_data
+            )
             hourly_data = hourly_data.to_dict("records")
 
             return hourly_line_fig, raw_line_fig, hourly_data
-        
+
         @callback(
             Output(COMPONENT_ID.last_update_text, "children"),
             Output(COMPONENT_ID.mean_indicator, "figure"),
             Output(COMPONENT_ID.mean_indicator, "style"),
-            Input(COMPONENT_ID.aggregate_store, "data")
+            Input(COMPONENT_ID.aggregate_store, "data"),
         )
         def update_indicator(data):
             data = pd.DataFrame(data)
             data = self.data_formatter._string_col_names_to_enum(data)
-            
+
             plotter = MeanIndicatorPlotter(data)
             indicator_fig = plotter.plot()
 
             last_time = get_last_time(data)
-            update_text = html.H5([f"Time: {last_time}"]),
-            
+            update_text = (html.H5([f"Time: {last_time}"]),)
+
             return update_text, indicator_fig, {}
 
         @callback(

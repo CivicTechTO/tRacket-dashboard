@@ -105,7 +105,7 @@ dbc_themes_name_to_url = {
 ### GENERAL UTILS ###
 
 
-def date_to_string(date_object: date|datetime) -> str:
+def date_to_string(date_object: date | datetime) -> str:
     """
     Turn a date or datetime object into a string following the API format.
     """
