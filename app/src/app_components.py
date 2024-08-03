@@ -49,7 +49,7 @@ class COMPONENT_ID(StrEnum):
     date_picker = auto()
     download_button = auto()
     download_csv = auto()
-    aggregate_store = auto()
+    hourly_data_store = auto()
     last_update_text = auto()
 
 
@@ -542,7 +542,6 @@ class LocationComponentManager(AbstractComponentManager):
 
     def get_level_card(
         self,
-        # style: dict = {"height": "395px", "margin-bottom": "20px"},
     ) -> dbc.Card:
 
         card = self.get_card(
@@ -688,7 +687,7 @@ class CallbackManager:
                 "figure",
                 allow_duplicate=True,
             ),
-            Output(COMPONENT_ID.aggregate_store, "data"),
+            Output(COMPONENT_ID.hourly_data_store, "data"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
             prevent_initial_call="initial_duplicate",
@@ -739,7 +738,7 @@ class CallbackManager:
             Output(COMPONENT_ID.last_update_text, "children"),
             Output(COMPONENT_ID.mean_indicator, "figure"),
             Output(COMPONENT_ID.mean_indicator, "style"),
-            Input(COMPONENT_ID.aggregate_store, "data"),
+            Input(COMPONENT_ID.hourly_data_store, "data"),
         )
         def update_indicator(data):
             data = pd.DataFrame(data)
@@ -749,7 +748,7 @@ class CallbackManager:
             indicator_fig = plotter.plot()
 
             last_time = get_last_time(data)
-            update_text = (html.H5([f"Time: {last_time}"]),)
+            update_text = (html.H5([f"Recorded at {last_time}"]),)
 
             return update_text, indicator_fig, {}
 

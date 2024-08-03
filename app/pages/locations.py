@@ -79,7 +79,7 @@ def layout(device_id: str = None, **kwargs):
             radius = data_manager.get_radius(location_id=device_id)
             active = data_manager.get_active_status(location_id=device_id)
 
-            ### Get Components ###
+            ### GET COMPONENTS ###
 
             # MAP CARD for specific location
             leaflet_manager.set_locations(data_manager.location_info)
@@ -102,13 +102,16 @@ def layout(device_id: str = None, **kwargs):
 
             # LINE GRAPH card with date picker and download button
             line_graphs_card = location_component_manager.get_noise_line_graph_card()
-    
 
-            # define layout
+            # NAVBAR
+            nav_bar = location_component_manager.get_navbar()
+
+            ### LAYOUT ###
+
             layout = dbc.Container(
                 [
-                    dcc.Store(id=COMPONENT_ID.aggregate_store),
-                    location_component_manager.get_navbar(),
+                    dcc.Store(id=COMPONENT_ID.hourly_data_store),
+                    nav_bar,
                     html.Br(),
                     dbc.Row(
                         [
