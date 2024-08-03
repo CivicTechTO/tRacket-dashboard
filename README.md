@@ -8,7 +8,7 @@ noise does not only impact quality of life and cause hearing loss but also has o
 
 Our application presents a real-time, interactive visual interface to a system of IoT sound meters deployed in the city of Toronto, Ontario, to better understand the ambient sound levels as well as extreme noise events local communities experience day to day.
 
-The app is currently under active development but can be accessed [by following this link](https://noise-dashboard-651f4e432386.herokuapp.com/locations) which gives you the system level map view. Individual devices can be reached by appending `/<device-id>` to the previous URL. The app might take a few seconds to load.
+The app is currently under active development but can be accessed [by following this link](https://dashboard.tracket.info/locations) which gives you the system level map view. Individual devices can be reached by appending `/<location-id>` to the previous URL [like this](https://dashboard.tracket.info/locations/572234). The app might take a few seconds to load.
 
 The project has been started and is maintained by volunteers from the [CivicTech Toronto](http://www.civictech.ca) community.
 
@@ -22,4 +22,4 @@ We followed Privacy by Design principles in setting up the data collection.
 
 ## For Developers
 
-If you'd like to contribute or dig deeper into the technical details, please see our [DEV-README](DEV-README.md).
+If you'd like to contribute or dig deeper into the technical details, please see our [DEV-README](DEV-README.md) and check out the open Issues on GitHub.
