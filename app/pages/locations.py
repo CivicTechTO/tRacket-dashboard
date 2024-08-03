@@ -110,6 +110,7 @@ def layout(device_id: str = None, **kwargs):
 
             layout = dbc.Container(
                 [
+                    dcc.Store(id=COMPONENT_ID.raw_data_store),
                     dcc.Store(id=COMPONENT_ID.hourly_data_store),
                     nav_bar,
                     html.Br(),

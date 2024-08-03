@@ -38,19 +38,27 @@ class COMPONENT_ID(StrEnum):
     """
     Component IDs for the app.
     """
-
+    redirect = auto()
+    
+    # maps
     system_map = auto()
-    hourly_noise_line_graph = auto()
+    map_markers = auto()
+    
+    # aggregate indicator
     mean_indicator = auto()
     mean_indicator_tooltip = auto()
-    map_markers = auto()
+    
+    # noise analyzer
+    hourly_noise_line_graph = auto()
     raw_noise_line_graph = auto()
-    redirect = auto()
     date_picker = auto()
     download_button = auto()
     download_csv = auto()
+    
+    # data stores
     hourly_data_store = auto()
     last_update_text = auto()
+    raw_data_store = auto()
 
 
 ### Mapping ###
@@ -320,7 +328,7 @@ class LeafletMapManager:
 
 class AbstractComponentManager:
     """
-    Base class for managing components.
+    Base class for managing components. Create a component page for each separate page of the dashboard.
     """
 
     def __init__(self) -> None:
@@ -461,6 +469,7 @@ class LocationComponentManager(AbstractComponentManager):
         noise_line_graph = dcc.Graph(
                 figure=go.Figure(),
                 id=component_id,
+                style={"visibility": "hidden"},
             )
 
         return noise_line_graph
@@ -634,6 +643,7 @@ class CallbackManager:
         self.data_manager = data_manager
         self.data_formatter = DataFormatter()
 
+    
     def initialize_callbacks(self):
         def _update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
             """
@@ -677,38 +687,47 @@ class CallbackManager:
             return dcc.send_data_frame(noise_df.to_csv, file_name)
 
         @callback(
-            Output(
-                COMPONENT_ID.hourly_noise_line_graph,
-                "figure",
-                allow_duplicate=True,
-            ),
-            Output(
-                COMPONENT_ID.raw_noise_line_graph,
-                "figure",
-                allow_duplicate=True,
-            ),
             Output(COMPONENT_ID.hourly_data_store, "data"),
+            Input(COMPONENT_ID.raw_data_store, "data"),
+        )
+        def aggregate_raw_to_hourly(raw_data: List[Dict[str, object]]) -> List[Dict[str, object]]:
+            """
+            Take the raw data and resample to hourly.
+            """
+            raw_df = self.data_formatter.store_to_dataframe(raw_data)
+
+            # aggregate
+            raw_df = raw_df.set_index(COLUMN.TIMESTAMP)
+            hourly_df = raw_df.resample("1H").agg(
+                {
+                    COLUMN.MEAN: "mean",
+                    COLUMN.MIN: "min",
+                    COLUMN.MAX: "max"
+                }
+            )
+            hourly_df = hourly_df.reset_index()
+
+            self.data_manager.location_noise[Granularity.hourly] = hourly_df
+
+            hourly_data = self.data_formatter.dataframe_to_store(hourly_df)
+
+            return hourly_data
+        
+        @callback(
+            Output(COMPONENT_ID.raw_data_store, "data"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
-            prevent_initial_call="initial_duplicate",
         )
-        def update_line_charts(start_date, end_date):
+        def load_data(start_date: date, end_date: date) -> List[Dict[str, object]]:
             """
-            Main callback responsible for loading data based on the date selector,
-            updating the line charts and storing aggregate noise data.
+            Load data based on date picker into client-side raw data store.
             """
             device_id = self.data_manager.device_id
 
             start_date = date.fromisoformat(start_date)
             end_date = date.fromisoformat(end_date)
             end_date += timedelta(days=1)
-
-            self.data_manager.load_and_format_location_noise(
-                location_id=device_id,
-                granularity=Granularity.hourly,
-                start=start_date,
-                end=end_date,
-            )
+            
             self.data_manager.load_and_format_location_noise(
                 location_id=device_id,
                 granularity=Granularity.raw,
@@ -716,23 +735,43 @@ class CallbackManager:
                 end=end_date,
             )
 
-            plotter = TimeseriesPlotter(
-                self.data_manager.location_noise[Granularity.raw]
-            )
+            raw_data = self.data_manager.location_noise[Granularity.raw]
+            raw_data = self.data_formatter.dataframe_to_store(raw_data)
+
+            return raw_data
+        
+        @callback(
+            Output(
+                COMPONENT_ID.hourly_noise_line_graph,
+                "figure",
+                allow_duplicate=True,
+            ),
+            Output(COMPONENT_ID.hourly_noise_line_graph, "style"),
+            Output(
+                COMPONENT_ID.raw_noise_line_graph,
+                "figure",
+                allow_duplicate=True,
+            ),
+            Output(COMPONENT_ID.raw_noise_line_graph, "style"),
+            Input(COMPONENT_ID.hourly_data_store, "data"),
+            Input(COMPONENT_ID.raw_data_store, "data"),
+            prevent_initial_call="initial_duplicate",
+        )
+        def update_line_charts(hourly_data: List[Dict[str, float]], raw_data: List[Dict[str, float]]):
+            """
+            Main callback responsible for loading data based on the date selector,
+            updating the line charts and storing aggregate noise data.
+            """
+
+            raw_data = self.data_formatter.store_to_dataframe(raw_data)
+            plotter = TimeseriesPlotter(raw_data)
             raw_line_fig = plotter.plot(bold_line=False)
 
-            plotter = TimeseriesPlotter(
-                self.data_manager.location_noise[Granularity.hourly]
-            )
+            hourly_data = self.data_formatter.store_to_dataframe(hourly_data)
+            plotter = TimeseriesPlotter(hourly_data)
             hourly_line_fig = plotter.plot(bold_line=True)
 
-            hourly_data = self.data_manager.location_noise[Granularity.hourly]
-            hourly_data = self.data_formatter._enum_col_names_to_string(
-                hourly_data
-            )
-            hourly_data = hourly_data.to_dict("records")
-
-            return hourly_line_fig, raw_line_fig, hourly_data
+            return hourly_line_fig, {}, raw_line_fig, {}
 
         @callback(
             Output(COMPONENT_ID.last_update_text, "children"),
@@ -740,7 +779,11 @@ class CallbackManager:
             Output(COMPONENT_ID.mean_indicator, "style"),
             Input(COMPONENT_ID.hourly_data_store, "data"),
         )
-        def update_indicator(data):
+        def update_trend_indicator(data):
+            """
+            The indicator component is updated whenever new hourly data is loaded into the store.
+            Style needs to be cleared as it is set to invisible by default to avoid loading an empty chart.
+            """
             data = pd.DataFrame(data)
             data = self.data_formatter._string_col_names_to_enum(data)
 

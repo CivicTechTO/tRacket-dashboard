@@ -165,6 +165,27 @@ class DataFormatter(object):
     def __init__(self) -> None:
         pass
 
+    def store_to_dataframe(self, data: List[Dict[str, object]]) -> pd.DataFrame:
+        """
+        Take a json style data set from the client-side dcc.Store() and 
+        turn into a dataframe with Enum column names and proper data types.
+        """
+
+        df = pd.DataFrame(data)
+        df = self._string_col_names_to_enum(df)
+        df = self._set_data_types(df)
+        
+        return df
+
+    def dataframe_to_store(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
+        """
+        Turn a dataframe into a json style data for the client-side dcc.Store().
+        """
+        df = self._enum_col_names_to_string(df)
+        data = df.to_dict("records")
+        
+        return data
+    
     @staticmethod
     def _fill_missing_times(df: pd.DataFrame, freq: str) -> pd.DataFrame:
         """
