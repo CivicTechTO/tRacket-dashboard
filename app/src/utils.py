@@ -116,9 +116,9 @@ def get_last_time(df: pd.DataFrame) -> np.datetime64:
     """
     Get last time stamp from the dataframe.
     """
-
-    return df[COLUMN.TIMESTAMP].max()
-
+    recent_timestamp = pd.to_datetime(df[COLUMN.TIMESTAMP].max())
+    formatted_timestamp = recent_timestamp.strftime("%Y %b %d - %I:%M:%S %p")
+    return formatted_timestamp
 
 def load_config(config_path: str = None) -> configparser.ConfigParser:
     """
