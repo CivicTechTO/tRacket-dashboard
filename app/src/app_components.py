@@ -608,7 +608,8 @@ class LocationComponentManager(AbstractComponentManager):
 
         range_picker = dcc.DatePickerRange(
             id=COMPONENT_ID.date_picker,
-            month_format="YYYY MMM",
+            display_format="DD MMM YYYY",
+            month_format="MMM YYYY",
             start_date=start_default,
             end_date=end_default,
             min_date_allowed=min_date_allowed,

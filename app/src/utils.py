@@ -112,13 +112,14 @@ def date_to_string(date_object: date | datetime) -> str:
     return date_object.strftime("%Y-%m-%dT%H:%M:%S-04:00")
 
 
-def get_last_time(df: pd.DataFrame) -> np.datetime64:
+def get_last_time(df: pd.DataFrame) -> str:
     """
     Get last time stamp from the dataframe.
     """
+    recent_timestamp = pd.to_datetime(df[COLUMN.TIMESTAMP].max())
+    formatted_timestamp = recent_timestamp.strftime('%d %b %Y, %I:%M %p')
 
-    return df[COLUMN.TIMESTAMP].max()
-
+    return formatted_timestamp
 
 def load_config(config_path: str = None) -> configparser.ConfigParser:
     """
