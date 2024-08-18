@@ -344,7 +344,7 @@ class AbstractComponentManager:
                 dbc.NavItem(dbc.NavLink("Noise Map", href="https://dashboard.tracket.info/locations",className="nav-link")),
                 dbc.NavItem(dbc.NavLink("About", href="https://tracket.info/",className="nav-link")),
                 dbc.NavItem(dbc.NavLink("Donate", href="https://opencollective.com/tRacket",className="nav-link")),
-                dbc.Button("Log In", href="https://manage.tracket.info/", className="button-login", size="me-1"),
+                dbc.Button("Log In", href="https://manage.tracket.info/", className="button-login"),
             ],
             brand=dbc.Container(
                 [
