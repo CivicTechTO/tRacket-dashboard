@@ -18,7 +18,7 @@ EditorConfig==0.12.4
 exceptiongroup==1.1.3
 Flask==2.2.5
 Flask-Caching==2.3.0
-gunicorn==21.2.0
+gunicorn==22.0.0
 h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
