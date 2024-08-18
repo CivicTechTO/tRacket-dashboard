@@ -43,3 +43,28 @@ body {
     background-color: #639FC6;
     color: white;
   }
+
+.button-login {
+    background-color: #ffffff;
+    border: 2px #ffffff;
+    border-radius: 5px;
+    color: #2D2D32;
+    cursor: pointer;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 14px;
+    margin: 4px 4px 4px 4px;
+}
+
+.button-login:hover {
+    background-color: #dddddd;
+    color: #2D2D32;
+    border-color: #dddddd;
+}
+
+.nav-link{
+    color: white;
+    font-family: 'Familjen Grotesk', sans-serif;
+    font-size: 14px;
+    padding: 10px 15px;
+    margin-right: 20px;
+}
