@@ -340,11 +340,11 @@ class AbstractComponentManager:
         """
         navbar = dbc.NavbarSimple(
             children=[
-                dbc.NavItem(dbc.NavLink("Get tRacket", href="https://tracket.info/sensor/",className="nav-link")),
-                dbc.NavItem(dbc.NavLink("Noise Map", href="https://dashboard.tracket.info/locations",className="nav-link")),
-                dbc.NavItem(dbc.NavLink("About", href="https://tracket.info/",className="nav-link")),
-                dbc.NavItem(dbc.NavLink("Donate", href="https://opencollective.com/tRacket",className="nav-link")),
-                dbc.Button("Log In", href="https://manage.tracket.info/", className="button-login"),
+                dbc.NavItem(dbc.NavLink("Get tRacket", href="https://tracket.info/sensor/", target="_blank", className="nav-link")),
+                dbc.NavItem(dbc.NavLink("Noise Map", href="https://dashboard.tracket.info/locations",target="_blank", className="nav-link")),
+                dbc.NavItem(dbc.NavLink("About", href="https://tracket.info/",target="_blank", className="nav-link")),
+                dbc.NavItem(dbc.NavLink("Donate", href="https://opencollective.com/tRacket",target="_blank", className="nav-link")),
+                dbc.Button("Log In", href="https://manage.tracket.info/", target="_blank", className="button-login"),
             ],
             brand=dbc.Container(
                 [
