@@ -339,7 +339,13 @@ class AbstractComponentManager:
         Get the navigation bar.
         """
         navbar = dbc.NavbarSimple(
-            children=[],
+            children=[
+                dbc.NavItem(dbc.NavLink("Get tRacket", href="https://tracket.info/sensor/", target="_blank", className="nav-link")),
+                dbc.NavItem(dbc.NavLink("Noise Map", href="https://dashboard.tracket.info/locations",target="_blank", className="nav-link")),
+                dbc.NavItem(dbc.NavLink("About", href="https://tracket.info/",target="_blank", className="nav-link")),
+                dbc.NavItem(dbc.NavLink("Donate", href="https://opencollective.com/tRacket",target="_blank", className="nav-link")),
+                dbc.Button("Log In", href="https://manage.tracket.info/", target="_blank", className="button-login"),
+            ],
             brand=dbc.Container(
                 [
                     html.A(
@@ -350,7 +356,7 @@ class AbstractComponentManager:
                                         src=get_asset_url("tracket_logo.svg"),
                                         height="30px",
                                     )
-                                )
+                                ),
                             ],
                             align="center",
                             className="g-0",
