@@ -569,7 +569,7 @@ class LocationComponentManager(AbstractComponentManager):
                     ]
                 ),
             logo="fa-arrow-trend-up",
-            style={"height": "395px", "margin-bottom": "20px"}
+            style={"height": "395px", "marginBottom": "20px"}
         )
 
         return card

@@ -1,24 +1,30 @@
 /* 
-Modifiers to the defualt Bootstrap theme.
+Modifiers to the default Bootstrap theme.
 */
-
 
 body {
     background-color: #FFF9F0;
-    font-family: familjen-grotesk;
+    font-family: "Inter", sans-serif;
 }
 
 .card {
-    color: black;
+    color: #aeaeb3;
     background-color: #FFF9F0;
 }
 
 .card-title {
-    color: black;
+    color: #2D2D32;
+    font-family: "Familjen Grotesk", sans-serif;
+    font-weight: 700;
+}
+
+.indicator {
+    font-family: "Familjen Grotesk", sans-serif;
 }
 
 .indicator_subtitle {
-    font-size: 10
+    font-size: 10;
+    font-family: "Inter", sans-serif;
 }
 
 .icon {

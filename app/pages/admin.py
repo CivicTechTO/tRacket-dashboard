@@ -75,7 +75,7 @@ def layout(**kwargs):
         ]
     )
     map = leaflet_manager.get_map(
-        style={"height": "50vh", "margin-bottom": "10px"}
+        style={"height": "50vh", "marginBottom": "10px"}
     )
 
     indicators = {

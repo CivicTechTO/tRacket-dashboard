@@ -582,6 +582,7 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                 "decreasing.color": self._config["plot.colors"][
                     "decrease_color"
                 ],
+                "font": {"size": 50}
             },
             gauge={
                 "axis": {
@@ -606,7 +607,10 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
                     "value": int(self._config["constants"]["noise_threshold"]),
                 },
             },
-            number={"suffix": " dBA"},
+            number={
+                "suffix": " dBA",
+                "font": {"size": 80}
+                },
         )
 
         fig.update_layout(
