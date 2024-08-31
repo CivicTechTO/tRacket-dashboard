@@ -20,6 +20,7 @@ from abc import abstractmethod
 import pandas.api.types as ptype
 from enum import StrEnum, auto
 from datetime import datetime
+from dash import html
 
 logger = Logging.get_console_logger()
 
@@ -486,26 +487,37 @@ class AbstractIndicatorPlotter(BasePlotter):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def _get_indicator(
-        value: float,
-        title: str,
-        mode: str = "number+delta",
-        **indicator_kwargs,
-    ) -> go.Figure:
-        fig = go.Figure(
-            go.Indicator(
-                mode=mode,
-                value=value,
-                title={
-                    "text": title,
-                },
-                domain={"x": [0, 1], "y": [0, 1]},
-                **indicator_kwargs,
-            )
-        )
+    def _get_indicator(self, value: float, delta: float) -> html.Div:
+        """
+        Create an indicator component based on value and delta.
+        """
+        # round values
+        value = round(value, 2)
+        delta = round(delta, 2)
 
-        return fig
+        # check sign and set color & logo
+        if delta >= 0:
+            logo = html.I(className=f"fa-solid fa-angles-up")
+            color = self._config["plot.colors"]["increase_color"]
+        else:
+            logo = html.I(className=f"fa-solid fa-angles-down")
+            color = self._config["plot.colors"]["decrease_color"]
+
+        title = html.Center(html.Div(f'{value} dBA', className="indicator_title"))
+        subtitle = html.Div([
+                html.Center([
+                    logo,
+                    html.Span(style={"display":"inline-block", "width": 15}),
+                    html.Span(f'{abs(delta)} %')
+                    ]),
+            ], className="indicator_subtitle", style={"color": color})
+    
+        indicator = html.Div([
+            title,
+            subtitle
+        ])
+
+        return indicator
 
 
 class NumberIndicator(AbstractIndicatorPlotter):
@@ -567,65 +579,17 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
         """
         return None
 
-    def plot(self) -> go.Figure:
-        fig = self._get_indicator(
-            value=self._get_last_mean(),
-            mode="number+delta",
-            title=self._get_title(),
-            delta={
-                "reference": self._get_reference_mean(),
-                "relative": True,
-                "valueformat": ".1%",
-                "increasing.color": self._config["plot.colors"][
-                    "increase_color"
-                ],
-                "decreasing.color": self._config["plot.colors"][
-                    "decrease_color"
-                ],
-                "font": {"size": 50}
-            },
-            gauge={
-                "axis": {
-                    "range": [None, 100],
-                    "tickwidth": 1,
-                    "tickcolor": self._config["plot.colors"]["mean"],
-                },
-                "bar": {"color": self._config["plot.colors"]["mean"]},
-                "bgcolor": self._config["plot.colors"]["background"],
-                "borderwidth": 2,
-                "bordercolor": self._config["plot.colors"]["mean"],
-                "steps": [
-                    {"range": [0, 30], "color": "cyan"},
-                    {"range": [30, 50], "color": "royalblue"},
-                ],
-                "threshold": {
-                    "line": {
-                        "color": self._config["plot.colors"]["mean"],
-                        "width": 4,
-                    },
-                    "thickness": 0.75,
-                    "value": int(self._config["constants"]["noise_threshold"]),
-                },
-            },
-            number={
-                "suffix": " dBA",
-                "font": {"size": 80}
-                },
+    def plot(self) -> html.Div:
+        last_mean = self._get_last_mean()
+        ref_mean = self._get_reference_mean()
+        delta = round((last_mean - ref_mean)/last_mean*100, 1)
+        
+        indicator = self._get_indicator(
+            value=last_mean,
+            delta=delta
         )
 
-        fig.update_layout(
-            height=int(self._config["plot.sizes"]["indicator_height"]),
-            margin=dict(
-                l=10,
-                r=10,
-                b=10,
-                t=10,
-            ),
-        )
-
-        self.set_formatting(fig)
-
-        return fig
+        return indicator
 
 
 class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):

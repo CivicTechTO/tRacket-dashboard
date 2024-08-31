@@ -16,14 +16,18 @@ body {
     color: #2D2D32;
     font-family: "Familjen Grotesk", sans-serif;
     font-weight: 700;
+    font-size: 35px;
 }
 
-.indicator {
+.indicator_title {
     font-family: "Familjen Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 50px;
+    color: #2D2D32;
 }
 
 .indicator_subtitle {
-    font-size: 10;
+    font-size: 25px;
     font-family: "Inter", sans-serif;
 }
 

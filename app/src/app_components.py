@@ -538,13 +538,11 @@ class LocationComponentManager(AbstractComponentManager):
         """
 
         # noise indicator with toolip
-        indicator_graph = dcc.Graph(
+        indicator = html.Div(
             id=COMPONENT_ID.mean_indicator,
-            config={"displayModeBar": False},
-            style={"visibility": "hidden"},
         )
 
-        indicator_graph = dbc.Spinner(indicator_graph)
+        # indicator = dbc.Spinner(indicator)
 
         indicator_tooltip = dbc.Tooltip(
             f"Average noise level in the past hour and relative change since the hour prior.",
@@ -553,7 +551,7 @@ class LocationComponentManager(AbstractComponentManager):
             id=COMPONENT_ID.mean_indicator_tooltip,
         )
 
-        return html.Div([indicator_graph, indicator_tooltip])
+        return html.Div([indicator, indicator_tooltip])
 
     def get_level_card(
         self,
@@ -782,8 +780,7 @@ class CallbackManager:
 
         @callback(
             Output(COMPONENT_ID.last_update_text, "children"),
-            Output(COMPONENT_ID.mean_indicator, "figure"),
-            Output(COMPONENT_ID.mean_indicator, "style"),
+            Output(COMPONENT_ID.mean_indicator, "children"),
             Input(COMPONENT_ID.hourly_data_store, "data"),
         )
         def update_trend_indicator(data):
@@ -800,7 +797,7 @@ class CallbackManager:
             last_time = get_last_time(data)
             update_text = (html.H5([f"Recorded at {last_time}"]),)
 
-            return update_text, indicator_fig, {}
+            return update_text, indicator_fig
 
         @callback(
             Output(COMPONENT_ID.hourly_noise_line_graph, "figure"),
