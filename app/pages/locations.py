@@ -121,7 +121,10 @@ def layout(device_id: str = None, **kwargs):
                         ],
                     ),
                     html.Br(),
-                    dbc.Row([line_graphs_card]),
+                    dbc.Row([
+                        dbc.Col(line_graphs_card,  lg=12, md=12)
+                        ]
+                    ),
                 ],
                 fluid=True,
             )
