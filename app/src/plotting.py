@@ -499,7 +499,7 @@ class AbstractIndicatorPlotter(BasePlotter):
         value and delta in percentage.
         """
         # round numbers
-        value = round(value, 2)
+        value = round(value, 1)
 
         elements = []
 
@@ -520,7 +520,7 @@ class AbstractIndicatorPlotter(BasePlotter):
         elements.append(value_line)
 
         if delta:
-            delta = round(delta, 2)
+            delta = round(delta, 1)
 
             # check sign to set color & logo appropriately
             if delta >= 0:
