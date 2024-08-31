@@ -83,7 +83,7 @@ def layout(device_id: str = None, **kwargs):
 
             # MAP CARD for specific location
             leaflet_manager.set_locations(data_manager.location_info)
-            
+
             map = leaflet_manager.get_map(
                 device_id=device_id,
                 style={"height": "300px"},
@@ -92,16 +92,16 @@ def layout(device_id: str = None, **kwargs):
             )
 
             map_card = location_component_manager.get_card(
-                title=label,
-                body=map,
-                logo="fa-map-location-dot"
+                title=label, body=map, logo="fa-map-location-dot"
             )
 
             # NOISE LEVEL card
             level_card = location_component_manager.get_level_card()
 
             # LINE GRAPH card with date picker and download button
-            line_graphs_card = location_component_manager.get_noise_line_graph_card()
+            line_graphs_card = (
+                location_component_manager.get_noise_line_graph_card()
+            )
 
             # NAVBAR
             nav_bar = location_component_manager.get_navbar()

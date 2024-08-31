@@ -15,18 +15,25 @@ body {
 .card-title {
     color: #2D2D32;
     font-family: "Familjen Grotesk", sans-serif;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 35px;
 }
 
 .indicator_title {
+    font-family: "Familjen Grotesk", sans-serif;
+    font-size: 35px;
+    color: #2D2D32;
+}
+
+
+.indicator_value {
     font-family: "Familjen Grotesk", sans-serif;
     font-weight: 700;
     font-size: 50px;
     color: #2D2D32;
 }
 
-.indicator_subtitle {
+.indicator_delta {
     font-size: 25px;
     font-family: "Inter", sans-serif;
 }

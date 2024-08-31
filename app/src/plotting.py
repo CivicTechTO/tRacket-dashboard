@@ -487,35 +487,67 @@ class AbstractIndicatorPlotter(BasePlotter):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def _get_indicator(self, value: float, delta: float) -> html.Div:
+    def _get_indicator(
+        self,
+        value: int | float,
+        units: Optional[str] = None,
+        delta: Optional[int | float] = None,
+        title: Optional[str] = None,
+    ) -> html.Div:
         """
-        Create an indicator component based on value and delta.
+        Create an indicator component that shows a
+        value and delta in percentage.
         """
-        # round values
+        # round numbers
         value = round(value, 2)
-        delta = round(delta, 2)
 
-        # check sign and set color & logo
-        if delta >= 0:
-            logo = html.I(className=f"fa-solid fa-angles-up")
-            color = self._config["plot.colors"]["increase_color"]
+        elements = []
+
+        if title:
+            title_line = html.Center(
+                html.Div(title, className="indicator_title")
+            )
+            elements.append(title_line)
+
+        if units:
+            value_text = f"{value} {units}"
         else:
-            logo = html.I(className=f"fa-solid fa-angles-down")
-            color = self._config["plot.colors"]["decrease_color"]
+            value_text = f"{value}"
 
-        title = html.Center(html.Div(f'{value} dBA', className="indicator_title"))
-        subtitle = html.Div([
-                html.Center([
-                    logo,
-                    html.Span(style={"display":"inline-block", "width": 15}),
-                    html.Span(f'{abs(delta)} %')
-                    ]),
-            ], className="indicator_subtitle", style={"color": color})
-    
-        indicator = html.Div([
-            title,
-            subtitle
-        ])
+        value_line = html.Center(
+            html.Div(value_text, className="indicator_value")
+        )
+        elements.append(value_line)
+
+        if delta:
+            delta = round(delta, 2)
+
+            # check sign to set color & logo appropriately
+            if delta >= 0:
+                logo = html.I(className=f"fa-solid fa-angles-up")
+                color = self._config["plot.colors"]["increase_color"]
+            else:
+                logo = html.I(className=f"fa-solid fa-angles-down")
+                color = self._config["plot.colors"]["decrease_color"]
+
+            delta_line = html.Div(
+                [
+                    html.Center(
+                        [
+                            logo,
+                            html.Span(
+                                style={"display": "inline-block", "width": 15}
+                            ),
+                            html.Span(f"{delta} %"),
+                        ]
+                    ),
+                ],
+                className="indicator_delta",
+                style={"color": color},
+            )
+            elements.append(delta_line)
+
+        indicator = html.Div(elements)
 
         return indicator
 
@@ -530,19 +562,9 @@ class NumberIndicator(AbstractIndicatorPlotter):
 
     def plot(self, value: int | float, title: str = None) -> go.Figure:
         """ """
-        fig = self._get_indicator(value=value, mode="number", title=title)
-        fig.update_layout(
-            margin=dict(
-                l=10,
-                r=10,
-                b=10,
-                t=10,
-            ),
-        )
+        indicator = self._get_indicator(value=value, title=title)
 
-        self.set_formatting(fig)
-
-        return fig
+        return indicator
 
 
 class MeanIndicatorPlotter(AbstractIndicatorPlotter):
@@ -582,340 +604,10 @@ class MeanIndicatorPlotter(AbstractIndicatorPlotter):
     def plot(self) -> html.Div:
         last_mean = self._get_last_mean()
         ref_mean = self._get_reference_mean()
-        delta = round((last_mean - ref_mean)/last_mean*100, 1)
-        
+        delta = round((last_mean - ref_mean) / last_mean * 100, 1)
+
         indicator = self._get_indicator(
-            value=last_mean,
-            delta=delta
-        )
-
-        return indicator
-
-
-class DeviceCountIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def _validate_data(self, df: pd.DataFrame) -> None:
-        for col in [COLUMN.DEVICEID, COLUMN.COUNT, COLUMN.COUNT_PRIOR]:
-            assert col in df.columns
-        assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
-
-    def _get_device_count(self) -> int:
-        """Current device count."""
-        return (self.df[COLUMN.COUNT] > 0).sum()
-
-    def _get_reference_count(self) -> int:
-        """Current device count."""
-        return (self.df[COLUMN.COUNT_PRIOR] > 0).sum()
-
-    def plot(self) -> go.Figure:
-        fig = self._get_indicator(
-            value=self._get_device_count(),
-            title="Number of Active Devices",
-            delta={
-                "reference": self._get_reference_count(),
-                "relative": False,
-                "increasing.color": "green",
-                "decreasing.color": "red",
-            },
-        )
-
-        self.set_formatting(fig)
-
-        return fig
-
-
-class MinAverageIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def _validate_data(self, df: pd.DataFrame) -> None:
-        for col in [
-            COLUMN.DEVICEID,
-            COLUMN.AVGMIN,
-            COLUMN.COUNT,
-            COLUMN.AVGMIN_PRIOR,
-            COLUMN.COUNT_PRIOR,
-        ]:
-            assert col in df.columns
-
-        assert df[COLUMN.DEVICEID].nunique() == df.shape[0]
-
-    def _get_min_avg(self, count_col: COLUMN, min_col: COLUMN) -> float:
-        """
-        Find system avg: individual device-level avg multiplied by device count for device total (disaggregate first) then get global average.
-        """
-        total_noise = sum(self.df[min_col] * self.df[count_col])
-        total_count = sum(self.df[count_col])
-
-        if total_count > 0:
-            avg = total_noise / total_count
-            avg = round(avg, 2)
-        else:
-            avg = None
-
-        return avg
-
-    def _get_system_min_avg(self) -> float:
-        """Current week."""
-        return self._get_min_avg(COLUMN.COUNT, COLUMN.AVGMIN)
-
-    def _get_reference_avg(self) -> float:
-        """Prior week."""
-        return self._get_min_avg(COLUMN.COUNT_PRIOR, COLUMN.AVGMIN_PRIOR)
-
-    def plot(self) -> go.Figure:
-        fig = self._get_indicator(
-            value=self._get_system_min_avg(),
-            title="Average Ambient Noise",
-            delta={
-                "reference": self._get_reference_avg(),
-                "relative": True,
-                "valueformat": ".1%",
-                "increasing.color": "red",
-                "decreasing.color": "green",
-            },
-            number={"suffix": " dBA"},
-        )
-
-        self.set_formatting(fig)
-
-        return fig
-
-
-class OutlierIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def _validate_data(self, df: pd.DataFrame) -> None:
-        assert COLUMN.OUTLIERCOUNT in df.columns
-        assert COLUMN.OUTLIERCOUNT_PRIOR in df.columns
-
-    def _get_total_count(self) -> int:
-        return self.df[COLUMN.OUTLIERCOUNT].sum()
-
-    def _get_reference_count(self) -> int:
-        return self.df[COLUMN.OUTLIERCOUNT_PRIOR].sum()
-
-    def plot(self) -> go.Figure:
-        fig = self._get_indicator(
-            value=self._get_total_count(),
-            title="Number of Outliers",
-            delta={
-                "reference": self._get_reference_count(),
-                "relative": False,
-                "increasing.color": "red",
-                "decreasing.color": "green",
-            },
-        )
-
-        self.set_formatting(fig)
-
-        return fig
-
-
-class TimeOfDay(StrEnum):
-    DAY = auto()
-    EVENING = auto()
-    NIGHT = auto()
-
-
-class TimeOfDayIndicatorPlotter(AbstractIndicatorPlotter):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def _validate_data(self, df: pd.DataFrame) -> None:
-        """
-        Expects the hourly data for the calculation.
-        """
-        assert COLUMN.DATE in df.columns
-        assert COLUMN.HOUR in df.columns
-        assert COLUMN.MINNOISE in df.columns
-
-    def _get_time_bounds(self, time_of_day: TimeOfDay) -> tuple[int, int]:
-        """
-        Return the start/end for the time of day.
-        """
-        if time_of_day == TimeOfDay.DAY:
-            start, end = int(self._config["constants"]["day_start"]), int(
-                self._config["constants"]["day_end"]
-            )
-        elif time_of_day == TimeOfDay.EVENING:
-            start, end = int(self._config["constants"]["evening_start"]), int(
-                self._config["constants"]["evening_end"]
-            )
-        elif time_of_day == TimeOfDay.NIGHT:
-            start, end = int(self._config["constants"]["night_start"]), int(
-                self._config["constants"]["night_end"]
-            )
-
-        return start, end
-
-    def _get_time_of_day_average(
-        self, df: pd.DataFrame, time_of_day: TimeOfDay
-    ) -> float:
-        """
-        Calculate the time of day average for a given day.
-        """
-        start, end = self._get_time_bounds(time_of_day)
-
-        if start < end:
-            hour_filter = (start <= df[COLUMN.HOUR]) & (df[COLUMN.HOUR] < end)
-        else:
-            hour_filter = (start <= df[COLUMN.HOUR]) | (df[COLUMN.HOUR] < end)
-
-        average = df.loc[hour_filter, COLUMN.MINNOISE].mean()
-
-        return average
-
-    def _extract_last_two_days(self) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Slice out the most current 48 hours of data and return it split into two 24 hour blocks.
-        """
-        self.df[COLUMN.DATE] = pd.to_datetime(self.df[COLUMN.DATE])
-        self.df.sort_values(
-            [COLUMN.DATE, COLUMN.HOUR], ascending=False, inplace=True
-        )
-
-        current_df = self.df.iloc[:24, :]
-        previous_df = self.df.iloc[24:48, :]
-
-        return current_df, previous_df
-
-    def plot(self, time_of_day: TimeOfDay) -> go.Figure:
-        """
-        Create indicator for time of day average with delta comparing to previous day value.
-        """
-        current_df, previous_df = self._extract_last_two_days()
-
-        emoji = {
-            TimeOfDay.DAY: "🌅",
-            TimeOfDay.EVENING: "🌇",
-            TimeOfDay.NIGHT: "🌃",
-        }
-
-        indicator_text = f"{str(time_of_day).title()} {emoji[time_of_day]}"
-
-        fig = self._get_indicator(
-            value=self._get_time_of_day_average(current_df, time_of_day),
-            title=indicator_text,
-            number={"suffix": " dBA"},
-            delta={
-                "reference": self._get_time_of_day_average(
-                    previous_df, time_of_day
-                ),
-                "relative": True,
-                "valueformat": ".1%",
-                "increasing.color": "red",
-                "decreasing.color": "green",
-            },
-        )
-
-        self.set_formatting(fig)
-
-        return fig
-
-
-class MapPlotter(BasePlotter):
-    """
-    Class for creating maps.
-    """
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def _validate_data(self, df: pd.DataFrame) -> None:
-        assert COLUMN.DEVICEID in df.columns
-        assert COLUMN.LAT in df.columns
-        assert COLUMN.LON in df.columns
-        assert COLUMN.LABEL in df.columns
-
-    def plot(self) -> go.Figure:
-        """
-        Create marker map of device locations.
-        """
-        fig = go.Figure()
-        fig.add_trace(self._get_map_layer())
-        self._position_map(fig)
-        self._set_margin(fig)
-
-        return fig
-
-    def _set_margin(self, fig):
-        fig.update_layout(
-            margin={"r": 0, "t": 0, "l": 0, "b": 0},
-        )
-
-    def _position_map(self, fig):
-        """
-        Center and zoom map.
-        """
-        lat, lon = self._get_map_center()
-
-        fig.update_layout(
-            mapbox=dict(
-                zoom=int(self._config["map"]["zoom"]),
-                center=dict(
-                    lat=lat,
-                    lon=lon,
-                ),
-                style=self._config["map"]["style"],
-            ),
-        )
-
-    def _get_map_layer(self) -> go.Scattermapbox:
-        """
-        Create the map layer and with markers.
-        """
-
-        return go.Scattermapbox(
-            lat=self.df[COLUMN.LAT],
-            lon=self.df[COLUMN.LON],
-            mode="markers",
-            marker=go.scattermapbox.Marker(
-                size=20, color=self.colors[COLOR_ITEM.MAX]
-            ),
-            hoverinfo="text",
-            hovertemplate="<b>%{hovertext}</b>",
-            hovertext=list(self.df[COLUMN.LABEL].values),
-            name="",
-        )
-
-    def _get_map_center(self) -> tuple[float, float]:
-        """
-        Read the map center from the data provided, or fall back on the default from config.
-        Returns lat, lon tuple.
-        """
-
-        if self.df.shape[0] > 0:
-            return self.df[COLUMN.LAT].values[0], self.df[COLUMN.LON].values[0]
-
-        else:
-            lat = float(self._config["constants"]["map_center_lat"])
-            lon = float(self._config["constants"]["map_center_lon"])
-
-            return lat, lon
-
-    def _get_indicator_trace(
-        self,
-        value: float | int,
-        text: str,
-        x_pos: tuple[float, float],
-        y_pos: tuple[float, float],
-    ) -> go.Indicator:
-        """
-        Count indicator.
-        """
-        indicator = go.Indicator(
-            mode="number",
-            value=value,
-            number={"font_color": self.colors[COLOR_ITEM.MAX]},
-            title={
-                "text": text,
-                "font_color": self.colors[COLOR_ITEM.MAX],
-            },
-            domain={"x": x_pos, "y": y_pos},
+            value=last_mean, delta=delta, units="dBA"
         )
 
         return indicator

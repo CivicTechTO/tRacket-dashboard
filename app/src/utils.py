@@ -117,9 +117,10 @@ def get_last_time(df: pd.DataFrame) -> str:
     Get last time stamp from the dataframe.
     """
     recent_timestamp = pd.to_datetime(df[COLUMN.TIMESTAMP].max())
-    formatted_timestamp = recent_timestamp.strftime('%d %b %Y, %I:%M %p')
+    formatted_timestamp = recent_timestamp.strftime("%d %b %Y, %I:%M %p")
 
     return formatted_timestamp
+
 
 def load_config(config_path: str = None) -> configparser.ConfigParser:
     """
@@ -166,16 +167,18 @@ class DataFormatter(object):
     def __init__(self) -> None:
         pass
 
-    def store_to_dataframe(self, data: List[Dict[str, object]]) -> pd.DataFrame:
+    def store_to_dataframe(
+        self, data: List[Dict[str, object]]
+    ) -> pd.DataFrame:
         """
-        Take a json style data set from the client-side dcc.Store() and 
+        Take a json style data set from the client-side dcc.Store() and
         turn into a dataframe with Enum column names and proper data types.
         """
 
         df = pd.DataFrame(data)
         df = self._string_col_names_to_enum(df)
         df = self._set_data_types(df)
-        
+
         return df
 
     def dataframe_to_store(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
@@ -184,9 +187,9 @@ class DataFormatter(object):
         """
         df = self._enum_col_names_to_string(df)
         data = df.to_dict("records")
-        
+
         return data
-    
+
     @staticmethod
     def _fill_missing_times(df: pd.DataFrame, freq: str) -> pd.DataFrame:
         """

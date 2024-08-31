@@ -38,23 +38,24 @@ class COMPONENT_ID(StrEnum):
     """
     Component IDs for the app.
     """
+
     redirect = auto()
-    
+
     # maps
     system_map = auto()
     map_markers = auto()
-    
+
     # aggregate indicator
     mean_indicator = auto()
     mean_indicator_tooltip = auto()
-    
+
     # noise analyzer
     hourly_noise_line_graph = auto()
     raw_noise_line_graph = auto()
     date_picker = auto()
     download_button = auto()
     download_csv = auto()
-    
+
     # data stores
     hourly_data_store = auto()
     last_update_text = auto()
@@ -340,11 +341,44 @@ class AbstractComponentManager:
         """
         navbar = dbc.NavbarSimple(
             children=[
-                dbc.NavItem(dbc.NavLink("Get tRacket", href="https://tracket.info/sensor/", target="_blank", className="nav-link")),
-                dbc.NavItem(dbc.NavLink("Noise Map", href="https://dashboard.tracket.info/locations",target="_blank", className="nav-link")),
-                dbc.NavItem(dbc.NavLink("About", href="https://tracket.info/",target="_blank", className="nav-link")),
-                dbc.NavItem(dbc.NavLink("Donate", href="https://opencollective.com/tRacket",target="_blank", className="nav-link")),
-                dbc.Button("Log In", href="https://manage.tracket.info/", target="_blank", className="button-login"),
+                dbc.NavItem(
+                    dbc.NavLink(
+                        "Get tRacket",
+                        href="https://tracket.info/sensor/",
+                        target="_blank",
+                        className="nav-link",
+                    )
+                ),
+                dbc.NavItem(
+                    dbc.NavLink(
+                        "Noise Map",
+                        href="https://dashboard.tracket.info/locations",
+                        target="_blank",
+                        className="nav-link",
+                    )
+                ),
+                dbc.NavItem(
+                    dbc.NavLink(
+                        "About",
+                        href="https://tracket.info/",
+                        target="_blank",
+                        className="nav-link",
+                    )
+                ),
+                dbc.NavItem(
+                    dbc.NavLink(
+                        "Donate",
+                        href="https://opencollective.com/tRacket",
+                        target="_blank",
+                        className="nav-link",
+                    )
+                ),
+                dbc.Button(
+                    "Log In",
+                    href="https://manage.tracket.info/",
+                    target="_blank",
+                    className="button-login",
+                ),
             ],
             brand=dbc.Container(
                 [
@@ -420,11 +454,10 @@ class AdminComponentManager(AbstractComponentManager):
 
         row = []
         for title, value in indicators.items():
-            fig = plotter.plot(value=value, title=title)
+            indicator = plotter.plot(value=value, title=title)
             col = dbc.Col(
-                dcc.Graph(
-                    figure=fig,
-                    config={"displayModeBar": False},
+                html.Div(
+                    [indicator],
                     style={"height": "20vh"},
                 )
             )
@@ -442,7 +475,9 @@ class LocationComponentManager(AbstractComponentManager):
         super().__init__()
         self.data_manager = data_manager
 
-    def get_card(self, title: str, body: object, logo: str, style: dict = dict()):
+    def get_card(
+        self, title: str, body: object, logo: str, style: dict = dict()
+    ):
         """
         Create a dbc.Card() component with the given title, body and fontawesome logo.
         """
@@ -462,7 +497,7 @@ class LocationComponentManager(AbstractComponentManager):
             ),
         )
         card = dbc.Card([card_header, dbc.CardBody([body])], style=style)
-        
+
         return card
 
     def _get_noise_line_graph(
@@ -473,10 +508,10 @@ class LocationComponentManager(AbstractComponentManager):
         Create an empty noise graph component which can be updated using callbacks.
         """
         noise_line_graph = dcc.Graph(
-                figure=go.Figure(),
-                id=component_id,
-                style={"visibility": "hidden"},
-            )
+            figure=go.Figure(),
+            id=component_id,
+            style={"visibility": "hidden"},
+        )
 
         return noise_line_graph
 
@@ -484,8 +519,12 @@ class LocationComponentManager(AbstractComponentManager):
         """
         Create the card component holding the noise line graphs.
         """
-        raw_noise_line_graph = self._get_noise_line_graph(COMPONENT_ID.raw_noise_line_graph)
-        hourly_noise_line_graph = self._get_noise_line_graph(COMPONENT_ID.hourly_noise_line_graph)
+        raw_noise_line_graph = self._get_noise_line_graph(
+            COMPONENT_ID.raw_noise_line_graph
+        )
+        hourly_noise_line_graph = self._get_noise_line_graph(
+            COMPONENT_ID.hourly_noise_line_graph
+        )
 
         ### Date Picker ###
 
@@ -496,33 +535,33 @@ class LocationComponentManager(AbstractComponentManager):
         download_button = self._get_download_button()
 
         noise_line_card_body = dbc.CardBody(
+            [
+                dbc.Row(
                     [
-                        dbc.Row(
-                            [
-                                dbc.Col(date_controls, lg=3, md=3),
-                                dbc.Col(download_button, lg=2, md=2),
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Spinner(hourly_noise_line_graph),
-                                    lg=12,
-                                    md=12,
-                                )
-                            ]
-                        ),
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Spinner(raw_noise_line_graph),
-                                    lg=12,
-                                    md=12,
-                                )
-                            ]
-                        ),
+                        dbc.Col(date_controls, lg=3, md=3),
+                        dbc.Col(download_button, lg=2, md=2),
                     ]
-                )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Spinner(hourly_noise_line_graph),
+                            lg=12,
+                            md=12,
+                        )
+                    ]
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Spinner(raw_noise_line_graph),
+                            lg=12,
+                            md=12,
+                        )
+                    ]
+                ),
+            ]
+        )
 
         line_graphs_card = self.get_card(
             title="Noise Analyzer",
@@ -558,16 +597,17 @@ class LocationComponentManager(AbstractComponentManager):
     ) -> dbc.Card:
 
         card = self.get_card(
-            title="Noise Level & Trend",
+            title="Current Noise Level",
             body=dbc.CardBody(
-                    [
-                        html.Span(id=COMPONENT_ID.last_update_text),
-                        html.Br(),
-                        self._get_mean_indicator(),
-                    ]
-                ),
+                [
+                    html.Span(id=COMPONENT_ID.last_update_text),
+                    html.Br(),
+                    html.Br(),
+                    self._get_mean_indicator(),
+                ]
+            ),
             logo="fa-arrow-trend-up",
-            style={"height": "395px", "marginBottom": "20px"}
+            style={"height": "395px", "marginBottom": "20px"},
         )
 
         return card
@@ -648,7 +688,6 @@ class CallbackManager:
         self.data_manager = data_manager
         self.data_formatter = DataFormatter()
 
-    
     def initialize_callbacks(self):
         def _update_fig_with_layout(relayout_data: dict, figure: dict) -> None:
             """
@@ -695,7 +734,9 @@ class CallbackManager:
             Output(COMPONENT_ID.hourly_data_store, "data"),
             Input(COMPONENT_ID.raw_data_store, "data"),
         )
-        def aggregate_raw_to_hourly(raw_data: List[Dict[str, object]]) -> List[Dict[str, object]]:
+        def aggregate_raw_to_hourly(
+            raw_data: List[Dict[str, object]]
+        ) -> List[Dict[str, object]]:
             """
             Take the raw data and resample to hourly.
             """
@@ -704,11 +745,7 @@ class CallbackManager:
             # aggregate
             raw_df = raw_df.set_index(COLUMN.TIMESTAMP)
             hourly_df = raw_df.resample("1H").agg(
-                {
-                    COLUMN.MEAN: "mean",
-                    COLUMN.MIN: "min",
-                    COLUMN.MAX: "max"
-                }
+                {COLUMN.MEAN: "mean", COLUMN.MIN: "min", COLUMN.MAX: "max"}
             )
             hourly_df = hourly_df.reset_index()
 
@@ -717,13 +754,15 @@ class CallbackManager:
             hourly_data = self.data_formatter.dataframe_to_store(hourly_df)
 
             return hourly_data
-        
+
         @callback(
             Output(COMPONENT_ID.raw_data_store, "data"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
         )
-        def load_data(start_date: date, end_date: date) -> List[Dict[str, object]]:
+        def load_data(
+            start_date: date, end_date: date
+        ) -> List[Dict[str, object]]:
             """
             Load data based on date picker into client-side raw data store.
             """
@@ -732,7 +771,7 @@ class CallbackManager:
             start_date = date.fromisoformat(start_date)
             end_date = date.fromisoformat(end_date)
             end_date += timedelta(days=1)
-            
+
             self.data_manager.load_and_format_location_noise(
                 location_id=device_id,
                 granularity=Granularity.raw,
@@ -744,7 +783,7 @@ class CallbackManager:
             raw_data = self.data_formatter.dataframe_to_store(raw_data)
 
             return raw_data
-        
+
         @callback(
             Output(
                 COMPONENT_ID.hourly_noise_line_graph,
@@ -762,7 +801,10 @@ class CallbackManager:
             Input(COMPONENT_ID.raw_data_store, "data"),
             prevent_initial_call="initial_duplicate",
         )
-        def update_line_charts(hourly_data: List[Dict[str, float]], raw_data: List[Dict[str, float]]):
+        def update_line_charts(
+            hourly_data: List[Dict[str, float]],
+            raw_data: List[Dict[str, float]],
+        ):
             """
             Main callback responsible for loading data based on the date selector,
             updating the line charts and storing aggregate noise data.
