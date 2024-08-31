@@ -11,6 +11,7 @@ from src.app_components import (
     LeafletMapManager,
     AdminComponentManager,
 )
+from dash import html
 
 dash.register_page(
     __name__,
@@ -86,13 +87,18 @@ def layout(**kwargs):
 
     indicator_row = admin_component_manager.get_indicators(indicators)
 
+    nav_bar = admin_component_manager.get_navbar()
+
     layout = dbc.Container(
         [
-            admin_component_manager.get_navbar(),
+            dbc.Row([nav_bar]),
+            html.Br(),
             dbc.Row([dbc.Col([map])]),
+            html.Br(),
             indicator_row,
             dbc.Row([dbc.Col([table])]),
-        ]
+        ],
+        fluid=True
     )
 
     return layout
