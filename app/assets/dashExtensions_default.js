@@ -26,9 +26,14 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             };
         },
         function1: function(feature, latlng, context) {
+                if (feature.properties.sending_data) {
+                    var color = "#FB9500";
+                } else {
+                    var color = "#545454";
+                };
                 return L.circleMarker(latlng, {
                     radius: 10,
-                    fillColor: feature.properties.marker_color,
+                    fillColor: color,
                     fillOpacity: 0.8,
                 }); // render a simple circle marker
             }
@@ -43,12 +48,19 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                     return icon;
                 }
             })
+            const leaves = index.getLeaves(feature.properties.cluster_id);
+            var cluster_color = "#545454";
+            for (let i = 0; i < leaves.length; ++i) {
+                if (leaves[i].properties.sending_data) {
+                    var cluster_color = "#FB9500";
+                }
+            }
             // Render a circle with the number of leaves written in the center.
             const icon = new scatterIcon({
                 html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
                 className: "marker-cluster",
                 iconSize: L.point(40, 40),
-                color: "#B6D4E7"
+                color: cluster_color
             });
             return L.marker(latlng, {
                 icon: icon

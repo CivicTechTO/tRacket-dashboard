@@ -157,16 +157,14 @@ class LeafletMapManager:
                     id=id,
                     active=active,
                     label=label,
-                    marker_color=color,
                     sending_data=sending_data
                 )
-                for lat, lon, id, label, active, color, sending_data in zip(
+                for lat, lon, id, label, active, sending_data in zip(
                     self.locations[COLUMN.LAT],
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
                     self.locations[COLUMN.ACTIVE],
-                    self.locations[COLUMN.MARKER_COLOR],
                     self.locations[COLUMN.SENDING_DATA]
                 )
             ]
@@ -223,12 +221,19 @@ class LeafletMapManager:
                             return icon;
                         }}
                     }})
+                    const leaves = index.getLeaves(feature.properties.cluster_id);
+                    var cluster_color = "{self.config["map"]["marker_color_inactive"]}";
+                    for (let i = 0; i < leaves.length; ++i) {{
+                        if (leaves[i].properties.sending_data) {{
+                            var cluster_color = "{self.config["map"]["marker_color_highlight"]}";
+                        }}
+                    }}
                     // Render a circle with the number of leaves written in the center.
                     const icon = new scatterIcon({{
                         html: '<div style="background-color:white;"><span>' + feature.properties.point_count_abbreviated + '</span></div>',
                         className: "marker-cluster",
                         iconSize: L.point(40, 40),
-                        color: "{self.config["map"]["cluster_color"]}"
+                        color: cluster_color
                     }});
                     return L.marker(latlng, {{icon : icon}})
                 }}"""
@@ -241,10 +246,15 @@ class LeafletMapManager:
         self._point_to_layer_system_map = assign(
             f"""
                 function(feature, latlng, context){{
+                    if (feature.properties.sending_data){{
+                        var color = "{self.config["map"]["marker_color_highlight"]}";
+                    }} else {{
+                        var color = "{self.config["map"]["marker_color_inactive"]}";
+                    }};
                     return L.circleMarker(latlng, 
                     {{
                         radius: {self.config["map"]["radius-pixel"]}, 
-                        fillColor: feature.properties.marker_color, 
+                        fillColor: color, 
                         fillOpacity: 0.8,
                     }});  // render a simple circle marker
                 }}
@@ -440,7 +450,7 @@ class AdminComponentManager(AbstractComponentManager):
                     "if": {
                         "filter_query": f"{{end}} > {limit.isoformat()}",
                     },
-                    "backgroundColor": "#2C7BB2",
+                    "backgroundColor": self.config["map"]["marker_color_highlight"],
                     "color": "white",
                 },
             ],

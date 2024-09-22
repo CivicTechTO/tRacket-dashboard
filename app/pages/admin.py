@@ -57,10 +57,6 @@ def layout(**kwargs):
     limit += pd.Timedelta(-1, unit="H")
     admin_df[COLUMN.SENDING_DATA] = admin_df[COLUMN.END] > limit
     
-    admin_df[COLUMN.MARKER_COLOR] = np.where(
-        admin_df[COLUMN.SENDING_DATA], "#2C7BB2", "#545454"
-    )
-    
     table = admin_component_manager.get_data_table(
         admin_df[table_columns], limit
     )
@@ -74,7 +70,6 @@ def layout(**kwargs):
                 COLUMN.ACTIVE,
                 COLUMN.LAT,
                 COLUMN.LON,
-                COLUMN.MARKER_COLOR,
                 COLUMN.SENDING_DATA
             ]
         ]
