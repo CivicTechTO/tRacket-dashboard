@@ -150,17 +150,26 @@ class AppDataManager:
 
         return label
 
+    def _get_active_time_limit(self) -> datetime:
+        """
+        Get the current threshold for marking sensor as active.
+        """
+        limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
+        limit += pd.Timedelta(-1, unit="H")
+
+        return limit
+    
     def get_active_status(self, location_id: str) -> int:
         """
         Return the activity status for the device.
         """
-        if self.location_info is None:
-            self.load_and_format_location_info(location_id=location_id)
+        if self.location_stats is None:
+            self.load_and_format_location_stats(location_id=location_id)
 
-        info = self.location_info.to_dict("records")[0]
-        active = info[COLUMN.ACTIVE]
+        stats = self.location_stats.to_dict("records")[0]
+        limit = self._get_active_time_limit()
 
-        return active
+        return stats[COLUMN.END] > limit
 
     def load_and_format_locations(self):
         """
@@ -195,8 +204,7 @@ class AppDataManager:
         stats = pd.concat(stats, axis=0, ignore_index=True)
     
         # add sending data flag
-        limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
-        limit += pd.Timedelta(-1, unit="H")
+        limit = self._get_active_time_limit()
         stats[COLUMN.SENDING_DATA] = stats[COLUMN.END] > limit
 
         self.locations = pd.concat([self.locations, stats], axis=1)
