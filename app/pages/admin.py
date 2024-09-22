@@ -52,14 +52,17 @@ def layout(**kwargs):
         COLUMN.COUNT,
         COLUMN.RADIUS,
     ]
+
     limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
     limit += pd.Timedelta(-1, unit="H")
+    admin_df[COLUMN.SENDING_DATA] = admin_df[COLUMN.END] > limit
+    
+    admin_df[COLUMN.MARKER_COLOR] = np.where(
+        admin_df[COLUMN.SENDING_DATA], "#2C7BB2", "#545454"
+    )
+    
     table = admin_component_manager.get_data_table(
         admin_df[table_columns], limit
-    )
-
-    admin_df[COLUMN.MARKER_COLOR] = np.where(
-        admin_df[COLUMN.END] > limit, "#2C7BB2", "#545454"
     )
 
     # set map
@@ -72,6 +75,7 @@ def layout(**kwargs):
                 COLUMN.LAT,
                 COLUMN.LON,
                 COLUMN.MARKER_COLOR,
+                COLUMN.SENDING_DATA
             ]
         ]
     )

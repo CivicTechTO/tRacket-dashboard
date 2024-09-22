@@ -1,7 +1,7 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
         function0: function(feature, layer, context) {
-            if (feature.properties.active) {
+            if (feature.properties.sending_data) {
                 {
                     var active = "<b>Active Location</b>";
                 }

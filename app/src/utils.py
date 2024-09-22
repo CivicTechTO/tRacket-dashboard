@@ -46,6 +46,7 @@ class COLUMN(Enum):
     END = "end"
     RADIUS = "radius"
     MARKER_COLOR = "marker_color"
+    SENDING_DATA = "sending_data"
 
     # aggregate columns
     COUNT_PRIOR = "count_prior"

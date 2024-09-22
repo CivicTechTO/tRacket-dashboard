@@ -158,14 +158,16 @@ class LeafletMapManager:
                     active=active,
                     label=label,
                     marker_color=color,
+                    sending_data=sending_data
                 )
-                for lat, lon, id, label, active, color in zip(
+                for lat, lon, id, label, active, color, sending_data in zip(
                     self.locations[COLUMN.LAT],
                     self.locations[COLUMN.LON],
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
                     self.locations[COLUMN.ACTIVE],
                     self.locations[COLUMN.MARKER_COLOR],
+                    self.locations[COLUMN.SENDING_DATA]
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
@@ -191,7 +193,7 @@ class LeafletMapManager:
         """
         self._on_each_feature = assign(
             """function(feature, layer, context){
-                if (feature.properties.active) {{ 
+                if (feature.properties.sending_data) {{ 
                     var active = "<b>Active Location</b>";
                     }} else {{
                     var active = "<b>Inactive Location</b>";
