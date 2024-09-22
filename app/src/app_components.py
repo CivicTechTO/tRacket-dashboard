@@ -428,7 +428,7 @@ class AdminComponentManager(AbstractComponentManager):
         self.data_formatter = DataFormatter()
 
     def get_data_table(
-        self, admin_df: pd.DataFrame, limit: datetime
+        self, admin_df: pd.DataFrame
     ) -> dash_table.DataTable:
         """
         Create a data table component with devices sending data actively highlighted.
@@ -436,6 +436,10 @@ class AdminComponentManager(AbstractComponentManager):
         assert (
             COLUMN.END in admin_df.columns
         ), "Dataframe should have an END column."
+        assert (
+            COLUMN.SENDING_DATA in admin_df.columns
+        ), "Dataframe should have an SENDING_DATA column."
+
 
         admin_df = admin_df.sort_values(COLUMN.END, ascending=False)
         admin_df_plain = self.data_formatter._enum_col_names_to_string(
@@ -448,7 +452,7 @@ class AdminComponentManager(AbstractComponentManager):
             style_data_conditional=[
                 {
                     "if": {
-                        "filter_query": f"{{end}} > {limit.isoformat()}",
+                        "filter_query": f"{{sending_data}} > 0",
                     },
                     "backgroundColor": self.config["map"]["marker_color_highlight"],
                     "color": "white",

@@ -33,17 +33,11 @@ admin_component_manager = AdminComponentManager()
 def layout(**kwargs):
     # load data
     data_manager.load_and_format_locations()
+    data_manager.load_all_location_stats()
 
-    stats = []
-    for device_id in data_manager.locations[COLUMN.DEVICEID]:
-        device_stat = data_manager.load_and_format_location_stats(
-            location_id=device_id
-        )
-        stats.append(device_stat)
-    stats = pd.concat(stats, axis=0, ignore_index=True)
+    admin_df = pd.concat([data_manager.all_location_stats, data_manager.locations], axis=1)
 
-    admin_df = pd.concat([stats, data_manager.locations], axis=1)
-
+    # set up admin table
     table_columns = [
         COLUMN.DEVICEID,
         COLUMN.LABEL,
@@ -51,14 +45,10 @@ def layout(**kwargs):
         COLUMN.ACTIVE,
         COLUMN.COUNT,
         COLUMN.RADIUS,
+        COLUMN.SENDING_DATA
     ]
-
-    limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
-    limit += pd.Timedelta(-1, unit="H")
-    admin_df[COLUMN.SENDING_DATA] = admin_df[COLUMN.END] > limit
-    
     table = admin_component_manager.get_data_table(
-        admin_df[table_columns], limit
+        admin_df[table_columns]
     )
 
     # set map

@@ -182,6 +182,25 @@ class AppDataManager:
 
         self.locations = locations
 
+    def load_all_location_stats(self) -> None:
+        """
+        Read additional stats for each location.
+        """
+        stats = []
+        for device_id in self.locations[COLUMN.DEVICEID]:
+            device_stat = self.load_and_format_location_stats(
+                location_id=device_id
+            )
+            stats.append(device_stat)
+        stats = pd.concat(stats, axis=0, ignore_index=True)
+    
+        # add sending data flag
+        limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
+        limit += pd.Timedelta(-1, unit="H")
+        stats[COLUMN.SENDING_DATA] = stats[COLUMN.END] > limit
+
+        self.all_location_stats = stats
+
     def _deduplicate(self, locations: pd.DataFrame) -> pd.DataFrame:
         """
         Keep unique device IDs only.
