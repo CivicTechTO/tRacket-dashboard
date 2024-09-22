@@ -182,9 +182,9 @@ class AppDataManager:
 
         self.locations = locations
 
-    def load_all_location_stats(self) -> None:
+    def attach_all_location_stats(self) -> None:
         """
-        Read additional stats for each location.
+        Add additional stats for each location to the main locations table.
         """
         stats = []
         for device_id in self.locations[COLUMN.DEVICEID]:
@@ -199,7 +199,7 @@ class AppDataManager:
         limit += pd.Timedelta(-1, unit="H")
         stats[COLUMN.SENDING_DATA] = stats[COLUMN.END] > limit
 
-        self.all_location_stats = stats
+        self.locations = pd.concat([self.locations, stats], axis=1)
 
     def _deduplicate(self, locations: pd.DataFrame) -> pd.DataFrame:
         """

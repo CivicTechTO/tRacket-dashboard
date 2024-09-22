@@ -33,9 +33,9 @@ admin_component_manager = AdminComponentManager()
 def layout(**kwargs):
     # load data
     data_manager.load_and_format_locations()
-    data_manager.load_all_location_stats()
+    data_manager.attach_all_location_stats()
 
-    admin_df = pd.concat([data_manager.all_location_stats, data_manager.locations], axis=1)
+    admin_df = data_manager.locations
 
     # set up admin table
     table_columns = [
@@ -52,26 +52,15 @@ def layout(**kwargs):
     )
 
     # set map
-    leaflet_manager.set_locations(
-        admin_df[
-            [
-                COLUMN.DEVICEID,
-                COLUMN.LABEL,
-                COLUMN.ACTIVE,
-                COLUMN.LAT,
-                COLUMN.LON,
-                COLUMN.SENDING_DATA
-            ]
-        ]
-    )
+    leaflet_manager.set_locations(data_manager.locations)
     map = leaflet_manager.get_map(
         style={"height": "50vh", "marginBottom": "10px"}
     )
 
     indicators = {
         "Locations": admin_df.shape[0],
-        "Active": admin_df[admin_df[COLUMN.ACTIVE] == True].shape[0],
-        "Sending Data": admin_df[admin_df[COLUMN.END] > limit].shape[0],
+        "Active": admin_df[COLUMN.ACTIVE].sum(),
+        "Sending Data": admin_df[COLUMN.SENDING_DATA].sum(),
     }
 
     indicator_row = admin_component_manager.get_indicators(indicators)

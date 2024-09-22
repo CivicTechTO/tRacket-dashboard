@@ -50,13 +50,9 @@ leaflet_manager = LeafletMapManager()
 def layout(device_id: str = None, **kwargs):
     if device_id is None:
         data_manager.load_and_format_locations()
+        data_manager.attach_all_location_stats()
         leaflet_manager.set_locations(data_manager.locations)
 
-        data_manager.locations[COLUMN.MARKER_COLOR] = np.where(
-            data_manager.locations[COLUMN.ACTIVE],
-            data_manager.config["map"]["marker_color_highlight"],
-            data_manager.config["map"]["marker_color_inactive"],
-        )
         map_card = leaflet_manager.get_map()
         layout = map_card
 
