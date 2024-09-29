@@ -54,10 +54,19 @@ class Location(BaseModel):
     longitude: float
     radius: int | float
     active: bool
+    latestTimestamp: datetime
 
     @field_validator("id", mode="before")
     def id_to_str(cls, value):
         return str(value)
+
+    @field_validator("latestTimestamp", mode="before")
+    def datetime_correction(cls, value):
+        if str(value).startswith("0000"):
+            # placeholder for invalid dates from API
+            value = datetime(year=1892, month=1, day=3, hour=1, minute=11).isoformat()
+        return value
+
 
 
 class LocationsData(BaseModel):
