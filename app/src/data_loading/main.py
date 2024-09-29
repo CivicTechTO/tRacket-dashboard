@@ -158,7 +158,7 @@ class AppDataManager:
         limit += pd.Timedelta(-1, unit="H")
 
         return limit
-    
+
     def get_active_status(self, location_id: str) -> int:
         """
         Return the activity status for the device.
@@ -179,6 +179,8 @@ class AppDataManager:
         locations = self.data_formatter._string_col_names_to_enum(locations)
         locations = self.data_formatter._set_data_types(locations)
 
+        locations = self._add_sending_data_flag(locations)
+
         if self.config["map"]["filter_active"].lower() == "true":
             locations = self._filter_active(locations)
             logger.info(
@@ -191,6 +193,19 @@ class AppDataManager:
 
         self.locations = locations
 
+    def _add_sending_data_flag(self, locations: pd.DataFrame) -> pd.DataFrame:
+        """
+        Based on the lastest timestamp, check if device has been sending data currently.
+        """
+        assert COLUMN.LATEST_TIMESTAMP in locations.columns
+
+        limit = self._get_active_time_limit()
+        locations[COLUMN.SENDING_DATA] = (
+            locations[COLUMN.LATEST_TIMESTAMP] > limit
+        )
+
+        return locations
+
     def attach_all_location_stats(self) -> None:
         """
         Add additional stats for each location to the main locations table.
@@ -202,7 +217,7 @@ class AppDataManager:
             )
             stats.append(device_stat)
         stats = pd.concat(stats, axis=0, ignore_index=True)
-    
+
         # add sending data flag
         limit = self._get_active_time_limit()
         stats[COLUMN.SENDING_DATA] = stats[COLUMN.END] > limit

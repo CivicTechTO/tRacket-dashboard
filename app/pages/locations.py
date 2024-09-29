@@ -16,7 +16,6 @@ from dash import dcc, html
 import numpy as np
 import plotly.graph_objects as go
 
-
 logger = Logging.get_console_logger(__name__)
 
 ### Data loading ###
@@ -41,7 +40,6 @@ dash.register_page(
     path_template="/locations/<device_id>",
 )
 
-
 ### LAYOUT DEFINITION ###
 
 leaflet_manager = LeafletMapManager()
@@ -50,7 +48,6 @@ leaflet_manager = LeafletMapManager()
 def layout(device_id: str = None, **kwargs):
     if device_id is None:
         data_manager.load_and_format_locations()
-        data_manager.attach_all_location_stats()
         leaflet_manager.set_locations(data_manager.locations)
 
         map_card = leaflet_manager.get_map()
@@ -117,10 +114,7 @@ def layout(device_id: str = None, **kwargs):
                         ],
                     ),
                     html.Br(),
-                    dbc.Row([
-                        dbc.Col(line_graphs_card,  lg=12, md=12)
-                        ]
-                    ),
+                    dbc.Row([dbc.Col(line_graphs_card, lg=12, md=12)]),
                 ],
                 fluid=True,
             )

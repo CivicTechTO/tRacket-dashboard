@@ -33,7 +33,7 @@ admin_component_manager = AdminComponentManager()
 def layout(**kwargs):
     # load data
     data_manager.load_and_format_locations()
-    data_manager.attach_all_location_stats()
+    # data_manager.attach_all_location_stats()
 
     admin_df = data_manager.locations
 
@@ -41,15 +41,12 @@ def layout(**kwargs):
     table_columns = [
         COLUMN.DEVICEID,
         COLUMN.LABEL,
-        COLUMN.END,
         COLUMN.ACTIVE,
-        COLUMN.COUNT,
         COLUMN.RADIUS,
-        COLUMN.SENDING_DATA
+        COLUMN.LATEST_TIMESTAMP,
+        COLUMN.SENDING_DATA,
     ]
-    table = admin_component_manager.get_data_table(
-        admin_df[table_columns]
-    )
+    table = admin_component_manager.get_data_table(admin_df[table_columns])
 
     # set map
     leaflet_manager.set_locations(data_manager.locations)
@@ -76,7 +73,7 @@ def layout(**kwargs):
             indicator_row,
             dbc.Row([dbc.Col([table])]),
         ],
-        fluid=True
+        fluid=True,
     )
 
     return layout

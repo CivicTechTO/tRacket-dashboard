@@ -157,7 +157,7 @@ class LeafletMapManager:
                     id=id,
                     active=active,
                     label=label,
-                    sending_data=sending_data
+                    sending_data=sending_data,
                 )
                 for lat, lon, id, label, active, sending_data in zip(
                     self.locations[COLUMN.LAT],
@@ -165,7 +165,7 @@ class LeafletMapManager:
                     self.locations[COLUMN.DEVICEID],
                     self.locations[COLUMN.LABEL],
                     self.locations[COLUMN.ACTIVE],
-                    self.locations[COLUMN.SENDING_DATA]
+                    self.locations[COLUMN.SENDING_DATA],
                 )
             ]
             markers = dlx.dicts_to_geojson(markers)
@@ -427,21 +427,20 @@ class AdminComponentManager(AbstractComponentManager):
         super().__init__()
         self.data_formatter = DataFormatter()
 
-    def get_data_table(
-        self, admin_df: pd.DataFrame
-    ) -> dash_table.DataTable:
+    def get_data_table(self, admin_df: pd.DataFrame) -> dash_table.DataTable:
         """
         Create a data table component with devices sending data actively highlighted.
         """
         assert (
-            COLUMN.END in admin_df.columns
-        ), "Dataframe should have an END column."
+            COLUMN.LATEST_TIMESTAMP in admin_df.columns
+        ), "Dataframe should have an LATEST_TIMESTAMP column."
         assert (
             COLUMN.SENDING_DATA in admin_df.columns
         ), "Dataframe should have an SENDING_DATA column."
 
-
-        admin_df = admin_df.sort_values(COLUMN.END, ascending=False)
+        admin_df = admin_df.sort_values(
+            COLUMN.LATEST_TIMESTAMP, ascending=False
+        )
         admin_df_plain = self.data_formatter._enum_col_names_to_string(
             admin_df
         )
@@ -454,7 +453,9 @@ class AdminComponentManager(AbstractComponentManager):
                     "if": {
                         "filter_query": f"{{sending_data}} > 0",
                     },
-                    "backgroundColor": self.config["map"]["marker_color_highlight"],
+                    "backgroundColor": self.config["map"][
+                        "marker_color_highlight"
+                    ],
                     "color": "white",
                 },
             ],

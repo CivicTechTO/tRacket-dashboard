@@ -251,13 +251,10 @@ class DataFormatter(object):
             if col in df.columns:
                 df[col] = df[col].astype(type_)
 
-
         date_cols = [COLUMN.TIMESTAMP, COLUMN.LATEST_TIMESTAMP]
         for col in date_cols:
             if col in df.columns:
-                df[col] = pd.to_datetime(
-                    df[col]
-                ).dt.tz_localize(None)
+                df[col] = pd.to_datetime(df[col]).dt.tz_localize(None)
 
         return df
 
