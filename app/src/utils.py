@@ -234,8 +234,7 @@ class DataFormatter(object):
 
         return new_df
 
-    @staticmethod
-    def _set_data_types(df: pd.DataFrame) -> pd.DataFrame:
+    def _set_data_types(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Sets the right data types for noise data columns in place.
         """
@@ -251,12 +250,26 @@ class DataFormatter(object):
             if col in df.columns:
                 df[col] = df[col].astype(type_)
 
-        date_cols = [COLUMN.TIMESTAMP, COLUMN.LATEST_TIMESTAMP]
-        for col in date_cols:
+        tz_aware_date_cols = [COLUMN.TIMESTAMP, COLUMN.LATEST_TIMESTAMP]
+        for col in tz_aware_date_cols:
             if col in df.columns:
-                df[col] = pd.to_datetime(df[col]).dt.tz_localize(None)
+                df[col] = self._convert_tz_aware_to_est(df[col])
+
+        tz_naive_date_cols = [COLUMN.START, COLUMN.END]
+        for col in tz_naive_date_cols:
+            if col in df.columns:
+                print(df[col])
+                df[col] = self._convert_tz_naive_to_est(df[col])
 
         return df
+
+    @staticmethod
+    def _convert_tz_naive_to_est(datetime_col: pd.Series) -> pd.Series:
+        return pd.to_datetime(datetime_col).dt.tz_localize('EST')
+
+    @staticmethod
+    def _convert_tz_aware_to_est(datetime_col: pd.Series) -> pd.Series:
+        return pd.to_datetime(datetime_col).dt.tz_convert('EST')
 
     @staticmethod
     def _raw_to_dataframe(raw_data: List[Dict[str, Any]]) -> pd.DataFrame:

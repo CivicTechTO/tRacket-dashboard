@@ -1,7 +1,19 @@
 import pandas as pd
 from src.utils import DataFormatter, COLUMN, date_to_string
+from src.data_loading.main import AppDataManager
 import pytest
 from datetime import datetime, date
+
+def test_time_comparison():
+    data_manager = AppDataManager()
+    limit = data_manager._get_active_time_limit()
+    
+    column = pd.Series(["2024-05-18T11:00:00-04:00"])
+
+    data_formatter = DataFormatter()
+    column = data_formatter._convert_tz_aware_to_est(column)
+
+    assert (column < limit).all()
 
 
 def date_to_string():

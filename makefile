@@ -133,3 +133,7 @@ debug:
 
 count:
 	wc -l **/*.py makefile Dockerfile README.md
+
+remove_branch:
+	git push -d origin $(BRANCH)
+	git branch -d $(BRANCH)

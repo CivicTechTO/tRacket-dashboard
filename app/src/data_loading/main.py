@@ -154,8 +154,7 @@ class AppDataManager:
         """
         Get the current threshold for marking sensor as active.
         """
-        limit = pd.Timestamp("now") + pd.Timedelta(-4, unit="H")
-        limit += pd.Timedelta(-1, unit="H")
+        limit = pd.Timestamp("now", tz='EST') + pd.Timedelta(-2, unit="H")
 
         return limit
 
