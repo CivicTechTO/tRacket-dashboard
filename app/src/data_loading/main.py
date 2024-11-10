@@ -11,6 +11,7 @@ from src.utils import (
     load_config,
     DataFormatter,
     COLUMN,
+    get_timestamp_now,
 )
 from src.data_loading.noise_api import NoiseApi
 from src.data_loading.models import NoiseRequestParams, Granularity
@@ -98,6 +99,7 @@ class AppDataManager:
         noise_df = pydantic_to_pandas(noise_data.measurements)
 
         logger.info(f"Received {noise_df.shape[0]} measurements.")
+        logger.info(f"Last timestamp fetched {noise_df['timestamp'].max()}")
 
         return noise_df
 
@@ -154,7 +156,7 @@ class AppDataManager:
         """
         Get the current threshold for marking sensor as active.
         """
-        limit = pd.Timestamp("now", tz='EST') + pd.Timedelta(-2, unit="H")
+        limit = get_timestamp_now() + pd.Timedelta(-2, unit="H")
 
         return limit
 
@@ -274,6 +276,17 @@ class AppDataManager:
         )
         noise_data = self.data_formatter._string_col_names_to_enum(noise_data)
         noise_data = self.data_formatter._set_data_types(noise_data)
+        logger.info(
+            f"Last timestamp after localized: {noise_data[COLUMN.TIMESTAMP].max()}"
+        )
+
+        # TODO: remove once the API has been fixed
+        noise_data[COLUMN.TIMESTAMP] += pd.Timedelta(hours=1)
+        logger.info(
+            f"Last timestamp after adjusted: {noise_data[COLUMN.TIMESTAMP].max()}"
+        )
+
+        logger.info(f"Timestamp now: {get_timestamp_now()}")
 
         if self.config["plot"]["fill_gaps"].lower() == "true":
             noise_data = self.data_formatter._fill_missing_times(

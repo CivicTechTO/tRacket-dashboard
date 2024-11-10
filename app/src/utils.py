@@ -107,6 +107,10 @@ dbc_themes_name_to_url = {
 ### GENERAL UTILS ###
 
 
+def get_timestamp_now():
+    return pd.Timestamp("now", tz="EST")
+
+
 def date_to_string(date_object: date | datetime) -> str:
     """
     Turn a date or datetime object into a string following the API format.
@@ -265,11 +269,11 @@ class DataFormatter(object):
 
     @staticmethod
     def _convert_tz_naive_to_est(datetime_col: pd.Series) -> pd.Series:
-        return pd.to_datetime(datetime_col).dt.tz_localize('EST')
+        return pd.to_datetime(datetime_col).dt.tz_localize("EST")
 
     @staticmethod
     def _convert_tz_aware_to_est(datetime_col: pd.Series) -> pd.Series:
-        return pd.to_datetime(datetime_col).dt.tz_convert('EST')
+        return pd.to_datetime(datetime_col).dt.tz_convert("EST")
 
     @staticmethod
     def _raw_to_dataframe(raw_data: List[Dict[str, Any]]) -> pd.DataFrame:
