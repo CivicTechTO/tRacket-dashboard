@@ -4,10 +4,11 @@ from src.data_loading.main import AppDataManager
 import pytest
 from datetime import datetime, date
 
+
 def test_time_comparison():
     data_manager = AppDataManager()
     limit = data_manager._get_active_time_limit()
-    
+
     column = pd.Series(["2024-05-18T11:00:00-04:00"])
 
     data_formatter = DataFormatter()
@@ -16,7 +17,7 @@ def test_time_comparison():
     assert (column < limit).all()
 
 
-def date_to_string():
+def test_date_to_string():
     """
     Test turning a date into datetime string.
     """
@@ -26,7 +27,7 @@ def date_to_string():
     assert expected == date_to_string(date_obj)
 
 
-def datetime_to_string():
+def test_datetime_to_string():
     """
     Test turning a datetime into datetime string.
     """

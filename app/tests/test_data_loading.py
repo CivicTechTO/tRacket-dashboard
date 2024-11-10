@@ -4,6 +4,7 @@ from src.data_loading.models import (
     TimedLocationNoiseData,
     NoiseRequestParams,
     AggregateLocationNoiseData,
+    NoiseTimed,
 )
 from src.data_loading.main import AppDataManager
 from src.data_loading.models import Granularity
@@ -11,6 +12,7 @@ from src.utils import get_current_dir, pydantic_to_pandas, load_config
 import pytest
 import os
 from pydantic import ValidationError
+from datetime import datetime
 
 ### TEST PARAMS ###
 
@@ -20,6 +22,25 @@ V1_API_TEST_ID = "572250"
 
 
 ### TEST v1 API ###
+
+
+def test_timezone_aware():
+    noise_measure = NoiseTimed(
+        **{
+            "min": 0.0,
+            "max": 0.0,
+            "mean": 0.0,
+            "timestamp": "2024-11-10T08:32:08-04:00",
+        }
+    )
+
+    d = noise_measure.timestamp
+
+    assert verify_timezone_aware(d)
+
+
+def verify_timezone_aware(d: datetime) -> bool:
+    return d.tzinfo is not None and d.tzinfo.utcoffset(d) is not None
 
 
 def test_noise_api_params():
