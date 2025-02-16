@@ -17,8 +17,12 @@ The project has been started and is maintained by volunteers from the [CivicTech
 We followed Privacy by Design principles in setting up the data collection. 
 
 1. The sound meter devices are deployed on private properties in residential areas at different locations in the city. We are **not publishing exact device locations**. 
-2. The devices **do not record sound** only sound levels in A-weighted decibel levels (dBA)(https://en.wikipedia.org/wiki/Decibel). 
+2. The devices **do not record sound** only sound levels in A-weighted decibel levels [dBA](https://en.wikipedia.org/wiki/Decibel). 
 3. We calculate minimum and maximum sound levels at 5 minute intervals on the device and **only broadcast these aggregate values** (along wiht the device ID) to a database.
+
+## Data Exploration
+
+We created a [starter notebook](notebooks/explore_noise_starter_notebook.ipynb) that you can easily run on [Google Colab](https://colab.research.google.com/) yourself to explore the data more in-depth.
 
 ## For Developers
 
