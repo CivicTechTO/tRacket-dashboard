@@ -4,7 +4,7 @@ This folder will collect tools to help you analyze the noise data collected by t
 
 ## The Starter Notebook
 
-You can use the [starter notebook](explore_noise_starter_notebook.ipynb) to dive into the data right away. 
+You can use the [starter notebook](explore_noise_starter_notebook.ipynb) to dive into the data right away (if you know a bit of coding with Python). 
 
 To run the notebook and experiment yourself:
 1. Go to https://colab.research.google.com/
