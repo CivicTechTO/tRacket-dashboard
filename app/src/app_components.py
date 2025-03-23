@@ -60,7 +60,9 @@ class COMPONENT_ID(StrEnum):
     hourly_data_store = auto()
     last_update_text = auto()
     raw_data_store = auto()
-
+    data_store_loading_output1 = auto()
+    data_store_loading_output2 = auto()
+    data_store_loading_output3 = auto()
 
 ### Mapping ###
 
@@ -566,7 +568,7 @@ class LocationComponentManager(AbstractComponentManager):
                                 dcc.Loading(
                                     children=[
                                         hourly_noise_line_graph,
-                                        html.Div(id="data-store-loading-output1"),
+                                        html.Div(id=COMPONENT_ID.data_store_loading_output1),
                                         ],
                                     type="circle",
                                     overlay_style={"visibility":"visible", "filter": "blur(2px)"},
@@ -584,7 +586,7 @@ class LocationComponentManager(AbstractComponentManager):
                                 dcc.Loading(
                                     children=[
                                         raw_noise_line_graph,
-                                        html.Div(id="data-store-loading-output2"),
+                                        html.Div(id=COMPONENT_ID.data_store_loading_output2),
                                         ],
                                     type="circle",
                                     overlay_style={"visibility":"visible", "filter": "blur(2px)"},
@@ -619,7 +621,7 @@ class LocationComponentManager(AbstractComponentManager):
         indicator = dcc.Loading(
                 [
                     indicator,
-                    html.Div(id="data-store-loading-output3"),
+                    html.Div(id=COMPONENT_ID.data_store_loading_output3),
                 ],
                 type="circle",
                 overlay_style={"visibility":"visible", "filter": "blur(2px)"},
@@ -799,9 +801,9 @@ class CallbackManager:
 
         @callback(
             Output(COMPONENT_ID.raw_data_store, "data"),
-            Output("data-store-loading-output1", "children"),
-            Output("data-store-loading-output2", "children"),
-            Output("data-store-loading-output3", "children"),
+            Output(COMPONENT_ID.data_store_loading_output1, "children"),
+            Output(COMPONENT_ID.data_store_loading_output2, "children"),
+            Output(COMPONENT_ID.data_store_loading_output3, "children"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
         )
