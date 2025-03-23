@@ -569,6 +569,7 @@ class LocationComponentManager(AbstractComponentManager):
                                         html.Div(id="data-store-loading-output1"),
                                         ],
                                     type="circle",
+                                    overlay_style={"visibility":"visible", "filter": "blur(2px)"},
                                 )
                             ],
                             lg=12,
@@ -586,6 +587,7 @@ class LocationComponentManager(AbstractComponentManager):
                                         html.Div(id="data-store-loading-output2"),
                                         ],
                                     type="circle",
+                                    overlay_style={"visibility":"visible", "filter": "blur(2px)"},
                                 )
                             ],
                             lg=12,
@@ -619,7 +621,8 @@ class LocationComponentManager(AbstractComponentManager):
                     indicator,
                     html.Div(id="data-store-loading-output3"),
                 ],
-                type="circle"
+                type="circle",
+                overlay_style={"visibility":"visible", "filter": "blur(2px)"},
             )
 
         indicator_tooltip = dbc.Tooltip(
