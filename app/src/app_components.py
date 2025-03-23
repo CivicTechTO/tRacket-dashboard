@@ -562,7 +562,15 @@ class LocationComponentManager(AbstractComponentManager):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dbc.Spinner(hourly_noise_line_graph),
+                            [
+                                dcc.Loading(
+                                    children=[
+                                        hourly_noise_line_graph,
+                                        html.Div(id="data-store-loading-output1"),
+                                        ],
+                                    type="circle",
+                                )
+                            ],
                             lg=12,
                             md=12,
                         )
@@ -571,7 +579,15 @@ class LocationComponentManager(AbstractComponentManager):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dbc.Spinner(raw_noise_line_graph),
+                            [
+                                dcc.Loading(
+                                    children=[
+                                        raw_noise_line_graph,
+                                        html.Div(id="data-store-loading-output2"),
+                                        ],
+                                    type="circle",
+                                )
+                            ],
                             lg=12,
                             md=12,
                         )
@@ -598,7 +614,13 @@ class LocationComponentManager(AbstractComponentManager):
             id=COMPONENT_ID.mean_indicator,
         )
 
-        # indicator = dbc.Spinner(indicator)
+        indicator = dcc.Loading(
+                [
+                    indicator,
+                    html.Div(id="data-store-loading-output3"),
+                ],
+                type="circle"
+            )
 
         indicator_tooltip = dbc.Tooltip(
             f"Average noise level in the past hour and relative change since the hour prior.",
@@ -614,7 +636,7 @@ class LocationComponentManager(AbstractComponentManager):
     ) -> dbc.Card:
 
         card = self.get_card(
-            title="Current Noise Level",
+            title="Hourly Noise Trend",
             body=dbc.CardBody(
                 [
                     html.Span(id=COMPONENT_ID.last_update_text),
@@ -774,6 +796,9 @@ class CallbackManager:
 
         @callback(
             Output(COMPONENT_ID.raw_data_store, "data"),
+            Output("data-store-loading-output1", "children"),
+            Output("data-store-loading-output2", "children"),
+            Output("data-store-loading-output3", "children"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
         )
@@ -799,7 +824,7 @@ class CallbackManager:
             raw_data = self.data_manager.location_noise[Granularity.raw]
             raw_data = self.data_formatter.dataframe_to_store(raw_data)
 
-            return raw_data
+            return raw_data, "", "", ""
 
         @callback(
             Output(
