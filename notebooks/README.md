@@ -17,6 +17,10 @@ If you are looking to dive into a deeper analysis, you can take the [load all da
 
 The process is the same as above, you can run the notebook locally or on Google Colab.
 
+## Comparing Across Locations
+
+You can use the [live-sensor-comparison](live-sensor-comparison.ipynb) notebook to see how multiple locations compare side by side.
+
 ## Kaggle
 
 The tRacket project is now on Kaggle too! You can run tRacket notebooks and showcase your work. Visit us here: https://www.kaggle.com/tracketnoisesensor
