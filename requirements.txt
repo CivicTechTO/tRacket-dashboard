@@ -42,7 +42,7 @@ pydantic==2.7.1
 pydantic_core==2.18.2
 pytest==7.4.2
 python-dateutil==2.8.2
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 pytz==2023.3.post1
 PyYAML==6.0.1
 requests>=2.32.4
