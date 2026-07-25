@@ -337,6 +337,7 @@ class TimeseriesPlotter(BasePlotter):
         return trace
 
     def _get_max_line_trace(self) -> go.Scatter:
+        line_width = int(self._config["plot.sizes"]["border_line_width"])
         trace = go.Scatter(
             x=self.df[COLUMN.TIMESTAMP],
             y=self.df[COLUMN.MAX].round(1),
@@ -345,17 +346,20 @@ class TimeseriesPlotter(BasePlotter):
             line_color=self.colors[COLOR_ITEM.MAX],
             fill="tonexty",
             fillcolor=self._config["plot.colors"]["fill"],
+            line_width=line_width,
         )
 
         return trace
 
     def _get_min_line_trace(self) -> go.Scatter:
+        line_width = int(self._config["plot.sizes"]["border_line_width"])
         trace = go.Scatter(
             x=self.df[COLUMN.TIMESTAMP],
             y=self.df[COLUMN.MIN].round(1),
             name="Min",
             mode="lines",
             line_color=self.colors[COLOR_ITEM.MIN],
+            line_width=line_width,
         )
         return trace
 
