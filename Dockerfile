@@ -41,4 +41,4 @@ ADD --chown=myuser ./app /usr/src/project/app/
 
 EXPOSE 8501
 
-CMD gunicorn --bind 0.0.0.0:$PORT app:server
+CMD gunicorn --bind 0.0.0.0:$PORT --timeout 60 app:server

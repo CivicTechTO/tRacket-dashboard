@@ -84,7 +84,6 @@ class NoiseApi:
             noise_data = TimedLocationNoiseData(**collected_noise_data)
 
         return noise_data
-
     def _paginate_check(
         self, params: NoiseRequestParams
     ) -> tuple[NoiseRequestParams, bool]:

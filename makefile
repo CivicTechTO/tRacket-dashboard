@@ -121,7 +121,7 @@ notebook:
 	jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
 
 app:
-	(cd /project/app; gunicorn --bind 0.0.0.0:$(APP_PORT) app:server)
+	(cd /project/app; gunicorn --bind 0.0.0.0:$(APP_PORT) --timeout 60 app:server)
 
 debug:
 	(cd /project/app; python app.py)
