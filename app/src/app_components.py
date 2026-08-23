@@ -110,12 +110,13 @@ class LeafletMapManager:
         Build the map tile layer URL, including the Stadia API key if available.
         """
         stadia_api_key = os.getenv("STADIA_API_KEY")
+        base_stadia_url = self.config["map"]["layer_url"]
         if stadia_api_key:
             logger.info("Using Stadia Maps with API key for map tiles.")
-            layer_url = f"{self.config['map']['layer_url']}?api_key={stadia_api_key}"
+            layer_url = f"{base_stadia_url}?api_key={stadia_api_key}"
         else:
             logger.warning("STADIA_API_KEY not set. Using default map tiles without API key.")
-            layer_url = self.config["map"]["layer_url"]
+            layer_url = base_stadia_url
 
         return layer_url
 
