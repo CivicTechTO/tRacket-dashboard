@@ -5,6 +5,7 @@ from dash import Dash, html
 import dash
 import dash_bootstrap_components as dbc
 import configparser
+from flask import redirect, request
 from src.utils import Logging, dbc_themes_name_to_url
 import os
 
@@ -42,6 +43,20 @@ app = Dash(
     suppress_callback_exceptions=True,
 )
 server = app.server
+
+
+@server.before_request
+def redirect_to_locations():
+    """
+    Redirects the user to the /locations page if they access the root URL.
+
+    The .before_request decorator registers this function to be called before each request. 
+    If the request path is "/", it redirects the user to "/locations". Otherwise, it does nothing.
+    This ensures Dash's index route is not taking precedence.
+    """
+    if request.path == "/":
+        return redirect("/locations")
+    return None
 
 app.layout = html.Div([dash.page_container])
 
