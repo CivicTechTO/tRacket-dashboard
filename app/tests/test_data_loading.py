@@ -8,6 +8,7 @@ from src.data_loading.models import (
 )
 from src.data_loading.main import AppDataManager
 from src.data_loading.models import Granularity
+from src.data_loading import noise_api as noise_api_module
 from src.utils import get_current_dir, pydantic_to_pandas, load_config
 import pytest
 import os
@@ -128,6 +129,53 @@ def test_plain_get_request(noise_api: NoiseApi):
     df = pydantic_to_pandas(TimedLocationNoiseData(**result).measurements)
 
     assert len(df) > 0
+
+
+def test_noise_api_paginated_batches_stop_at_empty_page(monkeypatch):
+    pages = {
+        0: [{"timestamp": "2024-02-04T23:00:00-04:00", "min": 1, "max": 2, "mean": 1.5}],
+        1: [{"timestamp": "2024-02-04T23:01:00-04:00", "min": 2, "max": 3, "mean": 2.5}],
+        2: [{"timestamp": "2024-02-04T23:02:00-04:00", "min": 3, "max": 4, "mean": 3.5}],
+        3: [],
+        4: [{"timestamp": "2024-02-04T23:04:00-04:00", "min": 5, "max": 6, "mean": 5.5}],
+        5: [{"timestamp": "2024-02-04T23:05:00-04:00", "min": 6, "max": 7, "mean": 6.5}],
+    }
+    requested_pages = []
+
+    class FakeResponse:
+        def __init__(self, page):
+            self.url = f"https://example.test/noise?page={page}"
+            self._data = {"measurements": pages[page]}
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self._data
+
+    class FakeAsyncClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, traceback):
+            pass
+
+        async def get(self, url, params=None):
+            page = params["page"]
+            requested_pages.append(page)
+            return FakeResponse(page)
+
+    monkeypatch.setattr(noise_api_module.httpx, "AsyncClient", FakeAsyncClient)
+
+    result = NoiseApi("https://example.test/").get_location_noise_data(
+        "location-1"
+    )
+
+    assert len(result.measurements) == 3
+    assert requested_pages == [0, 1, 2, 3, 4, 5]
 
 
 def test_plain_lifetime_get_request_lifetime(noise_api: NoiseApi):
