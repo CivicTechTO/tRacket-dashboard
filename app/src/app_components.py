@@ -21,6 +21,7 @@ from dash import dcc, html, get_asset_url
 import dash_bootstrap_components as dbc
 from typing import List, Dict
 from datetime import datetime, date, timedelta
+import os
 from dash import (
     callback,
     Input,
@@ -32,6 +33,9 @@ from dash import (
     dash_table,
 )
 import dash
+from src.utils import Logging
+
+logger = Logging.get_console_logger(__name__)
 
 
 class COMPONENT_ID(StrEnum):
@@ -101,12 +105,27 @@ class LeafletMapManager:
         assert COLUMN.ACTIVE in locations.columns
         assert COLUMN.LABEL in locations.columns
 
+    def _build_layer_url(self) -> str:
+        """
+        Build the map tile layer URL, including the Stadia API key if available.
+        """
+        stadia_api_key = os.getenv("STADIA_API_KEY")
+        if stadia_api_key:
+            logger.info("Using Stadia Maps with API key for map tiles.")
+            layer_url = f"{self.config['map']['layer_url']}?api_key={stadia_api_key}"
+        else:
+            logger.warning("STADIA_API_KEY not set. Using default map tiles without API key.")
+            layer_url = self.config["map"]["layer_url"]
+
+        return layer_url
+
     def _get_tile(self) -> dl.TileLayer:
         """
         Create the map tile layer.
         """
+        layer_url = self._build_layer_url()
         tile_layer = dl.TileLayer(
-            url=self.config["map"]["layer_url"],
+            url=layer_url,
             attribution=self.config["map"]["layer_attribution"],
         )
 

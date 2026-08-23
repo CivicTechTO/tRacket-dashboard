@@ -3,6 +3,7 @@ from src.utils import DataFormatter, COLUMN, date_to_string
 from src.data_loading.main import AppDataManager
 import pytest
 from datetime import datetime, date
+from src.app_components import LeafletMapManager
 
 
 def test_time_comparison():
@@ -35,6 +36,14 @@ def test_datetime_to_string():
     date_obj = datetime(2024, 1, 1, 12, 2, 0)
 
     assert expected == date_to_string(date_obj)
+
+
+def test_stadia_tile_uses_api_key(monkeypatch):
+    monkeypatch.setenv("STADIA_API_KEY", "test-key")
+
+    tile_layer = LeafletMapManager()._get_tile()
+
+    assert tile_layer.url.endswith("?api_key=test-key")
 
 
 @pytest.fixture

@@ -18,7 +18,8 @@ Process overview:
 **Prerequisites**: 
 
 1. Docker Engine and `make` installed. 
-2. Create a `config.env` file at the same level as the `makefile` and add a line `API_TOKEN=...` with your WebCommand token. The public token can be accessed [here](https://live.noisemeter.webcomand.com/open-data/) with some more info about the data base. 
+2. Create a `config.env` file at the same level as the `makefile` and add a line `API_TOKEN=...` with your WebCommand token. The public token can be accessed [here](https://live.noisemeter.webcomand.com/open-data/) with some more info about the data base.
+3. Add `STADIA_API_KEY=...` to the environment that runs the app (if API based authentication is required). In GitHub Codespaces, add it under **Settings > Secrets and variables > Codespaces**, then rebuild or restart the Codespace so it is available to the process. 
 
 Run the following commands to start the application locally:
 
