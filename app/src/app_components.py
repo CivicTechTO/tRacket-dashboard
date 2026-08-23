@@ -919,10 +919,11 @@ class CallbackManager:
         clientside_callback(
             """
             function(feature, n_clicks) {
-                var base_url = window.location.href;
-                console.log(feature)
                 if (!feature.properties.cluster) {
-                    var url = new URL("locations/".concat(feature.properties.id), base_url);
+                    var url = new URL(
+                        "/locations/".concat(encodeURIComponent(feature.properties.id)),
+                        window.location.origin
+                    );
                     console.log(`Redirecting to ${url}`);
                     window.open(url, '_blank');
                 }
