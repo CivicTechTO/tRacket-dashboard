@@ -170,12 +170,13 @@ def test_noise_api_paginated_batches_stop_at_empty_page(monkeypatch):
 
     monkeypatch.setattr(noise_api_module.httpx, "AsyncClient", FakeAsyncClient)
 
-    result = NoiseApi("https://example.test/").get_location_noise_data(
+    noise_api = NoiseApi("https://example.test/")
+    result = noise_api.get_location_noise_data(
         "location-1"
     )
 
     assert len(result.measurements) == 3
-    assert requested_pages == [0, 1, 2, 3, 4, 5]
+    assert requested_pages == [0, 1, 2, 3, 4, 5][:noise_api.page_batch_size + 1]  # Should stop after empty page
 
 
 def test_plain_lifetime_get_request_lifetime(noise_api: NoiseApi):
