@@ -9,9 +9,16 @@ from src.data_loading.models import (
 from src.data_loading.main import AppDataManager
 from src.data_loading.models import Granularity
 from src.data_loading import noise_api as noise_api_module
-from src.utils import get_current_dir, pydantic_to_pandas, load_config
+from src.utils import (
+    COLUMN,
+    get_current_dir,
+    pydantic_to_pandas,
+    load_config,
+)
 import pytest
 import os
+import asyncio
+import pandas as pd
 from pydantic import ValidationError
 from datetime import datetime
 
@@ -236,3 +243,60 @@ def test_noise_api_measurements_hourly(noise_api: NoiseApi):
         index=False,
     )
     assert len(result.measurements) > 0
+
+
+def test_data_manager_loads_raw_and_hourly_noise(monkeypatch):
+    data_manager = AppDataManager()
+    data_manager.location_stats = pd.DataFrame(
+        {
+            COLUMN.START: [datetime(2024, 1, 1)],
+            COLUMN.END: [datetime(2024, 2, 5)],
+        }
+    )
+    requested_granularities = []
+    requested_ranges = []
+    active_requests = 0
+    max_active_requests = 0
+
+    async def fake_async_get_location_noise_data(location_id, params=None):
+        nonlocal active_requests, max_active_requests
+        requested_granularities.append(params.granularity)
+        requested_ranges.append((params.start, params.end))
+        active_requests += 1
+        max_active_requests = max(max_active_requests, active_requests)
+        await asyncio.sleep(0)
+        active_requests -= 1
+        return TimedLocationNoiseData(
+            measurements=[
+                NoiseTimed(
+                    timestamp="2024-02-04T23:00:00-04:00",
+                    min=48.0,
+                    max=62.0,
+                    mean=49.0,
+                )
+            ]
+        )
+
+    monkeypatch.setattr(
+        data_manager.api,
+        "async_get_location_noise_data",
+        fake_async_get_location_noise_data,
+    )
+    data_manager.config["plot"]["fill_gaps"] = "false"
+
+    data_manager.load_and_format_location_noise_parallel(
+        location_id="location-1",
+        start=datetime(2024, 2, 4),
+        end=datetime(2024, 2, 5),
+    )
+
+    assert set(requested_granularities) == {
+        Granularity.raw,
+        Granularity.hourly,
+    }
+    assert requested_ranges == [(datetime(2024, 2, 4), datetime(2024, 2, 5))] * 2
+    assert max_active_requests == 2
+    assert set(data_manager.location_noise) == {
+        Granularity.raw,
+        Granularity.hourly,
+    }

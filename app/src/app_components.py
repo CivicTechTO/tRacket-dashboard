@@ -795,43 +795,16 @@ class CallbackManager:
             return dcc.send_data_frame(noise_df.to_csv, file_name)
 
         @callback(
-            Output(COMPONENT_ID.hourly_data_store, "data"),
-            Input(COMPONENT_ID.raw_data_store, "data"),
-        )
-        def aggregate_raw_to_hourly(
-            raw_data: List[Dict[str, object]]
-        ) -> List[Dict[str, object]]:
-            """
-            Take the raw data and resample to hourly.
-            """
-            raw_df = self.data_formatter.store_to_dataframe(raw_data)
-
-            # aggregate
-            raw_df = raw_df.set_index(COLUMN.TIMESTAMP)
-            hourly_df = raw_df.resample("1H").agg(
-                {COLUMN.MEAN: "mean", COLUMN.MIN: "min", COLUMN.MAX: "max"}
-            )
-            hourly_df = hourly_df.reset_index()
-
-            self.data_manager.location_noise[Granularity.hourly] = hourly_df
-
-            hourly_data = self.data_formatter.dataframe_to_store(hourly_df)
-
-            return hourly_data
-
-        @callback(
             Output(COMPONENT_ID.raw_data_store, "data"),
-            Output(COMPONENT_ID.data_store_loading_output1, "children"),
             Output(COMPONENT_ID.data_store_loading_output2, "children"),
-            Output(COMPONENT_ID.data_store_loading_output3, "children"),
             Input(COMPONENT_ID.date_picker, "start_date"),
             Input(COMPONENT_ID.date_picker, "end_date"),
         )
-        def load_data(
+        def load_raw_data(
             start_date: date, end_date: date
         ) -> List[Dict[str, object]]:
             """
-            Load data based on date picker into client-side raw data store.
+            Load raw data based on date picker into the client-side store.
             """
             device_id = self.data_manager.device_id
 
@@ -849,7 +822,37 @@ class CallbackManager:
             raw_data = self.data_manager.location_noise[Granularity.raw]
             raw_data = self.data_formatter.dataframe_to_store(raw_data)
 
-            return raw_data, "", "", ""
+            return raw_data, ""
+
+        @callback(
+            Output(COMPONENT_ID.hourly_data_store, "data"),
+            Output(COMPONENT_ID.data_store_loading_output1, "children"),
+            Output(COMPONENT_ID.data_store_loading_output3, "children"),
+            Input(COMPONENT_ID.date_picker, "start_date"),
+            Input(COMPONENT_ID.date_picker, "end_date"),
+        )
+        def load_hourly_data(
+            start_date: date, end_date: date
+        ) -> List[Dict[str, object]]:
+            """
+            Load hourly data based on date picker into the client-side store.
+            """
+            device_id = self.data_manager.device_id
+
+            start_date = date.fromisoformat(start_date)
+            end_date = date.fromisoformat(end_date) + timedelta(days=1)
+
+            self.data_manager.load_and_format_location_noise(
+                location_id=device_id,
+                granularity=Granularity.hourly,
+                start=start_date,
+                end=end_date,
+            )
+
+            hourly_data = self.data_manager.location_noise[Granularity.hourly]
+            hourly_data = self.data_formatter.dataframe_to_store(hourly_data)
+
+            return hourly_data, "", ""
 
         @callback(
             Output(
@@ -858,34 +861,36 @@ class CallbackManager:
                 allow_duplicate=True,
             ),
             Output(COMPONENT_ID.hourly_noise_line_graph, "style"),
+            Input(COMPONENT_ID.hourly_data_store, "data"),
+            prevent_initial_call="initial_duplicate",
+        )
+        def update_hourly_line_chart(hourly_data: List[Dict[str, float]]):
+            """
+            Update the hourly line chart when hourly data is available.
+            """
+            hourly_data = self.data_formatter.store_to_dataframe(hourly_data)
+            plotter = TimeseriesPlotter(hourly_data)
+            hourly_line_fig = plotter.plot(bold_line=True)
+
+            return hourly_line_fig, {}
+
+        @callback(
             Output(
                 COMPONENT_ID.raw_noise_line_graph,
                 "figure",
                 allow_duplicate=True,
             ),
             Output(COMPONENT_ID.raw_noise_line_graph, "style"),
-            Input(COMPONENT_ID.hourly_data_store, "data"),
             Input(COMPONENT_ID.raw_data_store, "data"),
             prevent_initial_call="initial_duplicate",
         )
-        def update_line_charts(
-            hourly_data: List[Dict[str, float]],
-            raw_data: List[Dict[str, float]],
-        ):
-            """
-            Main callback responsible for loading data based on the date selector,
-            updating the line charts and storing aggregate noise data.
-            """
-
+        def update_raw_line_chart(raw_data: List[Dict[str, float]]):
+            """Update the raw line chart when raw data is available."""
             raw_data = self.data_formatter.store_to_dataframe(raw_data)
             plotter = TimeseriesPlotter(raw_data)
             raw_line_fig = plotter.plot(bold_line=False)
 
-            hourly_data = self.data_formatter.store_to_dataframe(hourly_data)
-            plotter = TimeseriesPlotter(hourly_data)
-            hourly_line_fig = plotter.plot(bold_line=True)
-
-            return hourly_line_fig, {}, raw_line_fig, {}
+            return raw_line_fig, {}
 
         @callback(
             Output(COMPONENT_ID.last_update_text, "children"),

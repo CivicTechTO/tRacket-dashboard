@@ -1,6 +1,7 @@
 """
 Main data loading functionalities.
 """
+import asyncio
 import re
 from datetime import datetime, timedelta
 from typing import Dict, Optional
@@ -274,6 +275,12 @@ class AppDataManager:
             end_time=end,
             granularity=granularity,
         )
+        noise_data = self._format_location_noise(noise_data)
+
+        self.location_noise[granularity] = noise_data
+
+    def _format_location_noise(self, noise_data: pd.DataFrame) -> pd.DataFrame:
+        """Format a noise dataframe for use by the dashboard."""
         noise_data = self.data_formatter._string_col_names_to_enum(noise_data)
         noise_data = self.data_formatter._set_data_types(noise_data)
         logger.info(
@@ -293,4 +300,53 @@ class AppDataManager:
                 noise_data, freq="H"
             )
 
-        self.location_noise[granularity] = noise_data
+        return noise_data
+
+    def load_and_format_location_noise_parallel(
+        self,
+        location_id: str,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
+    ) -> None:
+        """Load raw and hourly noise data concurrently."""
+        if self.location_stats is None:
+            self.load_and_format_location_stats(location_id=location_id)
+
+        if end is None:
+            end = self.location_stats.loc[0, COLUMN.END]
+        if start is None:
+            start = end - timedelta(days=7)
+
+        asyncio.run(
+            self._load_and_format_location_noise_parallel(
+                location_id=location_id,
+                start=start,
+                end=end,
+            )
+        )
+
+    async def _load_and_format_location_noise_parallel(
+        self,
+        location_id: str,
+        start: datetime,
+        end: datetime,
+    ) -> None:
+        requests = [
+            self.api.async_get_location_noise_data(
+                location_id,
+                NoiseRequestParams(
+                    start=start, end=end, granularity=granularity
+                ),
+            )
+            for granularity in (Granularity.raw, Granularity.hourly)
+        ]
+        raw_data, hourly_data = await asyncio.gather(*requests)
+
+        for granularity, response in zip(
+            (Granularity.raw, Granularity.hourly),
+            (raw_data, hourly_data),
+        ):
+            noise_data = pydantic_to_pandas(response.measurements)
+            self.location_noise[granularity] = self._format_location_noise(
+                noise_data
+            )
