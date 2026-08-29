@@ -710,8 +710,9 @@ class LocationComponentManager(AbstractComponentManager):
         min_date_allowed = self._get_location_start_date()
         max_date_allowed = self._get_location_end_date()
 
-        # set default selection
-        start_default = max_date_allowed - timedelta(days=7)
+        # set default selection from config
+        default_window_days = int(self.config["constants"]["default_date_window_days"])
+        start_default = max_date_allowed - timedelta(days=default_window_days)
         end_default = max_date_allowed
 
         range_picker = dcc.DatePickerRange(
