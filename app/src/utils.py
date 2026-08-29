@@ -386,7 +386,7 @@ class Logging:
     }
 
     CONSOLE_CONFIG = {
-        "level": logging.INFO,
+        "level": logging.DEBUG,
         "format": "%(name)-12s %(levelname)-8s %(message)s",
     }
 

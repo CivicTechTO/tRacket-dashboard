@@ -2,6 +2,7 @@
 Base data loader definitions for issuing requests to the Webcommand Noise API.
 """
 import asyncio
+import time
 from urllib.parse import urljoin
 import httpx
 from src.utils import Logging
@@ -23,9 +24,14 @@ class NoiseApi:
     """
 
     def __init__(self, url: str, request_timeout: float = 60.0):
+        """
+        url: Base URL for the Webcommand Noise API.
+        timeout: Timeout for the request in seconds.
+        page_batch_size: Number of pages to fetch concurrently when paginating.
+        """
         self.url = url
         self.timeout = httpx.Timeout(request_timeout, connect=10.0)
-        self.page_batch_size = 3  # Number of pages to fetch concurrently when paginating
+        self.page_batch_size = 3  
 
     async def _async_get(
         self,
@@ -43,8 +49,20 @@ class NoiseApi:
             else None
         )
 
+        started_at = time.perf_counter()
+        logger.debug(
+            "Starting GET %s with params=%s",
+            full_url,
+            params,
+        )
+
         response = await client.get(full_url, params=params)
-        logger.info(f"GET Request: {response.url}")
+        elapsed_ms = (time.perf_counter() - started_at) * 1000
+        logger.debug(
+            "Completed GET %s in %.2f ms",
+            response.url,
+            elapsed_ms,
+        )
 
         response.raise_for_status()
 
@@ -94,6 +112,14 @@ class NoiseApi:
 
         params, paginate = self._paginate_check(params)
         endpoint = f"locations/{location_id}/noise"
+        total_started_at = time.perf_counter()
+
+        logger.debug(
+            "Starting noise fetch for location_id=%s with params=%s paginate=%s",
+            location_id,
+            params,
+            paginate,
+        )
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             noise_data = await self._async_get(client, endpoint, params=params)
@@ -106,6 +132,12 @@ class NoiseApi:
                     page_numbers = range(
                         next_page, next_page + self.page_batch_size
                     )
+                    page_batch_started_at = time.perf_counter()
+                    logger.debug(
+                        "Fetching paginated noise batch for location_id=%s pages=%s",
+                        location_id,
+                        list(page_numbers),
+                    )
                     page_results = await asyncio.gather(
                         *(
                             self._async_get(
@@ -115,6 +147,14 @@ class NoiseApi:
                             )
                             for page in page_numbers
                         )
+                    )
+                    batch_elapsed_ms = (
+                        time.perf_counter() - page_batch_started_at
+                    ) * 1000
+                    logger.debug(
+                        "Completed paginated noise batch for location_id=%s in %.2f ms",
+                        location_id,
+                        batch_elapsed_ms,
                     )
 
                     reached_end = False
@@ -129,6 +169,14 @@ class NoiseApi:
                         break
 
                     next_page += self.page_batch_size
+
+        total_elapsed_ms = (time.perf_counter() - total_started_at) * 1000
+        logger.info(
+            "Finished noise fetch for location_id=%s in %.2f ms with %d measurements",
+            location_id,
+            total_elapsed_ms,
+            len(collected_measurements),
+        )
 
         if params.granularity == Granularity.life_time:
             return AggregateLocationNoiseData(
