@@ -67,6 +67,7 @@ dev_container: docker_clean
 		-p 8888:8888\
 		-w /project\
 		-e PORT=$(APP_PORT)\
+		-e STADIA_API_KEY=$(STADIA_API_KEY)\
 		--name $(CONTAINER_NAME)\
 		$(DEV_IMAGE_NAME)
 
