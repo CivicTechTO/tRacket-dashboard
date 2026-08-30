@@ -28,10 +28,12 @@ class NoiseApi:
         url: Base URL for the Webcommand Noise API.
         timeout: Timeout for the request in seconds.
         page_batch_size: Number of pages to fetch concurrently when paginating.
+        page_size: Number of items per page, defined by the API.
         """
         self.url = url
         self.timeout = httpx.Timeout(request_timeout, connect=10.0)
-        self.page_batch_size = 3  
+        self.page_batch_size = 2
+        self.page_size = 1000
 
     async def _async_get(
         self,
@@ -106,7 +108,15 @@ class NoiseApi:
         location_id: str,
         params: NoiseRequestParams = None,
     ) -> AbstractLocationNoiseData:
-        """Get location noise data using bounded concurrent page batches."""
+        """
+        Get location noise data using bounded concurrent page batches.
+        
+        Pagination beyond the first call if the first data call returns a full page of results.
+        
+        Batching will be done in groups of self.page_batch_size pages at a time, 
+        with each page being fetched concurrently. Batched paginated calls will continue until
+        a page returns no results, indicating the end of the data set.
+        """
         if self.page_batch_size < 1:
             raise ValueError("page_batch_size must be at least 1")
 
@@ -126,7 +136,7 @@ class NoiseApi:
 
             collected_measurements = list(noise_data["measurements"])
 
-            if paginate and collected_measurements:
+            if paginate and len(collected_measurements) == self.page_size:
                 next_page = params.page + 1
                 while True:
                     page_numbers = range(
