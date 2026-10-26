@@ -34,7 +34,9 @@ ENV TOKEN=$TOKEN
 
 WORKDIR /usr/src/project/app
 
-RUN useradd -m myuser
+RUN useradd -m myuser \
+    && mkdir -p /usr/src/project/app/logs \
+    && chown myuser:myuser /usr/src/project/app/logs
 USER myuser
 
 ADD --chown=myuser ./app /usr/src/project/app/
