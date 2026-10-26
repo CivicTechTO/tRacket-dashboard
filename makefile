@@ -46,6 +46,7 @@ heroku_login:
 
 heroku_push:
 	docker tag $(PROD_IMAGE_NAME) registry.heroku.com/$(HEROKU_APP_NAME)/web
+	docker image inspect $(PROD_IMAGE_NAME) --format '{{.Os}}/{{.Architecture}}'
 	docker push registry.heroku.com/$(HEROKU_APP_NAME)/web
 
 heroku_release:
@@ -81,7 +82,7 @@ prod_container: docker_clean
 ### BUILD ###
 
 prod_build:
-	docker build --build-arg TOKEN=$(API_TOKEN) --no-cache --target prod-builder -t $(PROD_IMAGE_NAME) .
+	docker buildx build --load --platform linux/amd64 --provenance=false --build-arg TOKEN=$(API_TOKEN) --no-cache --target prod-builder -t $(PROD_IMAGE_NAME) .
 
 dev_build:
 	docker build --build-arg TOKEN=$(API_TOKEN) --target dev-builder -t $(DEV_IMAGE_NAME) .
